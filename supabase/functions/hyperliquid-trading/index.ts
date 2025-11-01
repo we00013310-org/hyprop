@@ -1,3 +1,4 @@
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { Wallet } from 'npm:ethers@6';
 import { HttpTransport } from 'npm:@nktkas/hyperliquid@0.25.7';
@@ -91,14 +92,13 @@ Deno.serve(async (req: Request) => {
       throw new Error('Account has no private key configured. Please set up your Hyperliquid testnet wallet key.');
     }
 
-    // Validate the private key format
     if (!account.hl_key.startsWith('0x') || account.hl_key.length !== 66) {
       throw new Error('Invalid private key format. Expected 0x-prefixed hex string.');
     }
 
     const wallet = new Wallet(account.hl_key);
-    const walletAddress = wallet.address;
-    console.log('Trading with wallet address:', walletAddress);
+    const walletAddr = wallet.address;
+    console.log('Trading with wallet address:', walletAddr);
     
     const transport = new HttpTransport({
       url: TESTNET_API_URL,
@@ -125,7 +125,7 @@ Deno.serve(async (req: Request) => {
       };
 
       console.log('Placing order with data:', JSON.stringify(orderData));
-      console.log('Using wallet:', walletAddress);
+      console.log('Using wallet:', walletAddr);
       console.log('Testnet URL:', TESTNET_API_URL);
       
       try {
@@ -158,6 +158,7 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ success: true, data: result }),
       {
+        status: 200,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
@@ -168,7 +169,6 @@ Deno.serve(async (req: Request) => {
     console.error('Trading error:', error);
     const errorMessage = error.message || String(error);
     
-    // Provide helpful error messages
     let userMessage = errorMessage;
     if (errorMessage.includes('does not exist')) {
       userMessage = 'Your wallet is not registered on Hyperliquid testnet. Please visit https://app.hyperliquid-testnet.xyz and connect with this wallet to activate it first.';
