@@ -36,9 +36,9 @@ export async function getAccountBalance(walletAddress: string): Promise<number> 
 
 interface ReferralState {
   cumVlm?: string;
-  cumBuilderFees?: string;
-  cumReferrerRebates?: string;
-  cumReferredTakerVolume?: string;
+  builderRewards?: string;
+  unclaimedRewards?: string;
+  claimedRewards?: string;
 }
 
 export async function getBuilderFees(builderAddress: string): Promise<number> {
@@ -56,8 +56,8 @@ export async function getBuilderFees(builderAddress: string): Promise<number> {
 
     const data: ReferralState = await response.json();
 
-    if (data?.cumBuilderFees) {
-      return parseFloat(data.cumBuilderFees);
+    if (data?.builderRewards) {
+      return parseFloat(data.builderRewards);
     }
 
     return 0;
