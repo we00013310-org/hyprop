@@ -409,6 +409,23 @@ Deno.serve(async (req: Request) => {
         { transport, wallet },
         { cancels: [] }
       );
+    } else if (action.type === 'getBuilderFees') {
+      const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
+
+      console.log('=== QUERYING BUILDER FEES ===');
+      console.log('Builder address:', BUILDER_ADDRESS);
+
+      const referralState = await getBuilderReferralState(BUILDER_ADDRESS);
+      const builderAccountValue = await getAccountValue(BUILDER_ADDRESS);
+
+      result = {
+        builderAddress: BUILDER_ADDRESS,
+        accountValue: builderAccountValue,
+        referralState: referralState,
+        meetsMinimum: builderAccountValue >= 100,
+      };
+
+      console.log('Builder fees result:', JSON.stringify(result, null, 2));
     } else {
       throw new Error('Invalid action type');
     }
