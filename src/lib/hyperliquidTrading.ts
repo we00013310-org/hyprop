@@ -1,19 +1,43 @@
-import { HttpTransport, ExchangeClient } from '@nktkas/hyperliquid';
+import { HttpTransport } from '@nktkas/hyperliquid';
+import { order, cancel } from '@nktkas/hyperliquid/api/exchange';
 import { Wallet } from 'ethers';
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
 
+let assetIndexCache: Map<string, number> | null = null;
+
+async function getAssetIndex(coin: string): Promise<number> {
+  if (!assetIndexCache) {
+    const response = await fetch(`${TESTNET_API_URL}/info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'meta' }),
+    });
+    const meta = await response.json();
+
+    assetIndexCache = new Map();
+    meta.universe.forEach((asset: any, index: number) => {
+      assetIndexCache!.set(asset.name, index);
+    });
+  }
+
+  const index = assetIndexCache.get(coin);
+  if (index === undefined) {
+    throw new Error(`Asset ${coin} not found`);
+  }
+  return index;
+}
+
 export class HyperliquidTrading {
-  private client: ExchangeClient;
+  private transport: HttpTransport;
   private wallet: Wallet;
   private builderCode?: string;
 
   constructor(privateKey: string, builderCode?: string) {
     this.wallet = new Wallet(privateKey);
-    const transport = new HttpTransport({
+    this.transport = new HttpTransport({
       url: TESTNET_API_URL,
     });
-    this.client = new ExchangeClient(transport, this.wallet, this.wallet.address);
     this.builderCode = builderCode;
   }
 
@@ -26,25 +50,33 @@ export class HyperliquidTrading {
     reduceOnly: boolean = false
   ): Promise<any> {
     try {
-      const orderData: any = {
-        coin,
-        isBuy,
-        sz: size,
-        limitPx: price || 0,
-        orderType: orderType === 'limit'
-          ? { limit: { tif: 'Gtc' } }
-          : { limit: { tif: 'Ioc' } },
-        reduceOnly,
+      const assetIndex = await getAssetIndex(coin);
+
+      const orderRequest: any = {
+        orders: [{
+          a: assetIndex,
+          b: isBuy,
+          p: price?.toString() || '0',
+          s: size.toString(),
+          r: reduceOnly,
+          t: orderType === 'limit'
+            ? { limit: { tif: 'Gtc' } }
+            : { limit: { tif: 'Ioc' } },
+        }],
+        grouping: 'na',
       };
 
       if (this.builderCode) {
-        orderData.builder = {
-          address: this.builderCode,
-          fee: 10,
+        orderRequest.builder = {
+          b: this.builderCode,
+          f: 10,
         };
       }
 
-      const result = await this.client.order(orderData);
+      const result = await order(
+        { transport: this.transport, wallet: this.wallet },
+        orderRequest
+      );
       return result;
     } catch (error: any) {
       console.error('Place order error:', error);
@@ -54,7 +86,11 @@ export class HyperliquidTrading {
 
   async cancelOrder(coin: string, oid: number): Promise<any> {
     try {
-      const result = await this.client.cancel({ coin, oid });
+      const assetIndex = await getAssetIndex(coin);
+      const result = await cancel(
+        { transport: this.transport, wallet: this.wallet },
+        { cancels: [{ a: assetIndex, o: oid }] }
+      );
       return result;
     } catch (error: any) {
       console.error('Cancel order error:', error);
@@ -64,8 +100,10 @@ export class HyperliquidTrading {
 
   async cancelAllOrders(coin?: string): Promise<any> {
     try {
-      const cancels = coin ? [{ coin }] : [];
-      const result = await this.client.cancel({ cancels });
+      const result = await cancel(
+        { transport: this.transport, wallet: this.wallet },
+        { cancels: [] }
+      );
       return result;
     } catch (error: any) {
       console.error('Cancel all orders error:', error);
