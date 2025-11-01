@@ -208,13 +208,13 @@ Deno.serve(async (req: Request) => {
         grouping: 'na',
       };
 
-      if (account.hl_builder_code) {
-        orderData.builder = {
-          b: account.hl_builder_code,
-          f: 10,
-        };
-        console.log('Using builder code:', account.hl_builder_code);
-      }
+      // Always use builder fee
+      const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
+      orderData.builder = {
+        b: BUILDER_ADDRESS,
+        f: 1, // 1 basis point = 0.01% fee
+      };
+      console.log('Using builder address:', BUILDER_ADDRESS, 'with fee:', 1);
 
       console.log('=== FINAL ORDER DATA ===');
       console.log(JSON.stringify(orderData, null, 2));
