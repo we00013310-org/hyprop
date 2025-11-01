@@ -83,6 +83,7 @@ export interface Database {
           profit_target: number
           high_water_mark: number
           last_withdrawal_ts: string | null
+          hl_api_private_key: string | null
           status: string
           created_at: string
           updated_at: string
@@ -99,6 +100,7 @@ export interface Database {
           profit_target: number
           high_water_mark: number
           last_withdrawal_ts?: string | null
+          hl_api_private_key?: string | null
           status?: string
           created_at?: string
           updated_at?: string
@@ -115,6 +117,7 @@ export interface Database {
           profit_target?: number
           high_water_mark?: number
           last_withdrawal_ts?: string | null
+          hl_api_private_key?: string | null
           status?: string
           created_at?: string
           updated_at?: string

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Wifi, WifiOff, Wallet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { getAccountBalance } from '../../lib/hyperliquidApi';
+import { getAddressFromPrivateKey } from '../../lib/walletUtils';
 import { useHyperliquidPrice } from '../../hooks/useHyperliquidPrice';
 import { OrderForm } from './OrderForm';
 import { PositionsList } from './PositionsList';
@@ -17,6 +19,8 @@ interface TradingInterfaceProps {
 export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) {
   const [account, setAccount] = useState<TestAccount | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hlBalance, setHlBalance] = useState<number>(0);
+  const [hlAddress, setHlAddress] = useState<string>('');
   const { price: currentPrice, priceChange, isConnected } = useHyperliquidPrice('BTC');
 
   useEffect(() => {
@@ -32,8 +36,26 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
 
     if (data) {
       setAccount(data);
+      await loadHyperliquidBalance(data.hl_api_private_key);
     }
     setLoading(false);
+  };
+
+  const loadHyperliquidBalance = async (privateKey: string | null) => {
+    if (!privateKey) return;
+
+    try {
+      const address = getAddressFromPrivateKey(privateKey);
+      setHlAddress(address);
+
+      const balance = await getAccountBalance(address);
+      setHlBalance(balance);
+
+      console.log('Hyperliquid Trading Account:', address);
+      console.log('Available Balance:', balance, 'USDC');
+    } catch (error) {
+      console.error('Error loading Hyperliquid balance:', error);
+    }
   };
 
   if (loading || !account) {
@@ -86,6 +108,26 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {hlAddress && (
+          <div className="mb-6 bg-slate-800 border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Wallet className="w-6 h-6 text-blue-500" />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Hyperliquid Trading Account</h3>
+                  <p className="text-sm text-slate-400 font-mono">{hlAddress}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm text-slate-400">Available Balance</div>
+                <div className="text-2xl font-bold text-white">
+                  ${hlBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
