@@ -12,32 +12,54 @@ const corsHeaders = {
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
 let assetIndexCache: Map<string, number> | null = null;
+let assetMetaCache: Map<string, any> | null = null;
+
+async function loadAssetMetadata(): Promise<void> {
+  if (assetIndexCache && assetMetaCache) return;
+  
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'meta' }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch asset metadata: ${response.statusText}`);
+  }
+  
+  const meta = await response.json();
+  console.log('Asset metadata:', JSON.stringify(meta));
+
+  assetIndexCache = new Map();
+  assetMetaCache = new Map();
+  meta.universe.forEach((asset: any, index: number) => {
+    assetIndexCache!.set(asset.name, index);
+    assetMetaCache!.set(asset.name, asset);
+  });
+}
 
 async function getAssetIndex(coin: string): Promise<number> {
-  if (!assetIndexCache) {
-    const response = await fetch(`${TESTNET_API_URL}/info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'meta' }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch asset metadata: ${response.statusText}`);
-    }
-    
-    const meta = await response.json();
-
-    assetIndexCache = new Map();
-    meta.universe.forEach((asset: any, index: number) => {
-      assetIndexCache!.set(asset.name, index);
-    });
-  }
-
-  const index = assetIndexCache.get(coin);
+  await loadAssetMetadata();
+  const index = assetIndexCache!.get(coin);
   if (index === undefined) {
     throw new Error(`Asset ${coin} not found`);
   }
   return index;
+}
+
+async function getAssetMeta(coin: string): Promise<any> {
+  await loadAssetMetadata();
+  const meta = assetMetaCache!.get(coin);
+  if (!meta) {
+    throw new Error(`Asset metadata for ${coin} not found`);
+  }
+  return meta;
+}
+
+function formatPrice(price: number, szDecimals: number): string {
+  const formatted = price.toFixed(szDecimals);
+  console.log(`Formatted price ${price} with ${szDecimals} decimals -> ${formatted}`);
+  return formatted;
 }
 
 async function getCurrentPrice(coin: string): Promise<number> {
@@ -52,12 +74,19 @@ async function getCurrentPrice(coin: string): Promise<number> {
   }
   
   const mids = await response.json();
-  const price = parseFloat(mids[coin]);
+  console.log('All mids:', JSON.stringify(mids));
   
-  if (!price || isNaN(price)) {
-    throw new Error(`Failed to get current price for ${coin}`);
+  const priceStr = mids[coin];
+  if (!priceStr) {
+    throw new Error(`No price found for ${coin}`);
   }
   
+  const price = parseFloat(priceStr);
+  if (isNaN(price)) {
+    throw new Error(`Invalid price for ${coin}: ${priceStr}`);
+  }
+  
+  console.log(`Current price for ${coin}: ${price}`);
   return price;
 }
 
@@ -91,7 +120,10 @@ Deno.serve(async (req: Request) => {
     }
 
     const { action, accountId } = await req.json();
-    console.log('Processing action:', action.type, 'for account:', accountId, 'user:', user.id);
+    console.log('=== NEW REQUEST ===');
+    console.log('Action:', JSON.stringify(action));
+    console.log('Account ID:', accountId);
+    console.log('User ID:', user.id);
 
     const { data: account, error: accountError } = await supabase
       .from('test_accounts')
@@ -110,16 +142,16 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!account.hl_key) {
-      throw new Error('Account has no private key configured. Please set up your Hyperliquid testnet wallet key.');
+      throw new Error('Account has no private key configured.');
     }
 
     if (!account.hl_key.startsWith('0x') || account.hl_key.length !== 66) {
-      throw new Error('Invalid private key format. Expected 0x-prefixed hex string.');
+      throw new Error('Invalid private key format.');
     }
 
     const wallet = new Wallet(account.hl_key);
     const derivedAddress = wallet.address;
-    console.log('Derived wallet address from private key:', derivedAddress);
+    console.log('Wallet address:', derivedAddress);
     
     const transport = new HttpTransport({
       isTestnet: true,
@@ -129,7 +161,20 @@ Deno.serve(async (req: Request) => {
 
     if (action.type === 'placeOrder') {
       const { coin, isBuy, size, price, orderType, reduceOnly } = action;
+      
+      console.log('=== ORDER DETAILS ===');
+      console.log('Coin:', coin);
+      console.log('Side:', isBuy ? 'BUY' : 'SELL');
+      console.log('Size:', size, typeof size);
+      console.log('Price:', price, typeof price);
+      console.log('Order Type:', orderType);
+      console.log('Reduce Only:', reduceOnly);
+      
       const assetIndex = await getAssetIndex(coin);
+      const assetMeta = await getAssetMeta(coin);
+      
+      console.log('Asset index:', assetIndex);
+      console.log('Asset meta:', JSON.stringify(assetMeta));
 
       let finalPrice: string;
       if (orderType === 'market' || !price) {
@@ -138,10 +183,15 @@ Deno.serve(async (req: Request) => {
         const slippagePrice = isBuy
           ? currentPrice * (1 + slippage)
           : currentPrice * (1 - slippage);
-        finalPrice = slippagePrice.toFixed(2);
-        console.log('Market order - using slippage price:', finalPrice, '(current:', currentPrice, ')');
+        
+        console.log('Market order calculation:');
+        console.log('  Current price:', currentPrice);
+        console.log('  Slippage:', slippage);
+        console.log('  Slippage price:', slippagePrice);
+        
+        finalPrice = formatPrice(slippagePrice, assetMeta.szDecimals || 5);
       } else {
-        finalPrice = price.toString();
+        finalPrice = formatPrice(price, assetMeta.szDecimals || 5);
       }
 
       const orderData: any = {
@@ -166,31 +216,27 @@ Deno.serve(async (req: Request) => {
         console.log('Using builder code:', account.hl_builder_code);
       }
 
-      console.log('Placing order:');
-      console.log('  - Coin:', coin, '(index:', assetIndex, ')');
-      console.log('  - Side:', isBuy ? 'BUY' : 'SELL');
-      console.log('  - Size:', size);
-      console.log('  - Price:', finalPrice);
-      console.log('  - Type:', orderType);
-      console.log('  - Wallet:', derivedAddress);
-      console.log('  - Using testnet: true');
-      console.log('  - Order data:', JSON.stringify(orderData));
+      console.log('=== FINAL ORDER DATA ===');
+      console.log(JSON.stringify(orderData, null, 2));
       
       try {
         result = await placeOrderAPI(
           { transport, wallet },
           orderData
         );
-        console.log('Order result:', JSON.stringify(result));
+        console.log('=== ORDER SUCCESS ===');
+        console.log('Result:', JSON.stringify(result));
       } catch (error: any) {
-        console.error('Order placement error:', error);
+        console.error('=== ORDER ERROR ===');
+        console.error('Error:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        
         const errorMsg = error.message || String(error);
         
         if (errorMsg.includes('does not exist')) {
           throw new Error(
-            `Wallet ${derivedAddress} is not registered on Hyperliquid testnet. ` +
-            `Please import this private key into MetaMask, connect to https://app.hyperliquid-testnet.xyz, ` +
-            `and complete at least one trade to activate it. Make sure the wallet address matches: ${derivedAddress}`
+            `Wallet ${derivedAddress} is not registered on Hyperliquid testnet.`
           );
         }
         
@@ -224,7 +270,11 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error: any) {
-    console.error('Trading error:', error);
+    console.error('=== HANDLER ERROR ===');
+    console.error('Error:', error);
+    console.error('Message:', error.message);
+    console.error('Stack:', error.stack);
+    
     const errorMessage = error.message || String(error);
     
     return new Response(

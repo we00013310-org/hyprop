@@ -37,6 +37,14 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
       const sizeNum = parseFloat(size);
       const priceNum = orderType === 'limit' ? parseFloat(limitPrice || currentPrice.toString()) : currentPrice;
 
+      console.log('=== ORDER FORM SUBMISSION ===');
+      console.log('Side:', side, '-> isBuy:', isBuy);
+      console.log('Size input:', size, '-> sizeNum:', sizeNum);
+      console.log('Order type:', orderType);
+      console.log('Current price:', currentPrice);
+      console.log('Limit price input:', limitPrice);
+      console.log('Price to send:', orderType === 'limit' ? priceNum : null);
+
       const result = await trading.placeOrder(
         'BTC',
         isBuy,
@@ -45,6 +53,8 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
         orderType,
         false
       );
+
+      console.log('Order result:', result);
 
       if (result.status === 'ok') {
         onOrderPlaced();
