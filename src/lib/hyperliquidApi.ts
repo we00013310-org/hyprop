@@ -33,3 +33,36 @@ export async function getAccountBalance(walletAddress: string): Promise<number> 
     return 0;
   }
 }
+
+interface ReferralState {
+  cumVlm?: string;
+  cumBuilderFees?: string;
+  cumReferrerRebates?: string;
+  cumReferredTakerVolume?: string;
+}
+
+export async function getBuilderFees(builderAddress: string): Promise<number> {
+  try {
+    const response = await fetch(TESTNET_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'referral',
+        user: builderAddress,
+      }),
+    });
+
+    const data: ReferralState = await response.json();
+
+    if (data?.cumBuilderFees) {
+      return parseFloat(data.cumBuilderFees);
+    }
+
+    return 0;
+  } catch (error) {
+    console.error('Failed to fetch builder fees:', error);
+    return 0;
+  }
+}

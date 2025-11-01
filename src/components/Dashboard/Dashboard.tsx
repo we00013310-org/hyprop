@@ -4,7 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { AccountSelection } from './AccountSelection';
 import { TestAccountCard } from './TestAccountCard';
 import { FundedAccountCard } from './FundedAccountCard';
-import { LogOut, TrendingUp } from 'lucide-react';
+import { LogOut, TrendingUp, DollarSign } from 'lucide-react';
+import { getBuilderFees } from '../../lib/hyperliquidApi';
 import type { Database } from '../../lib/database.types';
 
 type TestAccount = Database['public']['Tables']['test_accounts']['Row'];
@@ -20,9 +21,12 @@ export function Dashboard({ onOpenTrading }: DashboardProps) {
   const [fundedAccounts, setFundedAccounts] = useState<FundedAccount[]>([]);
   const [showAccountSelection, setShowAccountSelection] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [builderFees, setBuilderFees] = useState<number>(0);
+  const [loadingFees, setLoadingFees] = useState(true);
 
   useEffect(() => {
     loadAccounts();
+    loadBuilderFees();
   }, [user]);
 
   const loadAccounts = async () => {
@@ -48,6 +52,18 @@ export function Dashboard({ onOpenTrading }: DashboardProps) {
       console.error('Error loading accounts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBuilderFees = async () => {
+    try {
+      const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
+      const fees = await getBuilderFees(BUILDER_ADDRESS);
+      setBuilderFees(fees);
+    } catch (error) {
+      console.error('Error loading builder fees:', error);
+    } finally {
+      setLoadingFees(false);
     }
   };
 
@@ -84,8 +100,28 @@ export function Dashboard({ onOpenTrading }: DashboardProps) {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">Dashboard</h2>
-          <p className="text-slate-400">Manage your trading accounts and evaluations</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Dashboard</h2>
+              <p className="text-slate-400">Manage your trading accounts and evaluations</p>
+            </div>
+            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+              <div className="flex items-center space-x-2 mb-1">
+                <DollarSign className="w-5 h-5 text-green-500" />
+                <span className="text-slate-400 text-sm font-medium">Builder Fees Collected</span>
+              </div>
+              {loadingFees ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                  <span className="text-slate-500 text-sm">Loading...</span>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold text-white">
+                  ${builderFees.toFixed(4)} <span className="text-sm font-normal text-slate-400">USDC</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {loading ? (
