@@ -19,6 +19,11 @@ async function getAssetIndex(coin: string): Promise<number> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'meta' }),
     });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch asset metadata: ${response.statusText}`);
+    }
+    
     const meta = await response.json();
 
     assetIndexCache = new Map();
@@ -83,10 +88,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!account.hl_key) {
-      throw new Error('Account has no private key configured');
+      throw new Error('Account has no private key configured. Please set up your Hyperliquid testnet wallet key.');
+    }
+
+    // Validate the private key format
+    if (!account.hl_key.startsWith('0x') || account.hl_key.length !== 66) {
+      throw new Error('Invalid private key format. Expected 0x-prefixed hex string.');
     }
 
     const wallet = new Wallet(account.hl_key);
+    const walletAddress = wallet.address;
+    console.log('Trading with wallet address:', walletAddress);
+    
     const transport = new HttpTransport({
       url: TESTNET_API_URL,
     });
@@ -111,12 +124,20 @@ Deno.serve(async (req: Request) => {
         grouping: 'na',
       };
 
-      console.log('Placing order:', JSON.stringify(orderData));
-      result = await placeOrderAPI(
-        { transport, wallet },
-        orderData
-      );
-      console.log('Order result:', JSON.stringify(result));
+      console.log('Placing order with data:', JSON.stringify(orderData));
+      console.log('Using wallet:', walletAddress);
+      console.log('Testnet URL:', TESTNET_API_URL);
+      
+      try {
+        result = await placeOrderAPI(
+          { transport, wallet },
+          orderData
+        );
+        console.log('Order result:', JSON.stringify(result));
+      } catch (error: any) {
+        console.error('Order placement error:', error);
+        throw new Error(`Order failed: ${error.message || String(error)}`);
+      }
     } else if (action.type === 'cancelOrder') {
       const { coin, oid } = action;
       const assetIndex = await getAssetIndex(coin);
@@ -145,8 +166,16 @@ Deno.serve(async (req: Request) => {
     );
   } catch (error: any) {
     console.error('Trading error:', error);
+    const errorMessage = error.message || String(error);
+    
+    // Provide helpful error messages
+    let userMessage = errorMessage;
+    if (errorMessage.includes('does not exist')) {
+      userMessage = 'Your wallet is not registered on Hyperliquid testnet. Please visit https://app.hyperliquid-testnet.xyz and connect with this wallet to activate it first.';
+    }
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message || String(error) }),
+      JSON.stringify({ success: false, error: userMessage }),
       {
         status: 400,
         headers: {
