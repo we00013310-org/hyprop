@@ -101,7 +101,7 @@ Deno.serve(async (req: Request) => {
     console.log('Derived wallet address from private key:', derivedAddress);
     
     const transport = new HttpTransport({
-      url: TESTNET_API_URL,
+      isTestnet: true,
     });
 
     let result;
@@ -124,6 +124,14 @@ Deno.serve(async (req: Request) => {
         grouping: 'na',
       };
 
+      if (account.hl_builder_code) {
+        orderData.builder = {
+          b: account.hl_builder_code,
+          f: 10,
+        };
+        console.log('Using builder code:', account.hl_builder_code);
+      }
+
       console.log('Placing order:');
       console.log('  - Coin:', coin, '(index:', assetIndex, ')');
       console.log('  - Side:', isBuy ? 'BUY' : 'SELL');
@@ -131,7 +139,7 @@ Deno.serve(async (req: Request) => {
       console.log('  - Price:', price || 'MARKET');
       console.log('  - Type:', orderType);
       console.log('  - Wallet:', derivedAddress);
-      console.log('  - API URL:', TESTNET_API_URL);
+      console.log('  - Using testnet: true');
       console.log('  - Order data:', JSON.stringify(orderData));
       
       try {
