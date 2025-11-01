@@ -28,14 +28,23 @@ export class HyperliquidTrading {
     this.builderCode = builderCode;
   }
 
+  private stringToHex(str: string): string {
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      hex += code.toString(16).padStart(2, '0');
+    }
+    return hex;
+  }
+
   private async signL1Action(action: any, nonce: number): Promise<any> {
     const timestamp = Date.now();
 
     const connectionId = action.type === 'order'
-      ? Buffer.from(JSON.stringify({
+      ? this.stringToHex(JSON.stringify({
           destination: 'Hyperliquid',
           type: 'l1Action',
-        })).toString('hex')
+        }))
       : undefined;
 
     const phantomAgent = {
