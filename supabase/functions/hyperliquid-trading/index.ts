@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
       console.log('=== APPROVING BUILDER FEE ===');
       console.log('Wallet address:', derivedAddress);
       console.log('Builder address:', BUILDER_ADDRESS);
-      console.log('Max fee rate: 0.001%');
+      console.log('Max fee rate: 0.1%');
 
       try {
         // Check current approval first
@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
         result = await approveBuilderFeeAPI(
           { transport, wallet },
           {
-            maxFeeRate: '0.001%',
+            maxFeeRate: '0.1%',
             builder: BUILDER_ADDRESS,
           }
         );
@@ -228,8 +228,8 @@ Deno.serve(async (req: Request) => {
         const newApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
         console.log('New approval AFTER:', newApproval, '(tenths of basis points)');
 
-        if (newApproval === 0 || newApproval < 1) {
-          console.error('WARNING: Approval did not persist! Still 0 or less than 1');
+        if (newApproval === 0 || newApproval < 10) {
+          console.error('WARNING: Approval did not persist! Still less than 10 (0.1%)');
           throw new Error('Builder fee approval did not persist. Try again.');
         }
 
@@ -304,16 +304,15 @@ Deno.serve(async (req: Request) => {
       console.log('Max approved builder fee:', maxApprovedFee, '(tenths of basis points)');
       console.log('Max approved fee as percentage:', (maxApprovedFee / 10000) + '%');
 
-      // Use 1 tenth of basis point = 0.001%
-      const feeToUse = 1;
+      // Use 10 tenths of basis point = 0.1%
+      const feeToUse = 10;
       console.log('Fee we want to use:', feeToUse, '(tenths of basis points)');
       console.log('Fee we want to use as percentage:', (feeToUse / 10000) + '%');
 
       if (maxApprovedFee < feeToUse) {
         console.error('INSUFFICIENT APPROVAL!');
         console.error(`  Approved: ${maxApprovedFee} (${maxApprovedFee / 10000}%)`);
-        console.error(`  Required: ${feeToUse} (${feeToUse / 10000}%)`);
-        throw new Error(
+        console.error(`  Required: ${feeToUse} (${feeToUse / 10000}%)`);        throw new Error(
           `Insufficient builder fee approval. Approved: ${maxApprovedFee}, Required: ${feeToUse}. ` +
           `Please approve builder fee first.`
         );
@@ -325,7 +324,7 @@ Deno.serve(async (req: Request) => {
         b: BUILDER_ADDRESS,
         f: feeToUse,
       };
-      console.log('Using builder address:', BUILDER_ADDRESS, 'with fee:', feeToUse, '(tenths of basis points = 0.001%)');
+      console.log('Using builder address:', BUILDER_ADDRESS, 'with fee:', feeToUse, '(tenths of basis points = 0.1%)');
 
       console.log('=== FINAL ORDER DATA ===');
       console.log(JSON.stringify(orderData, null, 2));
