@@ -1,20 +1,17 @@
-import { supabase } from './supabase';
-
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
 
 export class HyperliquidTrading {
   private accountId: string;
+  private walletAddress: string;
 
-  constructor(accountId: string) {
+  constructor(accountId: string, walletAddress: string) {
     this.accountId = accountId;
+    this.walletAddress = walletAddress;
   }
 
   private async callEdgeFunction(action: any): Promise<any> {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-    if (sessionError || !session) {
-      console.error('Session error:', sessionError);
-      throw new Error('Not authenticated - please sign in again');
+    if (!this.walletAddress) {
+      throw new Error('Wallet not connected');
     }
 
     const response = await fetch(
@@ -22,9 +19,9 @@ export class HyperliquidTrading {
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'x-wallet-address': this.walletAddress,
         },
         body: JSON.stringify({
           action,

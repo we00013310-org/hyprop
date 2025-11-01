@@ -4,13 +4,14 @@ import { HyperliquidTrading } from '../../lib/hyperliquidTrading';
 
 interface OrderFormProps {
   accountId: string;
+  walletAddress: string;
   currentPrice: number;
   privateKey: string | null;
   builderCode: string | null;
   onOrderPlaced: () => void;
 }
 
-export function OrderForm({ accountId, currentPrice, privateKey, builderCode, onOrderPlaced }: OrderFormProps) {
+export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, builderCode, onOrderPlaced }: OrderFormProps) {
   const [side, setSide] = useState<'long' | 'short'>('long');
   const [size, setSize] = useState('');
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
@@ -30,7 +31,7 @@ export function OrderForm({ accountId, currentPrice, privateKey, builderCode, on
     setError(null);
 
     try {
-      const trading = new HyperliquidTrading(accountId);
+      const trading = new HyperliquidTrading(accountId, walletAddress);
 
       const isBuy = side === 'long';
       const sizeNum = parseFloat(size);

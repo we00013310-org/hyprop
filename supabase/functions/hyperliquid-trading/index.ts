@@ -6,7 +6,7 @@ import { order as placeOrderAPI, cancel as cancelAPI } from 'npm:@nktkas/hyperli
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey, x-wallet-address',
 };
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
@@ -43,29 +43,28 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
+    const walletAddress = req.headers.get('x-wallet-address');
+    if (!walletAddress) {
+      throw new Error('Missing wallet address');
     }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      throw new Error(`Unauthorized: ${authError?.message || 'No user'}`);
+    const { data: user } = await supabase
+      .from('users')
+      .select('id')
+      .eq('wallet_address', walletAddress.toLowerCase())
+      .maybeSingle();
+
+    if (!user) {
+      throw new Error('User not found');
     }
 
     const { action, accountId } = await req.json();
-    console.log('Processing action:', action.type, 'for account:', accountId);
+    console.log('Processing action:', action.type, 'for account:', accountId, 'user:', user.id);
 
     const { data: account, error: accountError } = await supabase
       .from('test_accounts')
@@ -111,13 +110,6 @@ Deno.serve(async (req: Request) => {
         }],
         grouping: 'na',
       };
-
-      if (account.hl_builder_code) {
-        orderData.builder = {
-          b: account.hl_builder_code,
-          f: 10,
-        };
-      }
 
       console.log('Placing order:', JSON.stringify(orderData));
       result = await placeOrderAPI(

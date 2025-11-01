@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { getAccountBalance } from '../../lib/hyperliquidApi';
 import { getAddressFromPrivateKey } from '../../lib/walletUtils';
 import { useHyperliquidPrice } from '../../hooks/useHyperliquidPrice';
+import { useAuth } from '../../contexts/AuthContext';
 import { OrderForm } from './OrderForm';
 import { PositionsList } from './PositionsList';
 import { OpenOrdersList } from './OpenOrdersList';
@@ -19,6 +20,7 @@ interface TradingInterfaceProps {
 }
 
 export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) {
+  const { walletAddress } = useAuth();
   const [account, setAccount] = useState<TestAccount | null>(null);
   const [loading, setLoading] = useState(true);
   const [hlBalance, setHlBalance] = useState<number>(0);
@@ -177,9 +179,10 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               {activeTab === 'positions' && hlAddress && (
                 <PositionsList address={hlAddress} />
               )}
-              {activeTab === 'orders' && hlAddress && (
+              {activeTab === 'orders' && hlAddress && walletAddress && (
                 <OpenOrdersList
                   accountId={accountId}
+                  walletAddress={walletAddress}
                   address={hlAddress}
                   privateKey={account?.hl_api_private_key || null}
                   builderCode={account?.hl_builder_code || null}
@@ -194,16 +197,19 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
 
           <div className="space-y-6">
             <AccountStats account={account} />
-            <OrderForm
-              accountId={accountId}
-              currentPrice={currentPrice}
-              privateKey={account?.hl_api_private_key || null}
-              builderCode={account?.hl_builder_code || null}
-              onOrderPlaced={() => {
-                loadAccount();
-                loadHyperliquidBalance(account?.hl_api_private_key || null);
-              }}
-            />
+            {walletAddress && (
+              <OrderForm
+                accountId={accountId}
+                walletAddress={walletAddress}
+                currentPrice={currentPrice}
+                privateKey={account?.hl_api_private_key || null}
+                builderCode={account?.hl_builder_code || null}
+                onOrderPlaced={() => {
+                  loadAccount();
+                  loadHyperliquidBalance(account?.hl_api_private_key || null);
+                }}
+              />
+            )}
           </div>
         </div>
       </main>
