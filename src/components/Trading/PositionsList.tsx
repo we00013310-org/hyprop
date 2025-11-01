@@ -4,9 +4,10 @@ import { getUserPositions } from '../../lib/hyperliquidTrading';
 
 interface PositionsListProps {
   address: string;
+  onCountChange?: (count: number) => void;
 }
 
-export function PositionsList({ address }: PositionsListProps) {
+export function PositionsList({ address, onCountChange }: PositionsListProps) {
   const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -16,6 +17,7 @@ export function PositionsList({ address }: PositionsListProps) {
       const data = await getUserPositions(address);
       const openPositions = data.filter((pos: any) => parseFloat(pos.position.szi) !== 0);
       setPositions(openPositions);
+      onCountChange?.(openPositions.length);
     } catch (error) {
       console.error('Failed to load positions:', error);
     } finally {
@@ -47,13 +49,7 @@ export function PositionsList({ address }: PositionsListProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <h3 className="text-lg font-semibold text-white">Positions</h3>
-          <span className="px-2 py-0.5 bg-slate-600 rounded text-xs text-slate-300">
-            {positions.length}
-          </span>
-        </div>
+      <div className="flex justify-end items-center mb-4">
         <button
           onClick={loadPositions}
           className="p-2 text-slate-400 hover:text-white transition-colors"

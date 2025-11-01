@@ -26,6 +26,8 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
   const [hlBalance, setHlBalance] = useState<number>(0);
   const [hlAddress, setHlAddress] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
+  const [positionsCount, setPositionsCount] = useState(0);
+  const [ordersCount, setOrdersCount] = useState(0);
   const { price: currentPrice, priceChange, isConnected } = useHyperliquidPrice('BTC');
 
   useEffect(() => {
@@ -204,7 +206,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Positions
+                  Positions ({positionsCount})
                 </button>
                 <button
                   onClick={() => setActiveTab('orders')}
@@ -214,7 +216,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Open Orders
+                  Open Orders ({ordersCount})
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
@@ -229,7 +231,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               </div>
 
               {activeTab === 'positions' && hlAddress && (
-                <PositionsList address={hlAddress} />
+                <PositionsList address={hlAddress} onCountChange={setPositionsCount} />
               )}
               {activeTab === 'orders' && hlAddress && walletAddress && (
                 <OpenOrdersList
@@ -239,6 +241,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                   privateKey={account?.hl_api_private_key || null}
                   builderCode={account?.hl_builder_code || null}
                   onOrderCancelled={loadHyperliquidBalance.bind(null, account?.hl_api_private_key || null)}
+                  onCountChange={setOrdersCount}
                 />
               )}
               {activeTab === 'history' && hlAddress && (

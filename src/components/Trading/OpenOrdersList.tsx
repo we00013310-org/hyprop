@@ -10,9 +10,10 @@ interface OpenOrdersListProps {
   privateKey: string | null;
   builderCode: string | null;
   onOrderCancelled: () => void;
+  onCountChange?: (count: number) => void;
 }
 
-export function OpenOrdersList({ accountId, walletAddress, address, privateKey, builderCode, onOrderCancelled }: OpenOrdersListProps) {
+export function OpenOrdersList({ accountId, walletAddress, address, privateKey, builderCode, onOrderCancelled, onCountChange }: OpenOrdersListProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<number | null>(null);
@@ -22,6 +23,7 @@ export function OpenOrdersList({ accountId, walletAddress, address, privateKey, 
     try {
       const data = await getOpenOrders(address);
       setOrders(data);
+      onCountChange?.(data.length);
     } catch (error) {
       console.error('Failed to load orders:', error);
     } finally {
@@ -69,13 +71,7 @@ export function OpenOrdersList({ accountId, walletAddress, address, privateKey, 
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <h3 className="text-lg font-semibold text-white">Open Orders</h3>
-          <span className="px-2 py-0.5 bg-slate-600 rounded text-xs text-slate-300">
-            {orders.length}
-          </span>
-        </div>
+      <div className="flex justify-end items-center mb-4">
         <button
           onClick={loadOrders}
           className="p-2 text-slate-400 hover:text-white transition-colors"
