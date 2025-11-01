@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Wifi, WifiOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useHyperliquidPrice } from '../../hooks/useHyperliquidPrice';
 import { OrderForm } from './OrderForm';
 import { PositionsList } from './PositionsList';
 import { AccountStats } from './AccountStats';
@@ -15,22 +16,11 @@ interface TradingInterfaceProps {
 
 export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) {
   const [account, setAccount] = useState<TestAccount | null>(null);
-  const [currentPrice, setCurrentPrice] = useState(67000);
-  const [priceChange, setPriceChange] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { price: currentPrice, priceChange, isConnected } = useHyperliquidPrice('BTC');
 
   useEffect(() => {
     loadAccount();
-    const priceInterval = setInterval(() => {
-      setCurrentPrice((prev) => {
-        const change = (Math.random() - 0.5) * 100;
-        const newPrice = prev + change;
-        setPriceChange(change);
-        return newPrice;
-      });
-    }, 2000);
-
-    return () => clearInterval(priceInterval);
   }, [accountId]);
 
   const loadAccount = async () => {
@@ -67,18 +57,27 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               <span>Back to Dashboard</span>
             </button>
             <div className="flex items-center space-x-6">
-              <div className="text-center">
-                <div className="text-sm text-slate-400">BTC-PERP</div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold text-white">
-                    ${currentPrice.toFixed(2)}
-                  </span>
-                  <span className={`text-sm flex items-center ${
-                    priceChange >= 0 ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {priceChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                    {Math.abs(priceChange).toFixed(2)}
-                  </span>
+              <div className="flex items-center space-x-3">
+                {isConnected ? (
+                  <Wifi className="w-5 h-5 text-green-400" />
+                ) : (
+                  <WifiOff className="w-5 h-5 text-red-400" />
+                )}
+                <div className="text-center">
+                  <div className="text-sm text-slate-400">BTC-PERP (Hyperliquid Testnet)</div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-2xl font-bold text-white">
+                      ${currentPrice > 0 ? currentPrice.toFixed(2) : '---'}
+                    </span>
+                    {priceChange !== 0 && (
+                      <span className={`text-sm flex items-center ${
+                        priceChange >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {priceChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                        {Math.abs(priceChange).toFixed(2)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
