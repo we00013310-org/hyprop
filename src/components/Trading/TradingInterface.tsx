@@ -115,7 +115,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {hlAddress && (
           <div className="mb-6 bg-slate-800 border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
                 <Wallet className="w-6 h-6 text-blue-500" />
                 <div>
@@ -130,6 +130,24 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                 </div>
               </div>
             </div>
+
+            {account?.hl_key && (
+              <div className="pt-4 border-t border-slate-700">
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm text-slate-400">Private Key:</span>
+                    <div className="mt-1 p-3 bg-slate-900 rounded border border-slate-600">
+                      <code className="text-xs text-amber-400 font-mono break-all select-all">
+                        {account.hl_key}
+                      </code>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      ⚠️ Import this key into MetaMask and connect to <a href="https://app.hyperliquid-testnet.xyz" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">app.hyperliquid-testnet.xyz</a> to activate the wallet
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
