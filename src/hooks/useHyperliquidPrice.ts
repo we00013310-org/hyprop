@@ -99,6 +99,10 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
 
         ws.onmessage = (event) => {
           try {
+            if (!event.data || event.data === '') {
+              return;
+            }
+
             const data = JSON.parse(event.data);
 
             if (data.channel === 'trades' && data.data) {
@@ -135,7 +139,7 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
               }
             }
           } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            console.error('Error parsing WebSocket message:', error, event.data);
           }
         };
 
