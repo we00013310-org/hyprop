@@ -94,6 +94,17 @@ export class HyperliquidTrading {
       throw error;
     }
   }
+
+  async approveBuilderFee(): Promise<any> {
+    try {
+      return await this.callEdgeFunction({
+        type: 'approveBuilderFee',
+      });
+    } catch (error: any) {
+      console.error('Approve builder fee error:', error);
+      throw error;
+    }
+  }
 }
 
 export async function getOpenOrders(address: string): Promise<any[]> {

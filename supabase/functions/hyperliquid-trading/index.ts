@@ -2,7 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { Wallet } from 'npm:ethers@6';
 import { HttpTransport } from 'npm:@nktkas/hyperliquid@0.25.7';
-import { order as placeOrderAPI, cancel as cancelAPI } from 'npm:@nktkas/hyperliquid@0.25.7/api/exchange';
+import { order as placeOrderAPI, cancel as cancelAPI, approveBuilderFee as approveBuilderFeeAPI } from 'npm:@nktkas/hyperliquid@0.25.7/api/exchange';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -159,7 +159,30 @@ Deno.serve(async (req: Request) => {
 
     let result;
 
-    if (action.type === 'placeOrder') {
+    if (action.type === 'approveBuilderFee') {
+      const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
+
+      console.log('=== APPROVING BUILDER FEE ===');
+      console.log('Builder address:', BUILDER_ADDRESS);
+      console.log('Max fee rate: 0.1%');
+
+      try {
+        result = await approveBuilderFeeAPI(
+          { transport, wallet },
+          {
+            maxFeeRate: '0.1%',
+            builder: BUILDER_ADDRESS,
+          }
+        );
+        console.log('=== BUILDER FEE APPROVED ===');
+        console.log('Result:', JSON.stringify(result));
+      } catch (error: any) {
+        console.error('=== BUILDER FEE APPROVAL ERROR ===');
+        console.error('Error:', error);
+        console.error('Error message:', error.message);
+        throw new Error(`Builder fee approval failed: ${error.message || String(error)}`);
+      }
+    } else if (action.type === 'placeOrder') {
       const { coin, isBuy, size, price, orderType, reduceOnly } = action;
       
       console.log('=== ORDER DETAILS ===');

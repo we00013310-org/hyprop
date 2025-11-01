@@ -18,6 +18,31 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
   const [limitPrice, setLimitPrice] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [approvingFee, setApprovingFee] = useState(false);
+  const [feeApproved, setFeeApproved] = useState(false);
+
+  const handleApproveBuilderFee = async () => {
+    if (!privateKey) {
+      setError('No Hyperliquid API key configured for this account');
+      return;
+    }
+
+    setApprovingFee(true);
+    setError(null);
+
+    try {
+      const trading = new HyperliquidTrading(accountId, walletAddress);
+      await trading.approveBuilderFee();
+      setFeeApproved(true);
+      setError(null);
+      alert('Builder fee approved successfully! You can now place orders.');
+    } catch (error: any) {
+      console.error('Approve builder fee failed:', error);
+      setError(error.message || 'Failed to approve builder fee');
+    } finally {
+      setApprovingFee(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,9 +203,31 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
           </div>
         )}
 
-        {error && (
+        {error && error.includes('Builder fee') && (
+          <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-3 space-y-2">
+            <p className="text-yellow-400 text-sm">
+              {error}
+            </p>
+            <button
+              type="button"
+              onClick={handleApproveBuilderFee}
+              disabled={approvingFee}
+              className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-600 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              {approvingFee ? 'Approving...' : 'Approve Builder Fee'}
+            </button>
+          </div>
+        )}
+
+        {error && !error.includes('Builder fee') && (
           <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-400 text-sm">
             {error}
+          </div>
+        )}
+
+        {feeApproved && (
+          <div className="bg-green-500/10 border border-green-500 rounded-lg p-3 text-green-400 text-sm">
+            Builder fee approved! You can now place orders.
           </div>
         )}
 
