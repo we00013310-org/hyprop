@@ -184,14 +184,17 @@ Deno.serve(async (req: Request) => {
       const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
 
       console.log('=== APPROVING BUILDER FEE ===');
+      console.log('Wallet address:', derivedAddress);
       console.log('Builder address:', BUILDER_ADDRESS);
       console.log('Max fee rate: 0.001%');
 
       try {
         // Check current approval first
         const currentApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
-        console.log('Current approval:', currentApproval, '(tenths of basis points)');
+        console.log('Current approval BEFORE:', currentApproval, '(tenths of basis points)');
 
+        // Call the approval API
+        console.log('Calling approveBuilderFeeAPI...');
         result = await approveBuilderFeeAPI(
           { transport, wallet },
           {
@@ -199,16 +202,37 @@ Deno.serve(async (req: Request) => {
             builder: BUILDER_ADDRESS,
           }
         );
-        console.log('=== BUILDER FEE APPROVED ===');
-        console.log('Result:', JSON.stringify(result));
+        console.log('=== BUILDER FEE APPROVAL API RESPONSE ===');
+        console.log('Full result:', JSON.stringify(result, null, 2));
+        console.log('Result type:', typeof result);
+        console.log('Result keys:', result ? Object.keys(result) : 'null/undefined');
+
+        if (result?.response?.type === 'error') {
+          console.error('Approval returned error:', result.response.payload);
+          throw new Error(`Approval failed: ${result.response.payload}`);
+        }
+
+        // Wait a bit for blockchain to process
+        console.log('Waiting 2 seconds for blockchain to process...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Verify approval after
         const newApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
-        console.log('New approval:', newApproval, '(tenths of basis points)');
+        console.log('New approval AFTER:', newApproval, '(tenths of basis points)');
+
+        if (newApproval === 0 || newApproval < 1) {
+          console.error('WARNING: Approval did not persist! Still 0 or less than 1');
+          throw new Error('Builder fee approval did not persist. Try again.');
+        }
+
+        console.log('=== BUILDER FEE APPROVAL SUCCESS ===');
+        console.log(`Approved ${newApproval} tenths of basis points (${newApproval / 10000}%)`);
+
       } catch (error: any) {
         console.error('=== BUILDER FEE APPROVAL ERROR ===');
         console.error('Error:', error);
         console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         throw new Error(`Builder fee approval failed: ${error.message || String(error)}`);
       }
     } else if (action.type === 'placeOrder') {
@@ -264,18 +288,30 @@ Deno.serve(async (req: Request) => {
       const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
 
       // Check current max builder fee approval
+      console.log('=== CHECKING BUILDER FEE APPROVAL ===');
+      console.log('Wallet address:', derivedAddress);
+      console.log('Builder address:', BUILDER_ADDRESS);
+
       const maxApprovedFee = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
       console.log('Max approved builder fee:', maxApprovedFee, '(tenths of basis points)');
+      console.log('Max approved fee as percentage:', (maxApprovedFee / 10000) + '%');
 
       // Use 1 tenth of basis point = 0.001%
       const feeToUse = 1;
+      console.log('Fee we want to use:', feeToUse, '(tenths of basis points)');
+      console.log('Fee we want to use as percentage:', (feeToUse / 10000) + '%');
 
       if (maxApprovedFee < feeToUse) {
+        console.error('INSUFFICIENT APPROVAL!');
+        console.error(`  Approved: ${maxApprovedFee} (${maxApprovedFee / 10000}%)`);
+        console.error(`  Required: ${feeToUse} (${feeToUse / 10000}%)`);
         throw new Error(
           `Insufficient builder fee approval. Approved: ${maxApprovedFee}, Required: ${feeToUse}. ` +
           `Please approve builder fee first.`
         );
       }
+
+      console.log('✓ Builder fee approval check passed!');
 
       orderData.builder = {
         b: BUILDER_ADDRESS,
