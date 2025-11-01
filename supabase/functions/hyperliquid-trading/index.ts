@@ -68,26 +68,46 @@ async function getCurrentPrice(coin: string): Promise<number> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: 'allMids' }),
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to fetch current prices: ${response.statusText}`);
   }
-  
+
   const mids = await response.json();
   console.log('All mids:', JSON.stringify(mids));
-  
+
   const priceStr = mids[coin];
   if (!priceStr) {
     throw new Error(`No price found for ${coin}`);
   }
-  
+
   const price = parseFloat(priceStr);
   if (isNaN(price)) {
     throw new Error(`Invalid price for ${coin}: ${priceStr}`);
   }
-  
+
   console.log(`Current price for ${coin}: ${price}`);
   return price;
+}
+
+async function getMaxBuilderFee(userAddress: string, builderAddress: string): Promise<number> {
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'maxBuilderFee',
+      user: userAddress,
+      builder: builderAddress,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch max builder fee: ${response.statusText}`);
+  }
+
+  const maxFee = await response.json();
+  console.log(`Max builder fee for ${userAddress} / ${builderAddress}: ${maxFee}`);
+  return maxFee;
 }
 
 Deno.serve(async (req: Request) => {
@@ -164,18 +184,26 @@ Deno.serve(async (req: Request) => {
 
       console.log('=== APPROVING BUILDER FEE ===');
       console.log('Builder address:', BUILDER_ADDRESS);
-      console.log('Max fee rate: 0.1%');
+      console.log('Max fee rate: 0.001%');
 
       try {
+        // Check current approval first
+        const currentApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
+        console.log('Current approval:', currentApproval, '(tenths of basis points)');
+
         result = await approveBuilderFeeAPI(
           { transport, wallet },
           {
-            maxFeeRate: '0.1%',
+            maxFeeRate: '0.001%',
             builder: BUILDER_ADDRESS,
           }
         );
         console.log('=== BUILDER FEE APPROVED ===');
         console.log('Result:', JSON.stringify(result));
+
+        // Verify approval after
+        const newApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
+        console.log('New approval:', newApproval, '(tenths of basis points)');
       } catch (error: any) {
         console.error('=== BUILDER FEE APPROVAL ERROR ===');
         console.error('Error:', error);
@@ -233,11 +261,26 @@ Deno.serve(async (req: Request) => {
 
       // Always use builder fee
       const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
+
+      // Check current max builder fee approval
+      const maxApprovedFee = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
+      console.log('Max approved builder fee:', maxApprovedFee, '(tenths of basis points)');
+
+      // Use 1 tenth of basis point = 0.001%
+      const feeToUse = 1;
+
+      if (maxApprovedFee < feeToUse) {
+        throw new Error(
+          `Insufficient builder fee approval. Approved: ${maxApprovedFee}, Required: ${feeToUse}. ` +
+          `Please approve builder fee first.`
+        );
+      }
+
       orderData.builder = {
         b: BUILDER_ADDRESS,
-        f: 1, // 1 basis point = 0.01% fee
+        f: feeToUse,
       };
-      console.log('Using builder address:', BUILDER_ADDRESS, 'with fee:', 1);
+      console.log('Using builder address:', BUILDER_ADDRESS, 'with fee:', feeToUse, '(tenths of basis points = 0.001%)');
 
       console.log('=== FINAL ORDER DATA ===');
       console.log(JSON.stringify(orderData, null, 2));
