@@ -57,14 +57,9 @@ async function getAssetMeta(coin: string): Promise<any> {
   return meta;
 }
 
-function roundToTickSize(price: number, szDecimals: number): number {
-  const multiplier = Math.pow(10, szDecimals);
-  return Math.round(price * multiplier) / multiplier;
-}
-
 function formatPrice(price: number, szDecimals: number): string {
-  const rounded = roundToTickSize(price, szDecimals);
-  const formatted = rounded.toFixed(szDecimals);
+  const rounded = Number(price.toFixed(szDecimals));
+  const formatted = rounded.toString();
   console.log(`Formatted price ${price} with ${szDecimals} decimals -> rounded: ${rounded} -> formatted: ${formatted}`);
   return formatted;
 }
@@ -294,21 +289,25 @@ Deno.serve(async (req: Request) => {
       console.log('Asset meta:', JSON.stringify(assetMeta));
 
       let finalPrice: string;
+      let orderTypeConfig: any;
+
       if (orderType === 'market' || !price) {
         const currentPrice = await getCurrentPrice(coin);
-        const slippage = 0.05;
+        const slippage = 0.1;
         const slippagePrice = isBuy
           ? currentPrice * (1 + slippage)
           : currentPrice * (1 - slippage);
-        
+
         console.log('Market order calculation:');
         console.log('  Current price:', currentPrice);
         console.log('  Slippage:', slippage);
         console.log('  Slippage price:', slippagePrice);
-        
+
         finalPrice = formatPrice(slippagePrice, assetMeta.szDecimals || 5);
+        orderTypeConfig = { limit: { tif: 'Ioc' } };
       } else {
         finalPrice = formatPrice(price, assetMeta.szDecimals || 5);
+        orderTypeConfig = { limit: { tif: 'Gtc' } };
       }
 
       const orderData: any = {
@@ -318,9 +317,7 @@ Deno.serve(async (req: Request) => {
           p: finalPrice,
           s: size.toString(),
           r: reduceOnly || false,
-          t: orderType === 'limit'
-            ? { limit: { tif: 'Gtc' } }
-            : { limit: { tif: 'Ioc' } },
+          t: orderTypeConfig,
         }],
         grouping: 'na',
       };
