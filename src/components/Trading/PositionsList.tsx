@@ -1,110 +1,110 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, X } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import type { Database } from '../../lib/database.types';
-
-type Position = Database['public']['Tables']['positions']['Row'];
+import { X, RefreshCw } from 'lucide-react';
+import { getUserPositions } from '../../lib/hyperliquidTrading';
 
 interface PositionsListProps {
-  accountId: string;
+  address: string;
 }
 
-export function PositionsList({ accountId }: PositionsListProps) {
-  const [positions, setPositions] = useState<Position[]>([]);
+export function PositionsList({ address }: PositionsListProps) {
+  const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const loadPositions = async () => {
+    setLoading(true);
+    try {
+      const data = await getUserPositions(address);
+      const openPositions = data.filter((pos: any) => parseFloat(pos.position.szi) !== 0);
+      setPositions(openPositions);
+    } catch (error) {
+      console.error('Failed to load positions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadPositions();
-  }, [accountId]);
+    const interval = setInterval(loadPositions, 5000);
+    return () => clearInterval(interval);
+  }, [address]);
 
-  const loadPositions = async () => {
-    const { data } = await supabase
-      .from('positions')
-      .select('*')
-      .eq('account_id', accountId);
-
-    if (data) {
-      setPositions(data);
-    }
-    setLoading(false);
-  };
-
-  const handleClosePosition = async (positionId: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    loadPositions();
-  };
-
-  if (loading) {
+  if (loading && positions.length === 0) {
     return (
-      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-        <h3 className="text-lg font-semibold text-white mb-4">Positions</h3>
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        </div>
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (positions.length === 0) {
+    return (
+      <div className="text-center py-12 text-slate-400">
+        No open positions
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-      <h3 className="text-lg font-semibold text-white mb-4">Positions</h3>
+    <div className="space-y-3">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-white">Positions</h3>
+        <button
+          onClick={loadPositions}
+          className="p-2 text-slate-400 hover:text-white transition-colors"
+          title="Refresh"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
+      </div>
 
-      {positions.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-slate-400">No open positions</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {positions.map((position) => (
-            <div
-              key={position.id}
-              className="bg-slate-700 rounded-lg p-4 flex items-center justify-between"
-            >
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-white font-semibold">{position.symbol}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    position.side === 'long'
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-red-500/20 text-red-400'
-                  }`}>
-                    {position.side.toUpperCase()}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <span className="text-slate-400">Size: </span>
-                    <span className="text-white">{position.size} BTC</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Entry: </span>
-                    <span className="text-white">${position.avg_entry.toFixed(2)}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">uPnL: </span>
-                    <span className={position.upnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                      {position.upnl >= 0 ? '+' : ''}${position.upnl.toFixed(2)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">rPnL: </span>
-                    <span className={position.rpnl >= 0 ? 'text-green-400' : 'text-red-400'}>
-                      {position.rpnl >= 0 ? '+' : ''}${position.rpnl.toFixed(2)}
-                    </span>
-                  </div>
+      {positions.map((pos, index) => {
+        const size = parseFloat(pos.position.szi);
+        const entryPx = parseFloat(pos.position.entryPx || 0);
+        const unrealizedPnl = parseFloat(pos.position.unrealizedPnl || 0);
+        const isLong = size > 0;
+
+        return (
+          <div
+            key={`${pos.position.coin}-${index}`}
+            className="bg-slate-700 rounded-lg p-4 border border-slate-600"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-white font-semibold">{pos.position.coin}</span>
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${
+                    isLong ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                  }`}
+                >
+                  {isLong ? 'Long' : 'Short'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-slate-400">Size</div>
+                <div className="text-white font-medium">{Math.abs(size).toFixed(4)}</div>
+              </div>
+              <div>
+                <div className="text-slate-400">Entry Price</div>
+                <div className="text-white font-medium">${entryPx.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
+              <div>
+                <div className="text-slate-400">Unrealized PnL</div>
+                <div className={`font-medium ${unrealizedPnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {unrealizedPnl >= 0 ? '+' : ''}${unrealizedPnl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
-              <button
-                onClick={() => handleClosePosition(position.id)}
-                className="ml-4 p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                title="Close Position"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <div className="text-slate-400">Margin Used</div>
+                <div className="text-white font-medium">${parseFloat(pos.position.marginUsed || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        );
+      })}
     </div>
   );
 }

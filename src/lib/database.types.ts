@@ -84,6 +84,7 @@ export interface Database {
           high_water_mark: number
           last_withdrawal_ts: string | null
           hl_api_private_key: string | null
+          hl_builder_code: string | null
           status: string
           created_at: string
           updated_at: string
@@ -101,6 +102,7 @@ export interface Database {
           high_water_mark: number
           last_withdrawal_ts?: string | null
           hl_api_private_key?: string | null
+          hl_builder_code?: string | null
           status?: string
           created_at?: string
           updated_at?: string
@@ -118,6 +120,7 @@ export interface Database {
           high_water_mark?: number
           last_withdrawal_ts?: string | null
           hl_api_private_key?: string | null
+          hl_builder_code?: string | null
           status?: string
           created_at?: string
           updated_at?: string

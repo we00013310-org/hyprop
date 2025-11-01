@@ -6,6 +6,8 @@ import { getAddressFromPrivateKey } from '../../lib/walletUtils';
 import { useHyperliquidPrice } from '../../hooks/useHyperliquidPrice';
 import { OrderForm } from './OrderForm';
 import { PositionsList } from './PositionsList';
+import { OpenOrdersList } from './OpenOrdersList';
+import { TradeHistoryList } from './TradeHistoryList';
 import { AccountStats } from './AccountStats';
 import type { Database } from '../../lib/database.types';
 
@@ -21,6 +23,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
   const [loading, setLoading] = useState(true);
   const [hlBalance, setHlBalance] = useState<number>(0);
   const [hlAddress, setHlAddress] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
   const { price: currentPrice, priceChange, isConnected } = useHyperliquidPrice('BTC');
 
   useEffect(() => {
@@ -137,7 +140,55 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               </div>
             </div>
 
-            <PositionsList accountId={accountId} />
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+              <div className="flex border-b border-slate-700 mb-4">
+                <button
+                  onClick={() => setActiveTab('positions')}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    activeTab === 'positions'
+                      ? 'text-blue-500 border-b-2 border-blue-500'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Positions
+                </button>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    activeTab === 'orders'
+                      ? 'text-blue-500 border-b-2 border-blue-500'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Open Orders
+                </button>
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className={`px-4 py-2 font-medium transition-colors ${
+                    activeTab === 'history'
+                      ? 'text-blue-500 border-b-2 border-blue-500'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Trade History
+                </button>
+              </div>
+
+              {activeTab === 'positions' && hlAddress && (
+                <PositionsList address={hlAddress} />
+              )}
+              {activeTab === 'orders' && hlAddress && (
+                <OpenOrdersList
+                  address={hlAddress}
+                  privateKey={account?.hl_api_private_key || null}
+                  builderCode={account?.hl_builder_code || null}
+                  onOrderCancelled={loadHyperliquidBalance.bind(null, account?.hl_api_private_key || null)}
+                />
+              )}
+              {activeTab === 'history' && hlAddress && (
+                <TradeHistoryList address={hlAddress} />
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -145,7 +196,12 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
             <OrderForm
               accountId={accountId}
               currentPrice={currentPrice}
-              onOrderPlaced={loadAccount}
+              privateKey={account?.hl_api_private_key || null}
+              builderCode={account?.hl_builder_code || null}
+              onOrderPlaced={() => {
+                loadAccount();
+                loadHyperliquidBalance(account?.hl_api_private_key || null);
+              }}
             />
           </div>
         </div>

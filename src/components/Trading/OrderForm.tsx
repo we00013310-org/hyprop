@@ -1,30 +1,60 @@
 import { useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { HyperliquidTrading } from '../../lib/hyperliquidTrading';
 
 interface OrderFormProps {
   accountId: string;
   currentPrice: number;
+  privateKey: string | null;
+  builderCode: string | null;
   onOrderPlaced: () => void;
 }
 
-export function OrderForm({ currentPrice, onOrderPlaced }: OrderFormProps) {
+export function OrderForm({ currentPrice, privateKey, builderCode, onOrderPlaced }: OrderFormProps) {
   const [side, setSide] = useState<'long' | 'short'>('long');
   const [size, setSize] = useState('');
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
   const [limitPrice, setLimitPrice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!privateKey) {
+      setError('No Hyperliquid API key configured for this account');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      onOrderPlaced();
-      setSize('');
-      setLimitPrice('');
-    } catch (error) {
+      const trading = new HyperliquidTrading(privateKey, builderCode || undefined);
+
+      const isBuy = side === 'long';
+      const sizeNum = parseFloat(size);
+      const priceNum = orderType === 'limit' ? parseFloat(limitPrice || currentPrice.toString()) : currentPrice;
+
+      const result = await trading.placeOrder(
+        'BTC',
+        isBuy,
+        sizeNum,
+        orderType === 'limit' ? priceNum : null,
+        orderType,
+        false
+      );
+
+      if (result.status === 'ok') {
+        onOrderPlaced();
+        setSize('');
+        setLimitPrice('');
+      } else {
+        setError(result.response || 'Order failed');
+      }
+    } catch (error: any) {
       console.error('Order failed:', error);
+      setError(error.message || 'Failed to place order');
     } finally {
       setLoading(false);
     }
@@ -134,6 +164,12 @@ export function OrderForm({ currentPrice, onOrderPlaced }: OrderFormProps) {
                 ${orderType === 'market' ? currentPrice.toFixed(2) : (limitPrice || currentPrice.toFixed(2))}
               </span>
             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-400 text-sm">
+            {error}
           </div>
         )}
 
