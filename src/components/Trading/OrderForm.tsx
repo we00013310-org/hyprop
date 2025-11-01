@@ -203,7 +203,7 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
           </div>
         )}
 
-        {error && error.includes('Builder fee') && (
+        {error && error.toLowerCase().includes('builder fee') && (
           <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-3 space-y-2">
             <p className="text-yellow-400 text-sm">
               {error}
@@ -219,7 +219,7 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
           </div>
         )}
 
-        {error && !error.includes('Builder fee') && (
+        {error && !error.toLowerCase().includes('builder fee') && (
           <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-400 text-sm">
             {error}
           </div>
