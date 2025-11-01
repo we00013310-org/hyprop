@@ -60,19 +60,26 @@ Deno.serve(async (req: Request) => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Auth error:', authError);
+      throw new Error(`Unauthorized: ${authError?.message || 'No user'}`);
     }
 
     const { action, accountId } = await req.json();
+    console.log('Processing action:', action.type, 'for account:', accountId);
 
     const { data: account, error: accountError } = await supabase
       .from('test_accounts')
-      .select('hl_key, builder_code')
+      .select('hl_key, hl_builder_code')
       .eq('id', accountId)
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (accountError || !account) {
+    if (accountError) {
+      console.error('Account query error:', accountError);
+      throw new Error(`Account error: ${accountError.message}`);
+    }
+
+    if (!account) {
       throw new Error('Account not found or unauthorized');
     }
 
@@ -105,17 +112,19 @@ Deno.serve(async (req: Request) => {
         grouping: 'na',
       };
 
-      if (account.builder_code) {
+      if (account.hl_builder_code) {
         orderData.builder = {
-          b: account.builder_code,
+          b: account.hl_builder_code,
           f: 10,
         };
       }
 
+      console.log('Placing order:', JSON.stringify(orderData));
       result = await placeOrderAPI(
         { transport, wallet },
         orderData
       );
+      console.log('Order result:', JSON.stringify(result));
     } else if (action.type === 'cancelOrder') {
       const { coin, oid } = action;
       const assetIndex = await getAssetIndex(coin);
@@ -145,7 +154,7 @@ Deno.serve(async (req: Request) => {
   } catch (error: any) {
     console.error('Trading error:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error.message || String(error) }),
       {
         status: 400,
         headers: {

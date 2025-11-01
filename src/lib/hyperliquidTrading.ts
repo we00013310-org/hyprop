@@ -10,9 +10,11 @@ export class HyperliquidTrading {
   }
 
   private async callEdgeFunction(action: any): Promise<any> {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      throw new Error('Not authenticated');
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      console.error('Session error:', sessionError);
+      throw new Error('Not authenticated - please sign in again');
     }
 
     const response = await fetch(
@@ -22,6 +24,7 @@ export class HyperliquidTrading {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
           action,
@@ -29,6 +32,12 @@ export class HyperliquidTrading {
         }),
       }
     );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edge function error:', errorText);
+      throw new Error(`Trading operation failed: ${errorText}`);
+    }
 
     const result = await response.json();
 
