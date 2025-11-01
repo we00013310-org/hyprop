@@ -97,8 +97,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const wallet = new Wallet(account.hl_key);
-    const walletAddr = wallet.address;
-    console.log('Trading with wallet address:', walletAddr);
+    const derivedAddress = wallet.address;
+    console.log('Derived wallet address from private key:', derivedAddress);
     
     const transport = new HttpTransport({
       url: TESTNET_API_URL,
@@ -124,9 +124,15 @@ Deno.serve(async (req: Request) => {
         grouping: 'na',
       };
 
-      console.log('Placing order with data:', JSON.stringify(orderData));
-      console.log('Using wallet:', walletAddr);
-      console.log('Testnet URL:', TESTNET_API_URL);
+      console.log('Placing order:');
+      console.log('  - Coin:', coin, '(index:', assetIndex, ')');
+      console.log('  - Side:', isBuy ? 'BUY' : 'SELL');
+      console.log('  - Size:', size);
+      console.log('  - Price:', price || 'MARKET');
+      console.log('  - Type:', orderType);
+      console.log('  - Wallet:', derivedAddress);
+      console.log('  - API URL:', TESTNET_API_URL);
+      console.log('  - Order data:', JSON.stringify(orderData));
       
       try {
         result = await placeOrderAPI(
@@ -136,7 +142,17 @@ Deno.serve(async (req: Request) => {
         console.log('Order result:', JSON.stringify(result));
       } catch (error: any) {
         console.error('Order placement error:', error);
-        throw new Error(`Order failed: ${error.message || String(error)}`);
+        const errorMsg = error.message || String(error);
+        
+        if (errorMsg.includes('does not exist')) {
+          throw new Error(
+            `Wallet ${derivedAddress} is not registered on Hyperliquid testnet. ` +
+            `Please import this private key into MetaMask, connect to https://app.hyperliquid-testnet.xyz, ` +
+            `and complete at least one trade to activate it. Make sure the wallet address matches: ${derivedAddress}`
+          );
+        }
+        
+        throw new Error(`Order failed: ${errorMsg}`);
       }
     } else if (action.type === 'cancelOrder') {
       const { coin, oid } = action;
@@ -156,7 +172,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, data: result }),
+      JSON.stringify({ success: true, data: result, walletAddress: derivedAddress }),
       {
         status: 200,
         headers: {
@@ -169,13 +185,8 @@ Deno.serve(async (req: Request) => {
     console.error('Trading error:', error);
     const errorMessage = error.message || String(error);
     
-    let userMessage = errorMessage;
-    if (errorMessage.includes('does not exist')) {
-      userMessage = 'Your wallet is not registered on Hyperliquid testnet. Please visit https://app.hyperliquid-testnet.xyz and connect with this wallet to activate it first.';
-    }
-    
     return new Response(
-      JSON.stringify({ success: false, error: userMessage }),
+      JSON.stringify({ success: false, error: errorMessage }),
       {
         status: 400,
         headers: {

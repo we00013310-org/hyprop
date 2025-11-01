@@ -63,6 +63,23 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
     }
   };
 
+  const updatePrivateKey = async (newKey: string) => {
+    try {
+      const { error } = await supabase
+        .from('test_accounts')
+        .update({ hl_key: newKey })
+        .eq('id', accountId);
+
+      if (error) throw error;
+
+      alert('Private key updated successfully! Reloading...');
+      await loadAccount();
+    } catch (error) {
+      console.error('Error updating private key:', error);
+      alert('Failed to update private key');
+    }
+  };
+
   if (loading || !account) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -135,14 +152,31 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               <div className="pt-4 border-t border-slate-700">
                 <div className="space-y-2">
                   <div>
-                    <span className="text-sm text-slate-400">Private Key:</span>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-slate-400">Private Key:</span>
+                      <button
+                        onClick={() => {
+                          const newKey = prompt('Paste your Hyperliquid testnet private key (0x...):\n\nThis should be the private key of wallet: 0x58f1...7611');
+                          if (newKey && newKey.startsWith('0x') && newKey.length === 66) {
+                            updatePrivateKey(newKey);
+                          } else if (newKey) {
+                            alert('Invalid private key format. Must start with 0x and be 66 characters long.');
+                          }
+                        }}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                      >
+                        Update Key
+                      </button>
+                    </div>
                     <div className="mt-1 p-3 bg-slate-900 rounded border border-slate-600">
                       <code className="text-xs text-amber-400 font-mono break-all select-all">
                         {account.hl_key}
                       </code>
                     </div>
                     <p className="mt-2 text-xs text-slate-500">
-                      ⚠️ Import this key into MetaMask and connect to <a href="https://app.hyperliquid-testnet.xyz" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">app.hyperliquid-testnet.xyz</a> to activate the wallet
+                      ⚠️ This wallet derives address: <span className="text-white font-mono">{hlAddress}</span>
+                      <br />
+                      Make sure this matches your active Hyperliquid testnet wallet (<a href="https://app.hyperliquid-testnet.xyz" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">app.hyperliquid-testnet.xyz</a>)
                     </p>
                   </div>
                 </div>
