@@ -10,7 +10,7 @@ interface OrderFormProps {
   onOrderPlaced: () => void;
 }
 
-export function OrderForm({ currentPrice, privateKey, builderCode, onOrderPlaced }: OrderFormProps) {
+export function OrderForm({ accountId, currentPrice, privateKey, builderCode, onOrderPlaced }: OrderFormProps) {
   const [side, setSide] = useState<'long' | 'short'>('long');
   const [size, setSize] = useState('');
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
@@ -30,7 +30,7 @@ export function OrderForm({ currentPrice, privateKey, builderCode, onOrderPlaced
     setError(null);
 
     try {
-      const trading = new HyperliquidTrading(privateKey, builderCode || undefined);
+      const trading = new HyperliquidTrading(accountId);
 
       const isBuy = side === 'long';
       const sizeNum = parseFloat(size);

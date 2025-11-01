@@ -4,13 +4,14 @@ import { getOpenOrders } from '../../lib/hyperliquidTrading';
 import { HyperliquidTrading } from '../../lib/hyperliquidTrading';
 
 interface OpenOrdersListProps {
+  accountId: string;
   address: string;
   privateKey: string | null;
   builderCode: string | null;
   onOrderCancelled: () => void;
 }
 
-export function OpenOrdersList({ address, privateKey, builderCode, onOrderCancelled }: OpenOrdersListProps) {
+export function OpenOrdersList({ accountId, address, privateKey, builderCode, onOrderCancelled }: OpenOrdersListProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<number | null>(null);
@@ -38,7 +39,7 @@ export function OpenOrdersList({ address, privateKey, builderCode, onOrderCancel
 
     setCancelling(oid);
     try {
-      const trading = new HyperliquidTrading(privateKey, builderCode || undefined);
+      const trading = new HyperliquidTrading(accountId);
       await trading.cancelOrder(coin, oid);
       onOrderCancelled();
       loadOrders();

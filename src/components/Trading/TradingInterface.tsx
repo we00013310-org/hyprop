@@ -179,6 +179,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               )}
               {activeTab === 'orders' && hlAddress && (
                 <OpenOrdersList
+                  accountId={accountId}
                   address={hlAddress}
                   privateKey={account?.hl_api_private_key || null}
                   builderCode={account?.hl_builder_code || null}

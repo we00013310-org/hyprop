@@ -1,44 +1,42 @@
-import { Wallet } from 'ethers';
-import { order as placeOrderAPI, cancel as cancelAPI } from '@nktkas/hyperliquid/api/exchange';
-import { HttpTransport } from '@nktkas/hyperliquid';
+import { supabase } from './supabase';
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
 
-let assetIndexCache: Map<string, number> | null = null;
-
-async function getAssetIndex(coin: string): Promise<number> {
-  if (!assetIndexCache) {
-    const response = await fetch(`${TESTNET_API_URL}/info`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'meta' }),
-    });
-    const meta = await response.json();
-
-    assetIndexCache = new Map();
-    meta.universe.forEach((asset: any, index: number) => {
-      assetIndexCache!.set(asset.name, index);
-    });
-  }
-
-  const index = assetIndexCache.get(coin);
-  if (index === undefined) {
-    throw new Error(`Asset ${coin} not found`);
-  }
-  return index;
-}
-
 export class HyperliquidTrading {
-  private wallet: Wallet;
-  private transport: HttpTransport;
-  private builderCode?: string;
+  private accountId: string;
 
-  constructor(privateKey: string, builderCode?: string) {
-    this.wallet = new Wallet(privateKey);
-    this.transport = new HttpTransport({
-      url: TESTNET_API_URL,
-    });
-    this.builderCode = builderCode;
+  constructor(accountId: string) {
+    this.accountId = accountId;
+  }
+
+  private async callEdgeFunction(action: any): Promise<any> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyperliquid-trading`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action,
+          accountId: this.accountId,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Trading operation failed');
+    }
+
+    return result.data;
   }
 
   async placeOrder(
@@ -50,34 +48,15 @@ export class HyperliquidTrading {
     reduceOnly: boolean = false
   ): Promise<any> {
     try {
-      const assetIndex = await getAssetIndex(coin);
-
-      const orderData: any = {
-        orders: [{
-          a: assetIndex,
-          b: isBuy,
-          p: price?.toString() || '0',
-          s: size.toString(),
-          r: reduceOnly,
-          t: orderType === 'limit'
-            ? { limit: { tif: 'Gtc' } }
-            : { limit: { tif: 'Ioc' } },
-        }],
-        grouping: 'na',
-      };
-
-      if (this.builderCode) {
-        orderData.builder = {
-          b: this.builderCode,
-          f: 10,
-        };
-      }
-
-      const result = await placeOrderAPI(
-        { transport: this.transport, wallet: this.wallet },
-        orderData
-      );
-      return result;
+      return await this.callEdgeFunction({
+        type: 'placeOrder',
+        coin,
+        isBuy,
+        size,
+        price,
+        orderType,
+        reduceOnly,
+      });
     } catch (error: any) {
       console.error('Place order error:', error);
       throw error;
@@ -86,13 +65,11 @@ export class HyperliquidTrading {
 
   async cancelOrder(coin: string, oid: number): Promise<any> {
     try {
-      const assetIndex = await getAssetIndex(coin);
-
-      const result = await cancelAPI(
-        { transport: this.transport, wallet: this.wallet },
-        { cancels: [{ a: assetIndex, o: oid }] }
-      );
-      return result;
+      return await this.callEdgeFunction({
+        type: 'cancelOrder',
+        coin,
+        oid,
+      });
     } catch (error: any) {
       console.error('Cancel order error:', error);
       throw error;
@@ -101,19 +78,14 @@ export class HyperliquidTrading {
 
   async cancelAllOrders(coin?: string): Promise<any> {
     try {
-      const result = await cancelAPI(
-        { transport: this.transport, wallet: this.wallet },
-        { cancels: [] }
-      );
-      return result;
+      return await this.callEdgeFunction({
+        type: 'cancelAllOrders',
+        coin,
+      });
     } catch (error: any) {
       console.error('Cancel all orders error:', error);
       throw error;
     }
-  }
-
-  getAddress(): string {
-    return this.wallet.address;
   }
 }
 
