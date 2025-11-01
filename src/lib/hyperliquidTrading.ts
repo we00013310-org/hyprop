@@ -1,6 +1,4 @@
-import { HttpTransport } from '@nktkas/hyperliquid';
-import { order, cancel } from '@nktkas/hyperliquid/api/exchange';
-import { Wallet } from 'ethers';
+import { Wallet, TypedDataDomain, TypedDataField } from 'ethers';
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
 
@@ -29,16 +27,49 @@ async function getAssetIndex(coin: string): Promise<number> {
 }
 
 export class HyperliquidTrading {
-  private transport: HttpTransport;
   private wallet: Wallet;
   private builderCode?: string;
 
   constructor(privateKey: string, builderCode?: string) {
     this.wallet = new Wallet(privateKey);
-    this.transport = new HttpTransport({
-      url: TESTNET_API_URL,
-    });
     this.builderCode = builderCode;
+  }
+
+  private async signAction(action: any, nonce: number): Promise<any> {
+    const domain: TypedDataDomain = {
+      name: 'Exchange',
+      version: '1',
+      chainId: 1337,
+      verifyingContract: '0x0000000000000000000000000000000000000000',
+    };
+
+    const types: Record<string, TypedDataField[]> = {
+      Agent: [
+        { name: 'source', type: 'string' },
+        { name: 'connectionId', type: 'bytes32' },
+      ],
+    };
+
+    const value = {
+      source: 'a',
+      connectionId: '0x' + Buffer.from(JSON.stringify({
+        domain: 'hyperliquid',
+        encoding: 'UTF-8',
+        connectionId: action.type,
+      })).toString('hex').padStart(64, '0'),
+    };
+
+    const signature = await this.wallet.signTypedData(domain, types, value);
+
+    return {
+      action,
+      nonce,
+      signature: {
+        r: signature.slice(0, 66),
+        s: '0x' + signature.slice(66, 130),
+        v: parseInt(signature.slice(130, 132), 16),
+      },
+    };
   }
 
   async placeOrder(
@@ -51,8 +82,10 @@ export class HyperliquidTrading {
   ): Promise<any> {
     try {
       const assetIndex = await getAssetIndex(coin);
+      const nonce = Date.now();
 
-      const orderRequest: any = {
+      const action: any = {
+        type: 'order',
         orders: [{
           a: assetIndex,
           b: isBuy,
@@ -67,16 +100,21 @@ export class HyperliquidTrading {
       };
 
       if (this.builderCode) {
-        orderRequest.builder = {
+        action.builder = {
           b: this.builderCode,
           f: 10,
         };
       }
 
-      const result = await order(
-        { transport: this.transport, wallet: this.wallet },
-        orderRequest
-      );
+      const signedAction = await this.signAction(action, nonce);
+
+      const response = await fetch(`${TESTNET_API_URL}/exchange`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signedAction),
+      });
+
+      const result = await response.json();
       return result;
     } catch (error: any) {
       console.error('Place order error:', error);
@@ -87,10 +125,22 @@ export class HyperliquidTrading {
   async cancelOrder(coin: string, oid: number): Promise<any> {
     try {
       const assetIndex = await getAssetIndex(coin);
-      const result = await cancel(
-        { transport: this.transport, wallet: this.wallet },
-        { cancels: [{ a: assetIndex, o: oid }] }
-      );
+      const nonce = Date.now();
+
+      const action = {
+        type: 'cancel',
+        cancels: [{ a: assetIndex, o: oid }],
+      };
+
+      const signedAction = await this.signAction(action, nonce);
+
+      const response = await fetch(`${TESTNET_API_URL}/exchange`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signedAction),
+      });
+
+      const result = await response.json();
       return result;
     } catch (error: any) {
       console.error('Cancel order error:', error);
@@ -100,10 +150,22 @@ export class HyperliquidTrading {
 
   async cancelAllOrders(coin?: string): Promise<any> {
     try {
-      const result = await cancel(
-        { transport: this.transport, wallet: this.wallet },
-        { cancels: [] }
-      );
+      const nonce = Date.now();
+
+      const action = {
+        type: 'cancel',
+        cancels: [],
+      };
+
+      const signedAction = await this.signAction(action, nonce);
+
+      const response = await fetch(`${TESTNET_API_URL}/exchange`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signedAction),
+      });
+
+      const result = await response.json();
       return result;
     } catch (error: any) {
       console.error('Cancel all orders error:', error);
