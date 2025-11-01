@@ -7,7 +7,8 @@ import { order as placeOrderAPI, cancel as cancelAPI, approveBuilderFee as appro
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey, x-wallet-address',
+  'Access-Control-Allow-Headers': 'content-type, authorization, x-client-info, apikey, x-wallet-address',
+  'Access-Control-Max-Age': '86400',
 };
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
@@ -113,7 +114,7 @@ async function getMaxBuilderFee(userAddress: string, builderAddress: string): Pr
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      status: 200,
+      status: 204,
       headers: corsHeaders,
     });
   }
