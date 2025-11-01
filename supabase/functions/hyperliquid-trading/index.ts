@@ -40,6 +40,27 @@ async function getAssetIndex(coin: string): Promise<number> {
   return index;
 }
 
+async function getCurrentPrice(coin: string): Promise<number> {
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'allMids' }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to fetch current prices: ${response.statusText}`);
+  }
+  
+  const mids = await response.json();
+  const price = parseFloat(mids[coin]);
+  
+  if (!price || isNaN(price)) {
+    throw new Error(`Failed to get current price for ${coin}`);
+  }
+  
+  return price;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -110,11 +131,24 @@ Deno.serve(async (req: Request) => {
       const { coin, isBuy, size, price, orderType, reduceOnly } = action;
       const assetIndex = await getAssetIndex(coin);
 
+      let finalPrice: string;
+      if (orderType === 'market' || !price) {
+        const currentPrice = await getCurrentPrice(coin);
+        const slippage = 0.05;
+        const slippagePrice = isBuy
+          ? currentPrice * (1 + slippage)
+          : currentPrice * (1 - slippage);
+        finalPrice = slippagePrice.toFixed(2);
+        console.log('Market order - using slippage price:', finalPrice, '(current:', currentPrice, ')');
+      } else {
+        finalPrice = price.toString();
+      }
+
       const orderData: any = {
         orders: [{
           a: assetIndex,
           b: isBuy,
-          p: price?.toString() || '0',
+          p: finalPrice,
           s: size.toString(),
           r: reduceOnly || false,
           t: orderType === 'limit'
@@ -136,7 +170,7 @@ Deno.serve(async (req: Request) => {
       console.log('  - Coin:', coin, '(index:', assetIndex, ')');
       console.log('  - Side:', isBuy ? 'BUY' : 'SELL');
       console.log('  - Size:', size);
-      console.log('  - Price:', price || 'MARKET');
+      console.log('  - Price:', finalPrice);
       console.log('  - Type:', orderType);
       console.log('  - Wallet:', derivedAddress);
       console.log('  - Using testnet: true');
