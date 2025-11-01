@@ -70,7 +70,12 @@ export function OpenOrdersList({ accountId, walletAddress, address, privateKey, 
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-white">Open Orders</h3>
+        <div className="flex items-center space-x-2">
+          <h3 className="text-lg font-semibold text-white">Open Orders</h3>
+          <span className="px-2 py-0.5 bg-slate-600 rounded text-xs text-slate-300">
+            {orders.length}
+          </span>
+        </div>
         <button
           onClick={loadOrders}
           className="p-2 text-slate-400 hover:text-white transition-colors"
