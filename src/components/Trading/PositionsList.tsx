@@ -4,10 +4,9 @@ import { getUserPositions } from '../../lib/hyperliquidTrading';
 
 interface PositionsListProps {
   address: string;
-  onCountChange?: (count: number) => void;
 }
 
-export function PositionsList({ address, onCountChange }: PositionsListProps) {
+export function PositionsList({ address }: PositionsListProps) {
   const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +16,6 @@ export function PositionsList({ address, onCountChange }: PositionsListProps) {
       const data = await getUserPositions(address);
       const openPositions = data.filter((pos: any) => parseFloat(pos.position.szi) !== 0);
       setPositions(openPositions);
-      onCountChange?.(openPositions.length);
     } catch (error) {
       console.error('Failed to load positions:', error);
     } finally {

@@ -10,10 +10,9 @@ interface OpenOrdersListProps {
   privateKey: string | null;
   builderCode: string | null;
   onOrderCancelled: () => void;
-  onCountChange?: (count: number) => void;
 }
 
-export function OpenOrdersList({ accountId, walletAddress, address, privateKey, builderCode, onOrderCancelled, onCountChange }: OpenOrdersListProps) {
+export function OpenOrdersList({ accountId, walletAddress, address, privateKey, builderCode, onOrderCancelled }: OpenOrdersListProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<number | null>(null);
@@ -23,7 +22,6 @@ export function OpenOrdersList({ accountId, walletAddress, address, privateKey, 
     try {
       const data = await getOpenOrders(address);
       setOrders(data);
-      onCountChange?.(data.length);
     } catch (error) {
       console.error('Failed to load orders:', error);
     } finally {

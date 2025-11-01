@@ -10,6 +10,7 @@ import { PositionsList } from './PositionsList';
 import { OpenOrdersList } from './OpenOrdersList';
 import { TradeHistoryList } from './TradeHistoryList';
 import { AccountStats } from './AccountStats';
+import { getOpenOrders, getUserPositions } from '../../lib/hyperliquidTrading';
 import type { Database } from '../../lib/database.types';
 
 type TestAccount = Database['public']['Tables']['test_accounts']['Row'];
@@ -33,6 +34,31 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
   useEffect(() => {
     loadAccount();
   }, [accountId]);
+
+  useEffect(() => {
+    if (hlAddress) {
+      loadCounts();
+      const interval = setInterval(loadCounts, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [hlAddress]);
+
+  const loadCounts = async () => {
+    if (!hlAddress) return;
+
+    try {
+      const [ordersData, positionsData] = await Promise.all([
+        getOpenOrders(hlAddress),
+        getUserPositions(hlAddress),
+      ]);
+
+      setOrdersCount(ordersData.length);
+      const openPositions = positionsData.filter((pos: any) => parseFloat(pos.position.szi) !== 0);
+      setPositionsCount(openPositions.length);
+    } catch (error) {
+      console.error('Failed to load counts:', error);
+    }
+  };
 
   const loadAccount = async () => {
     const { data } = await supabase
@@ -231,7 +257,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
               </div>
 
               {activeTab === 'positions' && hlAddress && (
-                <PositionsList address={hlAddress} onCountChange={setPositionsCount} />
+                <PositionsList address={hlAddress} />
               )}
               {activeTab === 'orders' && hlAddress && walletAddress && (
                 <OpenOrdersList
@@ -241,7 +267,6 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                   privateKey={account?.hl_api_private_key || null}
                   builderCode={account?.hl_builder_code || null}
                   onOrderCancelled={loadHyperliquidBalance.bind(null, account?.hl_api_private_key || null)}
-                  onCountChange={setOrdersCount}
                 />
               )}
               {activeTab === 'history' && hlAddress && (
