@@ -1,77 +1,20 @@
-import { Wallet, JsonRpcProvider } from 'ethers';
+import { HttpTransport, ExchangeClient } from '@nktkas/hyperliquid';
+import { Wallet } from 'ethers';
 
 const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz';
 
-interface OrderRequest {
-  coin: string;
-  is_buy: boolean;
-  sz: number;
-  limit_px: number;
-  order_type: {
-    limit?: { tif: string };
-    trigger?: { isMarket: boolean; triggerPx: number; tpsl: string };
-  };
-  reduce_only: boolean;
-}
-
-interface CancelOrderRequest {
-  coin: string;
-  oid: number;
-}
-
 export class HyperliquidTrading {
+  private client: ExchangeClient;
   private wallet: Wallet;
   private builderCode?: string;
 
   constructor(privateKey: string, builderCode?: string) {
     this.wallet = new Wallet(privateKey);
+    const transport = new HttpTransport({
+      url: TESTNET_API_URL,
+    });
+    this.client = new ExchangeClient(transport, this.wallet, this.wallet.address);
     this.builderCode = builderCode;
-  }
-
-  private stringToHex(str: string): string {
-    let hex = '';
-    for (let i = 0; i < str.length; i++) {
-      const code = str.charCodeAt(i);
-      hex += code.toString(16).padStart(2, '0');
-    }
-    return hex;
-  }
-
-  private async signL1Action(action: any, nonce: number): Promise<any> {
-    const timestamp = Date.now();
-
-    const connectionId = action.type === 'order'
-      ? this.stringToHex(JSON.stringify({
-          destination: 'Hyperliquid',
-          type: 'l1Action',
-        }))
-      : undefined;
-
-    const phantomAgent = {
-      source: 'a',
-      connectionId,
-    };
-
-    const data = {
-      action,
-      nonce,
-      signature: {
-        r: '',
-        s: '',
-        v: 0,
-      },
-    };
-
-    const payload = JSON.stringify(data);
-    const message = `Hyperliquid signed action:\n${payload}`;
-    const signature = await this.wallet.signMessage(message);
-
-    return {
-      action,
-      nonce,
-      signature,
-      vaultAddress: null,
-    };
   }
 
   async placeOrder(
@@ -82,91 +25,52 @@ export class HyperliquidTrading {
     orderType: 'market' | 'limit',
     reduceOnly: boolean = false
   ): Promise<any> {
-    const nonce = Date.now();
-
-    const order: OrderRequest = {
-      coin,
-      is_buy: isBuy,
-      sz: size,
-      limit_px: price || 0,
-      order_type: orderType === 'market'
-        ? { trigger: { isMarket: true, triggerPx: price || 0, tpsl: 'tp' } }
-        : { limit: { tif: 'Gtc' } },
-      reduce_only: reduceOnly,
-    };
-
-    const action = {
-      type: 'order',
-      orders: [order],
-      grouping: 'na',
-    };
-
-    if (this.builderCode) {
-      (action as any).builder = {
-        b: this.builderCode,
-        f: 10,
+    try {
+      const orderData: any = {
+        coin,
+        isBuy,
+        sz: size,
+        limitPx: price || 0,
+        orderType: orderType === 'limit'
+          ? { limit: { tif: 'Gtc' } }
+          : { limit: { tif: 'Ioc' } },
+        reduceOnly,
       };
+
+      if (this.builderCode) {
+        orderData.builder = {
+          address: this.builderCode,
+          fee: 10,
+        };
+      }
+
+      const result = await this.client.order(orderData);
+      return result;
+    } catch (error: any) {
+      console.error('Place order error:', error);
+      throw error;
     }
-
-    const signedAction = await this.signL1Action(action, nonce);
-
-    const response = await fetch(`${TESTNET_API_URL}/exchange`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(signedAction),
-    });
-
-    const result = await response.json();
-    return result;
   }
 
   async cancelOrder(coin: string, oid: number): Promise<any> {
-    const nonce = Date.now();
-
-    const action = {
-      type: 'cancel',
-      cancels: [{
-        coin,
-        oid,
-      }],
-    };
-
-    const signedAction = await this.signL1Action(action, nonce);
-
-    const response = await fetch(`${TESTNET_API_URL}/exchange`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(signedAction),
-    });
-
-    const result = await response.json();
-    return result;
+    try {
+      const result = await this.client.cancel({ coin, oid });
+      return result;
+    } catch (error: any) {
+      console.error('Cancel order error:', error);
+      throw error;
+    }
   }
 
   async cancelAllOrders(coin?: string): Promise<any> {
-    const nonce = Date.now();
-
-    const action = {
-      type: 'cancelAll',
-      coin,
-    };
-
-    const signedAction = await this.signL1Action(action, nonce);
-
-    const response = await fetch(`${TESTNET_API_URL}/exchange`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(signedAction),
-    });
-
-    const result = await response.json();
-    return result;
+    try {
+      const cancels = coin ? [{ coin }] : [];
+      const result = await this.client.cancel({ cancels });
+      return result;
+    } catch (error: any) {
+      console.error('Cancel all orders error:', error);
+      throw error;
+    }
   }
 
   getAddress(): string {
