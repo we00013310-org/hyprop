@@ -57,9 +57,17 @@ async function getAssetMeta(coin: string): Promise<any> {
   return meta;
 }
 
+function roundToTickSize(price: number, szDecimals: number): number {
+  // szDecimals represents the number of significant decimals for the tick size
+  // For BTC, szDecimals is typically 1, meaning prices must be in increments of 0.1
+  const multiplier = Math.pow(10, szDecimals);
+  return Math.round(price * multiplier) / multiplier;
+}
+
 function formatPrice(price: number, szDecimals: number): string {
-  const formatted = price.toFixed(szDecimals);
-  console.log(`Formatted price ${price} with ${szDecimals} decimals -> ${formatted}`);
+  const rounded = roundToTickSize(price, szDecimals);
+  const formatted = rounded.toFixed(szDecimals);
+  console.log(`Formatted price ${price} with ${szDecimals} decimals -> rounded: ${rounded} -> formatted: ${formatted}`);
   return formatted;
 }
 
