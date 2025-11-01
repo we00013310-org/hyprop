@@ -58,8 +58,6 @@ async function getAssetMeta(coin: string): Promise<any> {
 }
 
 function roundToTickSize(price: number, szDecimals: number): number {
-  // szDecimals represents the number of significant decimals for the tick size
-  // For BTC, szDecimals is typically 1, meaning prices must be in increments of 0.1
   const multiplier = Math.pow(10, szDecimals);
   return Math.round(price * multiplier) / multiplier;
 }
@@ -117,6 +115,45 @@ async function getMaxBuilderFee(userAddress: string, builderAddress: string): Pr
   const maxFee = await response.json();
   console.log(`Max builder fee for ${userAddress} / ${builderAddress}: ${maxFee}`);
   return maxFee;
+}
+
+async function getBuilderReferralState(builderAddress: string): Promise<any> {
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'referral',
+      user: builderAddress,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch referral state: ${response.statusText}`);
+  }
+
+  const state = await response.json();
+  console.log(`Referral state for ${builderAddress}:`, JSON.stringify(state));
+  return state;
+}
+
+async function getAccountValue(address: string): Promise<number> {
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'clearinghouseState',
+      user: address,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch account value: ${response.statusText}`);
+  }
+
+  const state = await response.json();
+  const accountValue = parseFloat(state.marginSummary?.accountValue || '0');
+  console.log(`Account value for ${address}: ${accountValue} USDC`);
+  return accountValue;
 }
 
 Deno.serve(async (req: Request) => {
@@ -197,11 +234,9 @@ Deno.serve(async (req: Request) => {
       console.log('Max fee rate: 0.1%');
 
       try {
-        // Check current approval first
         const currentApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
         console.log('Current approval BEFORE:', currentApproval, '(tenths of basis points)');
 
-        // Call the approval API
         console.log('Calling approveBuilderFeeAPI...');
         result = await approveBuilderFeeAPI(
           { transport, wallet },
@@ -220,16 +255,14 @@ Deno.serve(async (req: Request) => {
           throw new Error(`Approval failed: ${result.response.payload}`);
         }
 
-        // Wait a bit for blockchain to process
         console.log('Waiting 2 seconds for blockchain to process...');
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Verify approval after
         const newApproval = await getMaxBuilderFee(derivedAddress, BUILDER_ADDRESS);
         console.log('New approval AFTER:', newApproval, '(tenths of basis points)');
 
-        if (newApproval === 0 || newApproval < 10) {
-          console.error('WARNING: Approval did not persist! Still less than 10 (0.1%)');
+        if (newApproval === 0 || newApproval < 100) {
+          console.error('WARNING: Approval did not persist! Still less than 100 (0.1%)');
           throw new Error('Builder fee approval did not persist. Try again.');
         }
 
@@ -292,10 +325,8 @@ Deno.serve(async (req: Request) => {
         grouping: 'na',
       };
 
-      // Always use builder fee
       const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
 
-      // Check current max builder fee approval
       console.log('=== CHECKING BUILDER FEE APPROVAL ===');
       console.log('Wallet address:', derivedAddress);
       console.log('Builder address:', BUILDER_ADDRESS);
@@ -304,21 +335,34 @@ Deno.serve(async (req: Request) => {
       console.log('Max approved builder fee:', maxApprovedFee, '(tenths of basis points)');
       console.log('Max approved fee as percentage:', (maxApprovedFee / 10000) + '%');
 
-      // Use 10 tenths of basis point = 0.1%
-      const feeToUse = 10;
+      const builderAccountValue = await getAccountValue(BUILDER_ADDRESS);
+      console.log('Builder account value:', builderAccountValue, 'USDC');
+
+      if (builderAccountValue < 100) {
+        console.error('WARNING: Builder account has less than 100 USDC!');
+        console.error(`  Current balance: ${builderAccountValue} USDC`);
+        console.error(`  Required: 100 USDC`);
+        console.error('Builder fees will NOT be collected until builder has 100+ USDC');
+      }
+
+      const feeToUse = 100;
       console.log('Fee we want to use:', feeToUse, '(tenths of basis points)');
       console.log('Fee we want to use as percentage:', (feeToUse / 10000) + '%');
 
       if (maxApprovedFee < feeToUse) {
         console.error('INSUFFICIENT APPROVAL!');
         console.error(`  Approved: ${maxApprovedFee} (${maxApprovedFee / 10000}%)`);
-        console.error(`  Required: ${feeToUse} (${feeToUse / 10000}%)`);        throw new Error(
+        console.error(`  Required: ${feeToUse} (${feeToUse / 10000}%)`);
+        throw new Error(
           `Insufficient builder fee approval. Approved: ${maxApprovedFee}, Required: ${feeToUse}. ` +
           `Please approve builder fee first.`
         );
       }
 
       console.log('✓ Builder fee approval check passed!');
+
+      const referralState = await getBuilderReferralState(BUILDER_ADDRESS);
+      console.log('Builder accumulated fees:', JSON.stringify(referralState));
 
       orderData.builder = {
         b: BUILDER_ADDRESS,
