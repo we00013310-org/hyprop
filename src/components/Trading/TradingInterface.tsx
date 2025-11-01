@@ -67,7 +67,7 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                   <div className="text-sm text-slate-400">BTC-PERP (Hyperliquid Testnet)</div>
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl font-bold text-white">
-                      ${currentPrice > 0 ? currentPrice.toFixed(2) : '---'}
+                      ${currentPrice > 0 ? currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---'}
                     </span>
                     {priceChange !== 0 && (
                       <span className={`text-sm flex items-center ${
