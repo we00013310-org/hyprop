@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
-import { HyperliquidTrading } from '../../lib/hyperliquidTrading';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { HyperliquidTrading } from "../../lib/hyperliquidTrading";
 
 interface OrderFormProps {
   accountId: string;
@@ -12,11 +13,19 @@ interface OrderFormProps {
   onOrderPlaced: () => void;
 }
 
-export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, builderCode, isDisabled = false, onOrderPlaced }: OrderFormProps) {
-  const [side, setSide] = useState<'long' | 'short'>('long');
-  const [size, setSize] = useState('');
-  const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
-  const [limitPrice, setLimitPrice] = useState('');
+export function OrderForm({
+  accountId,
+  walletAddress,
+  currentPrice,
+  privateKey,
+  builderCode,
+  isDisabled = false,
+  onOrderPlaced,
+}: OrderFormProps) {
+  const [side, setSide] = useState<"long" | "short">("long");
+  const [size, setSize] = useState("");
+  const [orderType, setOrderType] = useState<"market" | "limit">("market");
+  const [limitPrice, setLimitPrice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [approvingFee, setApprovingFee] = useState(false);
@@ -24,7 +33,7 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
 
   const handleApproveBuilderFee = async () => {
     if (!privateKey) {
-      setError('No Hyperliquid API key configured for this account');
+      setError("No Hyperliquid API key configured for this account");
       return;
     }
 
@@ -36,10 +45,10 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
       await trading.approveBuilderFee();
       setFeeApproved(true);
       setError(null);
-      alert('Builder fee approved successfully! You can now place orders.');
+      alert("Builder fee approved successfully! You can now place orders.");
     } catch (error: any) {
-      console.error('Approve builder fee failed:', error);
-      setError(error.message || 'Failed to approve builder fee');
+      console.error("Approve builder fee failed:", error);
+      setError(error.message || "Failed to approve builder fee");
     } finally {
       setApprovingFee(false);
     }
@@ -49,7 +58,9 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
     e.preventDefault();
 
     if (isDisabled) {
-      setError('Trading is disabled for this account. This account has reached its limit.');
+      setError(
+        "Trading is disabled for this account. This account has reached its limit."
+      );
       return;
     }
 
@@ -59,52 +70,66 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
     try {
       const trading = new HyperliquidTrading(accountId, walletAddress);
 
-      const isBuy = side === 'long';
+      const isBuy = side === "long";
       const sizeNum = parseFloat(size);
-      const priceNum = orderType === 'limit' ? parseFloat(limitPrice || currentPrice.toString()) : currentPrice;
+      const priceNum =
+        orderType === "limit"
+          ? parseFloat(limitPrice || currentPrice.toString())
+          : currentPrice;
 
-      console.log('=== ORDER FORM SUBMISSION ===');
-      console.log('Side:', side, '-> isBuy:', isBuy);
-      console.log('Size input:', size, '-> sizeNum:', sizeNum);
-      console.log('Order type:', orderType);
-      console.log('Current price:', currentPrice);
-      console.log('Limit price input:', limitPrice);
-      console.log('Price to send:', orderType === 'limit' ? priceNum : null);
+      console.log("=== ORDER FORM SUBMISSION ===");
+      console.log("Side:", side, "-> isBuy:", isBuy);
+      console.log("Size input:", size, "-> sizeNum:", sizeNum);
+      console.log("Order type:", orderType);
+      console.log("Current price:", currentPrice);
+      console.log("Limit price input:", limitPrice);
+      console.log("Price to send:", orderType === "limit" ? priceNum : null);
 
       const result = await trading.placeOrder(
-        'BTC',
+        "BTC",
         isBuy,
         sizeNum,
-        orderType === 'limit' ? priceNum : null,
+        orderType === "limit" ? priceNum : null,
         orderType,
         false
       );
 
-      console.log('Order result:', result);
+      console.log("Order result:", result);
 
-      if (result && result.status === 'ok') {
+      if (result && result.status === "ok") {
         onOrderPlaced();
-        setSize('');
-        setLimitPrice('');
+        setSize("");
+        setLimitPrice("");
         setError(null);
         // Show success message briefly
-        console.log('Order placed successfully:', result.message || 'Order executed');
+        console.log(
+          "Order placed successfully:",
+          result.message || "Order executed"
+        );
       } else {
-        setError(result?.response || result?.message || 'Order failed');
+        setError(result?.response || result?.message || "Order failed");
       }
     } catch (error: any) {
-      console.error('Order failed:', error);
-      setError(error.message || 'Failed to place order');
+      console.error("Order failed:", error);
+      setError(error.message || "Failed to place order");
     } finally {
       setLoading(false);
     }
   };
 
-  const estimatedValue = parseFloat(size || '0') * currentPrice;
+  const estimatedValue = parseFloat(size || "0") * currentPrice;
 
   return (
-    <div className={`bg-slate-800 rounded-xl p-6 border border-slate-700 ${isDisabled ? 'opacity-60' : ''}`}>
-      <h3 className={`text-lg font-semibold mb-4 ${isDisabled ? 'text-slate-400' : 'text-white'}`}>
+    <div
+      className={`bg-slate-800 rounded-xl p-6 border border-slate-700 ${
+        isDisabled ? "opacity-60" : ""
+      }`}
+    >
+      <h3
+        className={`text-lg font-semibold mb-4 ${
+          isDisabled ? "text-slate-400" : "text-white"
+        }`}
+      >
         Place Order
       </h3>
 
@@ -117,63 +142,71 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className={`flex bg-slate-700 rounded-lg p-1 ${isDisabled ? 'opacity-50' : ''}`}>
+        <div
+          className={`flex bg-slate-700 rounded-lg p-1 ${
+            isDisabled ? "opacity-50" : ""
+          }`}
+        >
           <button
             type="button"
-            onClick={() => !isDisabled && setSide('long')}
+            onClick={() => !isDisabled && setSide("long")}
             disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-1 ${
-              side === 'long'
-                ? 'bg-green-600 text-white'
-                : 'text-slate-300 hover:text-white'
-            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+              side === "long"
+                ? "bg-green-600 text-white"
+                : "text-slate-300 hover:text-white"
+            } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <TrendingUp className="w-4 h-4" />
             <span>Long</span>
           </button>
           <button
             type="button"
-            onClick={() => !isDisabled && setSide('short')}
+            onClick={() => !isDisabled && setSide("short")}
             disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-1 ${
-              side === 'short'
-                ? 'bg-red-600 text-white'
-                : 'text-slate-300 hover:text-white'
-            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+              side === "short"
+                ? "bg-red-600 text-white"
+                : "text-slate-300 hover:text-white"
+            } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
           >
             <TrendingDown className="w-4 h-4" />
             <span>Short</span>
           </button>
         </div>
 
-        <div className={`flex bg-slate-700 rounded-lg p-1 ${isDisabled ? 'opacity-50' : ''}`}>
+        <div
+          className={`flex bg-slate-700 rounded-lg p-1 ${
+            isDisabled ? "opacity-50" : ""
+          }`}
+        >
           <button
             type="button"
-            onClick={() => !isDisabled && setOrderType('market')}
+            onClick={() => !isDisabled && setOrderType("market")}
             disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              orderType === 'market'
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-300 hover:text-white'
-            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+              orderType === "market"
+                ? "bg-blue-600 text-white"
+                : "text-slate-300 hover:text-white"
+            } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Market
           </button>
           <button
             type="button"
-            onClick={() => !isDisabled && setOrderType('limit')}
+            onClick={() => !isDisabled && setOrderType("limit")}
             disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              orderType === 'limit'
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-300 hover:text-white'
-            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
+              orderType === "limit"
+                ? "bg-blue-600 text-white"
+                : "text-slate-300 hover:text-white"
+            } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Limit
           </button>
         </div>
 
-        {orderType === 'limit' && (
+        {orderType === "limit" && (
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Limit Price
@@ -211,35 +244,40 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
             <div className="flex justify-between">
               <span className="text-slate-400">Estimated Value</span>
               <span className="text-white font-semibold">
-                ${estimatedValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                $
+                {estimatedValue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Entry Price</span>
               <span className="text-white font-semibold">
-                ${orderType === 'market' ? currentPrice.toFixed(2) : (limitPrice || currentPrice.toFixed(2))}
+                $
+                {orderType === "market"
+                  ? currentPrice.toFixed(2)
+                  : limitPrice || currentPrice.toFixed(2)}
               </span>
             </div>
           </div>
         )}
 
-        {error && error.toLowerCase().includes('builder fee') && (
+        {error && error.toLowerCase().includes("builder fee") && (
           <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-3 space-y-2">
-            <p className="text-yellow-400 text-sm">
-              {error}
-            </p>
+            <p className="text-yellow-400 text-sm">{error}</p>
             <button
               type="button"
               onClick={handleApproveBuilderFee}
               disabled={approvingFee}
               className="w-full py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-600 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
             >
-              {approvingFee ? 'Approving...' : 'Approve Builder Fee'}
+              {approvingFee ? "Approving..." : "Approve Builder Fee"}
             </button>
           </div>
         )}
 
-        {error && !error.toLowerCase().includes('builder fee') && (
+        {error && !error.toLowerCase().includes("builder fee") && (
           <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-400 text-sm">
             {error}
           </div>
@@ -256,17 +294,19 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
           disabled={loading || !size || isDisabled}
           className={`w-full py-3 font-semibold rounded-lg transition-colors ${
             isDisabled
-              ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-              : side === 'long'
-              ? 'bg-green-600 hover:bg-green-700 disabled:bg-slate-600'
-              : 'bg-red-600 hover:bg-red-700 disabled:bg-slate-600'
+              ? "bg-slate-600 text-slate-400 cursor-not-allowed"
+              : side === "long"
+              ? "bg-green-600 hover:bg-green-700 disabled:bg-slate-600"
+              : "bg-red-600 hover:bg-red-700 disabled:bg-slate-600"
           } text-white disabled:cursor-not-allowed`}
         >
-          {isDisabled 
-            ? 'Trading Disabled' 
-            : loading 
-            ? 'Placing Order...' 
-            : `${side === 'long' ? 'Buy' : 'Sell'} ${orderType === 'market' ? 'Market' : 'Limit'}`}
+          {isDisabled
+            ? "Trading Disabled"
+            : loading
+            ? "Placing Order..."
+            : `${side === "long" ? "Buy" : "Sell"} ${
+                orderType === "market" ? "Market" : "Limit"
+              }`}
         </button>
       </form>
     </div>

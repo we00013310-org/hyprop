@@ -1,31 +1,54 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, Wifi, WifiOff, Wallet, AlertTriangle } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-import { useHyperliquidPrice } from '../../hooks/useHyperliquidPrice';
-import { useAuth } from '../../contexts/AuthContext';
-import { OrderForm } from './OrderForm';
-import { PositionsList } from './PositionsList';
-import { OpenOrdersList } from './OpenOrdersList';
-import { TradeHistoryList } from './TradeHistoryList';
-import { TradingViewChart } from './TradingViewChart';
-import { getOpenOrders, getUserPositions, HyperliquidTrading } from '../../lib/hyperliquidTrading';
-import type { Database } from '../../lib/database.types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  TrendingUp,
+  TrendingDown,
+  Wifi,
+  WifiOff,
+  Wallet,
+  AlertTriangle,
+} from "lucide-react";
+import { supabase } from "../../lib/supabase";
+import { useHyperliquidPrice } from "../../hooks/useHyperliquidPrice";
+import { useAuth } from "../../contexts/AuthContext";
+import { OrderForm } from "./OrderForm";
+import { PositionsList } from "./PositionsList";
+// import { OpenOrdersList } from "./OpenOrdersList";
+// import { TradeHistoryList } from "./TradeHistoryList";
+import { TradingViewChart } from "./TradingViewChart";
+import {
+  // getOpenOrders,
+  getUserPositions,
+  HyperliquidTrading,
+} from "../../lib/hyperliquidTrading";
+import type { Database } from "../../lib/database.types";
 
-type TestAccount = Database['public']['Tables']['test_accounts']['Row'];
+type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
 
 interface TradingInterfaceProps {
   accountId: string;
   onClose: () => void;
 }
 
-export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) {
+export function TradingInterface({
+  accountId,
+  onClose,
+}: TradingInterfaceProps) {
   const { walletAddress } = useAuth();
   const [account, setAccount] = useState<TestAccount | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
+  const [activeTab, setActiveTab] = useState<
+    "positions" | "orders" | "history"
+  >("positions");
   const [positionsCount, setPositionsCount] = useState(0);
   const [ordersCount, setOrdersCount] = useState(0);
-  const { price: currentPrice, priceChange, isConnected } = useHyperliquidPrice('BTC');
+  const {
+    price: currentPrice,
+    priceChange,
+    isConnected,
+  } = useHyperliquidPrice("BTC");
+  const [key, setKey] = useState(Date.now()); // use this to revalidate Positions List
 
   useEffect(() => {
     loadAccount();
@@ -41,19 +64,21 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
 
   // PHASE 1: Check test status periodically
   useEffect(() => {
+    console.log("accountId", accountId, walletAddress);
     if (!accountId || !walletAddress) return;
 
     const checkTestStatus = async () => {
       try {
         const trading = new HyperliquidTrading(accountId, walletAddress);
         const result = await trading.checkTestStatus();
-        
-        if (result?.shouldPass || result?.status === 'failed') {
+        console.log("result", result);
+
+        if (result?.shouldPass || result?.status === "failed") {
           // Reload account to get updated status
           loadAccount();
         }
       } catch (error) {
-        console.error('Failed to check test status:', error);
+        console.error("Failed to check test status:", error);
       }
     };
 
@@ -67,23 +92,27 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
 
     try {
       // PHASE 1: For test accounts, use database positions
-      const positionsData = await getUserPositions('', accountId, walletAddress);
+      const positionsData = await getUserPositions(
+        "",
+        accountId,
+        walletAddress
+      );
       const openPositions = positionsData.filter((pos: any) => {
-        const size = parseFloat(pos.position?.szi || '0');
+        const size = parseFloat(pos.position?.szi || "0");
         return size !== 0;
       });
       setPositionsCount(openPositions.length);
       setOrdersCount(0); // Orders not supported in Phase 1
     } catch (error) {
-      console.error('Failed to load counts:', error);
+      console.error("Failed to load counts:", error);
     }
   };
 
   const loadAccount = async () => {
     const { data } = await supabase
-      .from('test_accounts')
-      .select('*')
-      .eq('id', accountId)
+      .from("test_accounts")
+      .select("*")
+      .eq("id", accountId)
       .single();
 
     if (data) {
@@ -92,7 +121,11 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
     setLoading(false);
   };
 
-  const isAccountActive = account?.status === 'active';
+  const isAccountActive = account?.status === "active";
+
+  const reloadData = () => {
+    loadAccount();
+  };
 
   if (loading || !account) {
     return (
@@ -122,16 +155,30 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                   <WifiOff className="w-5 h-5 text-red-400" />
                 )}
                 <div className="text-center">
-                  <div className="text-sm text-slate-400">BTC-PERP (Hyperliquid Testnet)</div>
+                  <div className="text-sm text-slate-400">
+                    BTC-PERP (Hyperliquid Testnet)
+                  </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-2xl font-bold text-white">
-                      ${currentPrice > 0 ? currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '---'}
+                      $
+                      {currentPrice > 0
+                        ? currentPrice.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : "---"}
                     </span>
                     {priceChange !== 0 && (
-                      <span className={`text-sm flex items-center ${
-                        priceChange >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        {priceChange >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                      <span
+                        className={`text-sm flex items-center ${
+                          priceChange >= 0 ? "text-green-400" : "text-red-400"
+                        }`}
+                      >
+                        {priceChange >= 0 ? (
+                          <TrendingUp className="w-4 h-4" />
+                        ) : (
+                          <TrendingDown className="w-4 h-4" />
+                        )}
                         {Math.abs(priceChange).toFixed(2)}
                       </span>
                     )}
@@ -145,51 +192,79 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Trading Account Info - Consolidated */}
-        <div className={`mb-6 bg-slate-800 border rounded-xl p-6 ${
-          isAccountActive ? 'border-slate-700' : 'border-slate-600 opacity-75'
-        }`}>
+        <div
+          className={`mb-6 bg-slate-800 border rounded-xl p-6 ${
+            isAccountActive ? "border-slate-700" : "border-slate-600 opacity-75"
+          }`}
+        >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-3">
-              <Wallet className={`w-6 h-6 ${isAccountActive ? 'text-blue-500' : 'text-slate-500'}`} />
+              <Wallet
+                className={`w-6 h-6 ${
+                  isAccountActive ? "text-blue-500" : "text-slate-500"
+                }`}
+              />
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className={`text-lg font-semibold ${isAccountActive ? 'text-white' : 'text-slate-400'}`}>
+                  <h3
+                    className={`text-lg font-semibold ${
+                      isAccountActive ? "text-white" : "text-slate-400"
+                    }`}
+                  >
                     Test Trading Account
                   </h3>
                   {!isAccountActive && (
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      account.status === 'passed'
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    }`}>
-                      {account.status === 'passed' ? 'READ ONLY' : 'DISABLED'}
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        account.status === "passed"
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : "bg-red-500/20 text-red-400 border border-red-500/30"
+                      }`}
+                    >
+                      {account.status === "passed" ? "READ ONLY" : "DISABLED"}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-slate-400">{account.account_mode.toUpperCase()}</p>
+                <p className="text-sm text-slate-400">
+                  {account.account_mode.toUpperCase()}
+                </p>
               </div>
             </div>
             <div className="text-right">
               <div className="text-sm text-slate-400">Virtual Balance</div>
-              <div className={`text-2xl font-bold ${isAccountActive ? 'text-white' : 'text-slate-500'}`}>
-                ${account.virtual_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div
+                className={`text-2xl font-bold ${
+                  isAccountActive ? "text-white" : "text-slate-500"
+                }`}
+              >
+                $
+                {account.virtual_balance.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </div>
             </div>
           </div>
 
           {!isAccountActive && (
-            <div className={`mb-6 p-3 rounded-lg border ${
-              account.status === 'passed'
-                ? 'bg-green-500/10 border-green-500/20'
-                : 'bg-red-500/10 border-red-500/20'
-            }`}>
-              <p className={`text-sm font-medium ${
-                account.status === 'passed' ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {account.status === 'passed'
-                  ? '✓ Test completed successfully! This account is read-only. You can view positions and history but cannot place new orders.'
-                  : '✗ Trading is disabled for this account. You can view positions and history but cannot place new orders.'}
+            <div
+              className={`mb-6 p-3 rounded-lg border ${
+                account.status === "passed"
+                  ? "bg-green-500/10 border-green-500/20"
+                  : "bg-red-500/10 border-red-500/20"
+              }`}
+            >
+              <p
+                className={`text-sm font-medium ${
+                  account.status === "passed"
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                {account.status === "passed"
+                  ? "✓ Test completed successfully! This account is read-only. You can view positions and history but cannot place new orders."
+                  : "✗ Trading is disabled for this account. You can view positions and history but cannot place new orders."}
               </p>
             </div>
           )}
@@ -200,39 +275,64 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
             const profitLossPercent = (profitLoss / account.account_size) * 100;
             const isProfit = profitLoss >= 0;
             const progressPercent = (profitLoss / account.profit_target) * 100;
-            const dailyDDPercent = (account.dd_daily / account.account_size) * 100;
+            const dailyDDPercent =
+              (account.dd_daily / account.account_size) * 100;
             const maxDDPercent = (account.dd_max / account.account_size) * 100;
 
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <div className="text-xs text-slate-400 mb-1">Account Size</div>
-                  <div className={`text-lg font-semibold ${isAccountActive ? 'text-white' : 'text-slate-500'}`}>
+                  <div className="text-xs text-slate-400 mb-1">
+                    Account Size
+                  </div>
+                  <div
+                    className={`text-lg font-semibold ${
+                      isAccountActive ? "text-white" : "text-slate-500"
+                    }`}
+                  >
                     ${account.account_size.toLocaleString()}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-slate-400 mb-1">Profit/Loss</div>
-                  <div className={`text-lg font-semibold flex items-center space-x-1 ${
-                    isProfit ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {isProfit ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                  <div
+                    className={`text-lg font-semibold flex items-center space-x-1 ${
+                      isProfit ? "text-green-400" : "text-red-400"
+                    }`}
+                  >
+                    {isProfit ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4" />
+                    )}
                     <span>
-                      {isProfit ? '+' : ''}${profitLoss.toLocaleString()} ({profitLossPercent.toFixed(2)}%)
+                      {isProfit ? "+" : ""}${profitLoss.toLocaleString()} (
+                      {profitLossPercent.toFixed(2)}%)
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-400 mb-1">Profit Target</div>
-                  <div className={`text-lg font-semibold ${isAccountActive ? 'text-white' : 'text-slate-500'}`}>
+                  <div className="text-xs text-slate-400 mb-1">
+                    Profit Target
+                  </div>
+                  <div
+                    className={`text-lg font-semibold ${
+                      isAccountActive ? "text-white" : "text-slate-500"
+                    }`}
+                  >
                     ${account.profit_target.toLocaleString()}
                   </div>
                   <div className="w-full bg-slate-700 rounded-full h-1.5 mt-2">
                     <div
                       className={`h-1.5 rounded-full transition-all ${
-                        progressPercent >= 100 ? 'bg-green-500' : 'bg-blue-500'
+                        progressPercent >= 100 ? "bg-green-500" : "bg-blue-500"
                       }`}
-                      style={{ width: `${Math.min(Math.max(progressPercent, 0), 100)}%` }}
+                      style={{
+                        width: `${Math.min(
+                          Math.max(progressPercent, 0),
+                          100
+                        )}%`,
+                      }}
                     />
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
@@ -240,18 +340,22 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-slate-400 mb-1">Drawdown Limits</div>
+                  <div className="text-xs text-slate-400 mb-1">
+                    Drawdown Limits
+                  </div>
                   <div className="space-y-1">
                     <div className="flex items-center space-x-1">
                       <AlertTriangle className="w-3 h-3 text-yellow-400" />
                       <span className="text-sm text-slate-300">
-                        Daily: ${account.dd_daily.toLocaleString()} ({dailyDDPercent.toFixed(1)}%)
+                        Daily: ${account.dd_daily.toLocaleString()} (
+                        {dailyDDPercent.toFixed(1)}%)
                       </span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <AlertTriangle className="w-3 h-3 text-red-400" />
                       <span className="text-sm text-slate-300">
-                        Max: ${account.dd_max.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
+                        Max: ${account.dd_max.toLocaleString()} (
+                        {maxDDPercent.toFixed(1)}%)
                       </span>
                     </div>
                   </div>
@@ -265,12 +369,16 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-white">BTC/USDT Price Chart</h3>
-                <span className="text-xs text-slate-400">Powered by TradingView</span>
+                <h3 className="text-lg font-semibold text-white">
+                  BTC/USDT Price Chart
+                </h3>
+                <span className="text-xs text-slate-400">
+                  Powered by TradingView
+                </span>
               </div>
               <div className="bg-slate-900 rounded-lg overflow-hidden">
-                <TradingViewChart 
-                  symbol="BINANCE:BTCUSDT" 
+                <TradingViewChart
+                  symbol="BINANCE:BTCUSDT"
                   theme="dark"
                   height={500}
                 />
@@ -280,51 +388,53 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <div className="flex border-b border-slate-700 mb-4">
                 <button
-                  onClick={() => setActiveTab('positions')}
+                  onClick={() => setActiveTab("positions")}
                   className={`px-4 py-2 font-medium transition-colors ${
-                    activeTab === 'positions'
-                      ? 'text-blue-500 border-b-2 border-blue-500'
-                      : 'text-slate-400 hover:text-white'
+                    activeTab === "positions"
+                      ? "text-blue-500 border-b-2 border-blue-500"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   Positions ({positionsCount})
                 </button>
                 <button
-                  onClick={() => setActiveTab('orders')}
+                  onClick={() => setActiveTab("orders")}
                   className={`px-4 py-2 font-medium transition-colors ${
-                    activeTab === 'orders'
-                      ? 'text-blue-500 border-b-2 border-blue-500'
-                      : 'text-slate-400 hover:text-white'
+                    activeTab === "orders"
+                      ? "text-blue-500 border-b-2 border-blue-500"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   Open Orders ({ordersCount})
                 </button>
                 <button
-                  onClick={() => setActiveTab('history')}
+                  onClick={() => setActiveTab("history")}
                   className={`px-4 py-2 font-medium transition-colors ${
-                    activeTab === 'history'
-                      ? 'text-blue-500 border-b-2 border-blue-500'
-                      : 'text-slate-400 hover:text-white'
+                    activeTab === "history"
+                      ? "text-blue-500 border-b-2 border-blue-500"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   Trade History
                 </button>
               </div>
 
-              {activeTab === 'positions' && walletAddress && (
-                <PositionsList 
-                  address="" 
+              {activeTab === "positions" && !!walletAddress && (
+                <PositionsList
+                  key={key}
+                  address=""
                   accountId={accountId}
                   walletAddress={walletAddress}
                   isDisabled={!isAccountActive}
+                  reloadData={reloadData}
                 />
               )}
-              {activeTab === 'orders' && (
+              {activeTab === "orders" && (
                 <div className="text-center py-12 text-slate-400">
                   Orders not available in Phase 1 (simulated trading)
                 </div>
               )}
-              {activeTab === 'history' && (
+              {activeTab === "history" && (
                 <div className="text-center py-12 text-slate-400">
                   Trade history coming soon
                 </div>
@@ -344,26 +454,29 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                 onOrderPlaced={() => {
                   loadAccount();
                   loadCounts();
+                  setKey(Date.now());
                 }}
               />
             )}
             {walletAddress && !isAccountActive && (
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                 <div className="text-center py-8">
-                  <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${
-                    account.status === 'passed'
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-red-500/20 text-red-400'
-                  }`}>
-                    {account.status === 'passed' ? '✓' : '✗'}
+                  <div
+                    className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                      account.status === "passed"
+                        ? "bg-green-500/20 text-green-400"
+                        : "bg-red-500/20 text-red-400"
+                    }`}
+                  >
+                    {account.status === "passed" ? "✓" : "✗"}
                   </div>
                   <h3 className="text-lg font-semibold text-slate-300 mb-2">
                     Trading Disabled
                   </h3>
                   <p className="text-sm text-slate-400">
-                    {account.status === 'passed'
-                      ? 'This account has completed the evaluation. You can view positions and history below.'
-                      : 'This account has reached its limit. You can view positions and history below.'}
+                    {account.status === "passed"
+                      ? "This account has completed the evaluation. You can view positions and history below."
+                      : "This account has reached its limit. You can view positions and history below."}
                   </p>
                 </div>
               </div>

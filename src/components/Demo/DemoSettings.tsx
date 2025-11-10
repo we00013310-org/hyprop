@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { getRealBTCPriceWithFallback } from '../../lib/priceOracle';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../contexts/ToastContext';
 
 interface DemoSettingsProps {
   onBack: () => void;
 }
 
 export function DemoSettings({ onBack }: DemoSettingsProps) {
+  const toast = useToast();
   const [priceOffset, setPriceOffset] = useState<string>('');
   const [currentOffset, setCurrentOffset] = useState<number>(0);
   const [realPrice, setRealPrice] = useState<number | null>(null);
@@ -14,19 +17,35 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load current offset from localStorage
-    const offset = localStorage.getItem('demo_btc_price_offset');
-    if (offset) {
-      const parsed = parseFloat(offset);
-      if (!isNaN(parsed)) {
-        setCurrentOffset(parsed);
-        setPriceOffset(offset);
-      }
-    }
-
+    // Load current offset from database
+    loadOffsetFromDatabase();
     // Fetch current price
     fetchPrice();
   }, []);
+
+  const loadOffsetFromDatabase = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('config')
+        .select('value')
+        .eq('key', 'demo_btc_price_offset')
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.value) {
+        const offset = parseFloat(data.value as string);
+        if (!isNaN(offset)) {
+          setCurrentOffset(offset);
+          setPriceOffset(offset.toString());
+          // Also update localStorage for frontend price oracle
+          localStorage.setItem('demo_btc_price_offset', offset.toString());
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load offset from database:', error);
+    }
+  };
 
   const fetchPrice = async () => {
     setLoading(true);
@@ -44,25 +63,63 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
     }
   };
 
-  const handleApplyOffset = () => {
+  const handleApplyOffset = async () => {
     const offset = parseFloat(priceOffset);
     if (isNaN(offset)) {
-      alert('Please enter a valid number');
+      toast.error('Please enter a valid number');
       return;
     }
 
-    localStorage.setItem('demo_btc_price_offset', offset.toString());
-    setCurrentOffset(offset);
-    fetchPrice();
-    alert(`Price offset set to ${offset >= 0 ? '+' : ''}${offset}`);
+    try {
+      setLoading(true);
+
+      // Save to database
+      const { error } = await supabase
+        .from('config')
+        .upsert({
+          key: 'demo_btc_price_offset',
+          value: offset.toString(),
+        });
+
+      if (error) throw error;
+
+      // Also save to localStorage for frontend
+      localStorage.setItem('demo_btc_price_offset', offset.toString());
+      setCurrentOffset(offset);
+      await fetchPrice();
+      toast.success(`Price offset set to ${offset >= 0 ? '+' : ''}${offset}. This will affect all PnL calculations including backend operations.`, 5000);
+    } catch (error: any) {
+      console.error('Failed to save offset:', error);
+      toast.error(`Failed to save offset: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleClearOffset = () => {
-    localStorage.removeItem('demo_btc_price_offset');
-    setCurrentOffset(0);
-    setPriceOffset('');
-    fetchPrice();
-    alert('Price offset cleared');
+  const handleClearOffset = async () => {
+    try {
+      setLoading(true);
+
+      // Delete from database
+      const { error } = await supabase
+        .from('config')
+        .delete()
+        .eq('key', 'demo_btc_price_offset');
+
+      if (error) throw error;
+
+      // Also clear from localStorage
+      localStorage.removeItem('demo_btc_price_offset');
+      setCurrentOffset(0);
+      setPriceOffset('');
+      await fetchPrice();
+      toast.success('Price offset cleared');
+    } catch (error: any) {
+      console.error('Failed to clear offset:', error);
+      toast.error(`Failed to clear offset: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const previewPrice = realPrice && priceOffset ? realPrice + parseFloat(priceOffset || '0') : null;

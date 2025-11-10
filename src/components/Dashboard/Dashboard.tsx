@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import { AccountSelection } from './AccountSelection';
-import { TestAccountCard } from './TestAccountCard';
-import { FundedAccountCard } from './FundedAccountCard';
-import { LogOut, TrendingUp, DollarSign, Settings } from 'lucide-react';
-import { getBuilderFees } from '../../lib/hyperliquidApi';
-import type { Database } from '../../lib/database.types';
+import { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
+import { AccountSelection } from "./AccountSelection";
+import { TestAccountCard } from "./TestAccountCard";
+import { FundedAccountCard } from "./FundedAccountCard";
+import { LogOut, TrendingUp, DollarSign, Settings } from "lucide-react";
+import { getBuilderFees } from "../../lib/hyperliquidApi";
+import type { Database } from "../../lib/database.types";
 
-type TestAccount = Database['public']['Tables']['test_accounts']['Row'];
-type FundedAccount = Database['public']['Tables']['funded_accounts']['Row'];
+type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
+type FundedAccount = Database["public"]["Tables"]["funded_accounts"]["Row"];
 
 interface DashboardProps {
   onOpenTrading: (accountId: string) => void;
@@ -36,21 +36,21 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
     try {
       const [testResult, fundedResult] = await Promise.all([
         supabase
-          .from('test_accounts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .from("test_accounts")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
         supabase
-          .from('funded_accounts')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .from("funded_accounts")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (testResult.data) setTestAccounts(testResult.data);
       if (fundedResult.data) setFundedAccounts(fundedResult.data);
     } catch (error) {
-      console.error('Error loading accounts:', error);
+      console.error("Error loading accounts:", error);
     } finally {
       setLoading(false);
     }
@@ -58,11 +58,11 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
 
   const loadBuilderFees = async () => {
     try {
-      const BUILDER_ADDRESS = '0x7c4E42B6cDDcEfa029D230137908aB178D52d324';
+      const BUILDER_ADDRESS = "0x7c4E42B6cDDcEfa029D230137908aB178D52d324";
       const fees = await getBuilderFees(BUILDER_ADDRESS);
       setBuilderFees(fees);
     } catch (error) {
-      console.error('Error loading builder fees:', error);
+      console.error("Error loading builder fees:", error);
     } finally {
       setLoadingFees(false);
     }
@@ -114,12 +114,16 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-3xl font-bold text-white mb-2">Dashboard</h2>
-              <p className="text-slate-400">Manage your trading accounts and evaluations</p>
+              <p className="text-slate-400">
+                Manage your trading accounts and evaluations
+              </p>
             </div>
             <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
               <div className="flex items-center space-x-2 mb-1">
                 <DollarSign className="w-5 h-5 text-green-500" />
-                <span className="text-slate-400 text-sm font-medium">Builder Fees Collected</span>
+                <span className="text-slate-400 text-sm font-medium">
+                  Builder Fees Collected
+                </span>
               </div>
               {loadingFees ? (
                 <div className="flex items-center space-x-2">
@@ -128,7 +132,10 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
                 </div>
               ) : (
                 <div className="text-2xl font-bold text-white">
-                  ${builderFees.toFixed(4)} <span className="text-sm font-normal text-slate-400">USDC</span>
+                  ${builderFees.toFixed(4)}{" "}
+                  <span className="text-sm font-normal text-slate-400">
+                    USDC
+                  </span>
                 </div>
               )}
             </div>
@@ -145,13 +152,19 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                  <h3 className="text-xl font-semibold text-white">Funded Accounts</h3>
-                  <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">Real Money</span>
+                  <h3 className="text-xl font-semibold text-white">
+                    Funded Accounts
+                  </h3>
+                  <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                    Real Money
+                  </span>
                 </div>
               </div>
               {fundedAccounts.length === 0 ? (
                 <div className="bg-slate-800 rounded-xl p-8 text-center">
-                  <p className="text-slate-400">No funded accounts yet. Pass an evaluation to get funded!</p>
+                  <p className="text-slate-400">
+                    No funded accounts yet. Pass an evaluation to get funded!
+                  </p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -166,8 +179,12 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
-                  <h3 className="text-xl font-semibold text-white">Test Accounts</h3>
-                  <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">Simulated</span>
+                  <h3 className="text-xl font-semibold text-white">
+                    Test Accounts
+                  </h3>
+                  <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">
+                    Simulated
+                  </span>
                 </div>
                 <button
                   onClick={() => setShowAccountSelection(true)}
@@ -178,7 +195,9 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
               </div>
               {testAccounts.length === 0 ? (
                 <div className="bg-slate-800 rounded-xl p-8 text-center">
-                  <p className="text-slate-400 mb-4">No test accounts yet. Start your trading journey!</p>
+                  <p className="text-slate-400 mb-4">
+                    No test accounts yet. Start your trading journey!
+                  </p>
                   <button
                     onClick={() => setShowAccountSelection(true)}
                     className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"

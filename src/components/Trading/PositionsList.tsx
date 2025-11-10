@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useCallback } from "react";
 import { X, RefreshCw, AlertTriangle } from "lucide-react";
 import {
@@ -9,12 +10,14 @@ import {
   calculateRealWorldPNL,
   calculatePNLPercentage,
 } from "../../lib/priceOracle";
+import { useToast } from "../../contexts/ToastContext";
 
 interface PositionsListProps {
   address: string;
   accountId: string;
   walletAddress: string;
   isDisabled?: boolean;
+  reloadData: () => void;
 }
 
 export function PositionsList({
@@ -22,7 +25,9 @@ export function PositionsList({
   accountId,
   walletAddress,
   isDisabled = false,
+  reloadData,
 }: PositionsListProps) {
+  const toast = useToast();
   const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [realBTCPrice, setRealBTCPrice] = useState<number | null>(null);
@@ -55,6 +60,41 @@ export function PositionsList({
       setLoading(false);
     }
   }, [address, accountId, walletAddress]);
+
+  const handleClosePosition = async (coin: string, size: number) => {
+    if (isDisabled) {
+      toast.error("Cannot close positions on a disabled account");
+      return;
+    }
+
+    const positionKey = `${coin}-${size}`;
+
+    setClosingPositions((prev) => new Set(prev).add(positionKey));
+
+    try {
+      const trading = new HyperliquidTrading(accountId, walletAddress);
+      await trading.closePosition(coin, size);
+
+      // Wait a moment for the order to process
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Reload positions
+      await loadPositions();
+
+      reloadData();
+
+      toast.success(`Successfully closed ${coin} position`);
+    } catch (error: any) {
+      console.error("Failed to close position:", error);
+      toast.error(`Failed to close position: ${error.message || "Unknown error"}`);
+    } finally {
+      setClosingPositions((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(positionKey);
+        return newSet;
+      });
+    }
+  };
 
   const checkAndCloseLosingPositions = useCallback(async () => {
     // Don't auto-close if account is disabled (already passed/failed)
@@ -151,7 +191,7 @@ export function PositionsList({
           );
         }
 
-        const isLosing = realWorldPNL < 0;
+        // const isLosing = realWorldPNL < 0;
         const lossExceedsThreshold = realWorldPNLPercentage < -5;
         const positionKey = `${coin}-${size}`;
         const isClosing = closingPositions.has(positionKey);
@@ -196,6 +236,20 @@ export function PositionsList({
                   </span>
                 )}
               </div>
+              {!isDisabled && (
+                <button
+                  onClick={() => handleClosePosition(coin, size)}
+                  disabled={isClosing}
+                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Close Position"
+                >
+                  {isClosing ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
+                  ) : (
+                    <X className="w-4 h-4" />
+                  )}
+                </button>
+              )}
             </div>
 
             {lossExceedsThreshold && !isDisabled && (
