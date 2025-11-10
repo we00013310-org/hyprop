@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { AccountSelection } from './AccountSelection';
 import { TestAccountCard } from './TestAccountCard';
 import { FundedAccountCard } from './FundedAccountCard';
-import { LogOut, TrendingUp, DollarSign } from 'lucide-react';
+import { LogOut, TrendingUp, DollarSign, Settings } from 'lucide-react';
 import { getBuilderFees } from '../../lib/hyperliquidApi';
 import type { Database } from '../../lib/database.types';
 
@@ -13,9 +13,10 @@ type FundedAccount = Database['public']['Tables']['funded_accounts']['Row'];
 
 interface DashboardProps {
   onOpenTrading: (accountId: string) => void;
+  onOpenDemo?: () => void;
 }
 
-export function Dashboard({ onOpenTrading }: DashboardProps) {
+export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
   const { user, walletAddress, disconnectWallet } = useAuth();
   const [testAccounts, setTestAccounts] = useState<TestAccount[]>([]);
   const [fundedAccounts, setFundedAccounts] = useState<FundedAccount[]>([]);
@@ -85,6 +86,16 @@ export function Dashboard({ onOpenTrading }: DashboardProps) {
                 <div className="text-slate-300 text-sm font-mono">
                   {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                 </div>
+              )}
+              {onOpenDemo && (
+                <button
+                  onClick={onOpenDemo}
+                  className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
+                  title="Demo Settings (Testing Only)"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>Demo</span>
+                </button>
               )}
               <button
                 onClick={handleDisconnect}

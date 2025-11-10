@@ -3,10 +3,11 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AuthForm } from './components/Auth/AuthForm';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { TradingInterface } from './components/Trading/TradingInterface';
+import { DemoSettings } from './components/Demo/DemoSettings';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'trading'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'trading' | 'demo'>('dashboard');
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   if (loading) {
@@ -31,11 +32,23 @@ function AppContent() {
     setSelectedAccountId(null);
   };
 
+  const handleOpenDemo = () => {
+    setCurrentView('demo');
+  };
+
+  const handleCloseDemo = () => {
+    setCurrentView('dashboard');
+  };
+
+  if (currentView === 'demo') {
+    return <DemoSettings onBack={handleCloseDemo} />;
+  }
+
   if (currentView === 'trading' && selectedAccountId) {
     return <TradingInterface accountId={selectedAccountId} onClose={handleCloseTrade} />;
   }
 
-  return <Dashboard onOpenTrading={handleOpenTrading} />;
+  return <Dashboard onOpenTrading={handleOpenTrading} onOpenDemo={handleOpenDemo} />;
 }
 
 function App() {
