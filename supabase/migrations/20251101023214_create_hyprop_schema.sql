@@ -144,12 +144,9 @@
     - Default values prevent null-related errors
 */
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Users table
+-- Users table (using gen_random_uuid() which is built into PostgreSQL)
 CREATE TABLE IF NOT EXISTS users (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   email text,
   wallet_address text,
   kyc_status text DEFAULT 'none' NOT NULL,
@@ -195,7 +192,7 @@ CREATE POLICY "Anyone can view active pairs"
 
 -- Test accounts table
 CREATE TABLE IF NOT EXISTS test_accounts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   account_size numeric NOT NULL,
   account_mode text NOT NULL,
@@ -237,7 +234,7 @@ CREATE POLICY "Users can update own test accounts"
 
 -- Funded accounts table
 CREATE TABLE IF NOT EXISTS funded_accounts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES users(id) ON DELETE CASCADE NOT NULL,
   test_account_id uuid REFERENCES test_accounts(id) ON DELETE SET NULL,
   primary_symbol text REFERENCES pairs(symbol) NOT NULL,
@@ -282,7 +279,7 @@ CREATE POLICY "Users can update own funded accounts"
 
 -- Positions table
 CREATE TABLE IF NOT EXISTS positions (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id uuid REFERENCES funded_accounts(id) ON DELETE CASCADE NOT NULL,
   symbol text NOT NULL,
   side text NOT NULL,
@@ -314,7 +311,7 @@ CREATE POLICY "Users can view positions for own funded accounts"
 
 -- Equity snapshots table
 CREATE TABLE IF NOT EXISTS equity_snapshots (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id uuid REFERENCES funded_accounts(id) ON DELETE CASCADE NOT NULL,
   ts timestamptz DEFAULT now() NOT NULL,
   equity numeric NOT NULL,
@@ -343,7 +340,7 @@ CREATE POLICY "Users can view equity snapshots for own funded accounts"
 
 -- Events table
 CREATE TABLE IF NOT EXISTS events (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   ts timestamptz DEFAULT now() NOT NULL,
   account_id uuid REFERENCES funded_accounts(id) ON DELETE SET NULL,
   user_id uuid REFERENCES users(id) ON DELETE SET NULL,
@@ -367,7 +364,7 @@ CREATE POLICY "Users can view events for own accounts"
 
 -- Treasury transfers table
 CREATE TABLE IF NOT EXISTS treasury_transfers (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id uuid REFERENCES funded_accounts(id) ON DELETE CASCADE NOT NULL,
   tx_hash text,
   direction text NOT NULL,
@@ -402,7 +399,7 @@ CREATE POLICY "Users can view treasury transfers for own funded accounts"
 
 -- Payouts table
 CREATE TABLE IF NOT EXISTS payouts (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id uuid REFERENCES funded_accounts(id) ON DELETE CASCADE NOT NULL,
   period_start date NOT NULL,
   period_end date NOT NULL,

@@ -132,7 +132,11 @@ export function Dashboard({ onOpenTrading }: DashboardProps) {
           <div className="space-y-8">
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-white">Funded Accounts</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                  <h3 className="text-xl font-semibold text-white">Funded Accounts</h3>
+                  <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">Real Money</span>
+                </div>
               </div>
               {fundedAccounts.length === 0 ? (
                 <div className="bg-slate-800 rounded-xl p-8 text-center">
@@ -149,7 +153,11 @@ export function Dashboard({ onOpenTrading }: DashboardProps) {
 
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-white">Test Accounts</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                  <h3 className="text-xl font-semibold text-white">Test Accounts</h3>
+                  <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">Simulated</span>
+                </div>
                 <button
                   onClick={() => setShowAccountSelection(true)}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"

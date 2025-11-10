@@ -8,10 +8,11 @@ interface OrderFormProps {
   currentPrice: number;
   privateKey: string | null;
   builderCode: string | null;
+  isDisabled?: boolean;
   onOrderPlaced: () => void;
 }
 
-export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, builderCode, onOrderPlaced }: OrderFormProps) {
+export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, builderCode, isDisabled = false, onOrderPlaced }: OrderFormProps) {
   const [side, setSide] = useState<'long' | 'short'>('long');
   const [size, setSize] = useState('');
   const [orderType, setOrderType] = useState<'market' | 'limit'>('market');
@@ -47,8 +48,8 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!privateKey) {
-      setError('No Hyperliquid API key configured for this account');
+    if (isDisabled) {
+      setError('Trading is disabled for this account. This account has reached its limit.');
       return;
     }
 
@@ -81,12 +82,15 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
 
       console.log('Order result:', result);
 
-      if (result.status === 'ok') {
+      if (result && result.status === 'ok') {
         onOrderPlaced();
         setSize('');
         setLimitPrice('');
+        setError(null);
+        // Show success message briefly
+        console.log('Order placed successfully:', result.message || 'Order executed');
       } else {
-        setError(result.response || 'Order failed');
+        setError(result?.response || result?.message || 'Order failed');
       }
     } catch (error: any) {
       console.error('Order failed:', error);
@@ -99,57 +103,71 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
   const estimatedValue = parseFloat(size || '0') * currentPrice;
 
   return (
-    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-      <h3 className="text-lg font-semibold text-white mb-4">Place Order</h3>
+    <div className={`bg-slate-800 rounded-xl p-6 border border-slate-700 ${isDisabled ? 'opacity-60' : ''}`}>
+      <h3 className={`text-lg font-semibold mb-4 ${isDisabled ? 'text-slate-400' : 'text-white'}`}>
+        Place Order
+      </h3>
+
+      {isDisabled && (
+        <div className="mb-4 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+          <p className="text-sm text-red-400 font-medium">
+            ✗ Trading is disabled for this account
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex bg-slate-700 rounded-lg p-1">
+        <div className={`flex bg-slate-700 rounded-lg p-1 ${isDisabled ? 'opacity-50' : ''}`}>
           <button
             type="button"
-            onClick={() => setSide('long')}
+            onClick={() => !isDisabled && setSide('long')}
+            disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-1 ${
               side === 'long'
                 ? 'bg-green-600 text-white'
                 : 'text-slate-300 hover:text-white'
-            }`}
+            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <TrendingUp className="w-4 h-4" />
             <span>Long</span>
           </button>
           <button
             type="button"
-            onClick={() => setSide('short')}
+            onClick={() => !isDisabled && setSide('short')}
+            disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center space-x-1 ${
               side === 'short'
                 ? 'bg-red-600 text-white'
                 : 'text-slate-300 hover:text-white'
-            }`}
+            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <TrendingDown className="w-4 h-4" />
             <span>Short</span>
           </button>
         </div>
 
-        <div className="flex bg-slate-700 rounded-lg p-1">
+        <div className={`flex bg-slate-700 rounded-lg p-1 ${isDisabled ? 'opacity-50' : ''}`}>
           <button
             type="button"
-            onClick={() => setOrderType('market')}
+            onClick={() => !isDisabled && setOrderType('market')}
+            disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               orderType === 'market'
                 ? 'bg-blue-600 text-white'
                 : 'text-slate-300 hover:text-white'
-            }`}
+            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             Market
           </button>
           <button
             type="button"
-            onClick={() => setOrderType('limit')}
+            onClick={() => !isDisabled && setOrderType('limit')}
+            disabled={isDisabled}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
               orderType === 'limit'
                 ? 'bg-blue-600 text-white'
                 : 'text-slate-300 hover:text-white'
-            }`}
+            } ${isDisabled ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             Limit
           </button>
@@ -164,8 +182,9 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
               type="number"
               step="0.01"
               value={limitPrice}
-              onChange={(e) => setLimitPrice(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => !isDisabled && setLimitPrice(e.target.value)}
+              disabled={isDisabled}
+              className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder={currentPrice.toFixed(2)}
             />
           </div>
@@ -179,8 +198,9 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
             type="number"
             step="0.001"
             value={size}
-            onChange={(e) => setSize(e.target.value)}
-            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onChange={(e) => !isDisabled && setSize(e.target.value)}
+            disabled={isDisabled}
+            className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             placeholder="0.000"
             required
           />
@@ -233,14 +253,20 @@ export function OrderForm({ accountId, walletAddress, currentPrice, privateKey, 
 
         <button
           type="submit"
-          disabled={loading || !size}
+          disabled={loading || !size || isDisabled}
           className={`w-full py-3 font-semibold rounded-lg transition-colors ${
-            side === 'long'
+            isDisabled
+              ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+              : side === 'long'
               ? 'bg-green-600 hover:bg-green-700 disabled:bg-slate-600'
               : 'bg-red-600 hover:bg-red-700 disabled:bg-slate-600'
           } text-white disabled:cursor-not-allowed`}
         >
-          {loading ? 'Placing Order...' : `${side === 'long' ? 'Buy' : 'Sell'} ${orderType === 'market' ? 'Market' : 'Limit'}`}
+          {isDisabled 
+            ? 'Trading Disabled' 
+            : loading 
+            ? 'Placing Order...' 
+            : `${side === 'long' ? 'Buy' : 'Sell'} ${orderType === 'market' ? 'Market' : 'Limit'}`}
         </button>
       </form>
     </div>

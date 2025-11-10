@@ -1,16 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, Wifi, WifiOff, Wallet } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Wifi, WifiOff, Wallet, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { getAccountBalance } from '../../lib/hyperliquidApi';
-import { getAddressFromPrivateKey } from '../../lib/walletUtils';
 import { useHyperliquidPrice } from '../../hooks/useHyperliquidPrice';
 import { useAuth } from '../../contexts/AuthContext';
 import { OrderForm } from './OrderForm';
 import { PositionsList } from './PositionsList';
 import { OpenOrdersList } from './OpenOrdersList';
 import { TradeHistoryList } from './TradeHistoryList';
-import { AccountStats } from './AccountStats';
-import { getOpenOrders, getUserPositions } from '../../lib/hyperliquidTrading';
+import { TradingViewChart } from './TradingViewChart';
+import { getOpenOrders, getUserPositions, HyperliquidTrading } from '../../lib/hyperliquidTrading';
 import type { Database } from '../../lib/database.types';
 
 type TestAccount = Database['public']['Tables']['test_accounts']['Row'];
@@ -24,8 +22,6 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
   const { walletAddress } = useAuth();
   const [account, setAccount] = useState<TestAccount | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hlBalance, setHlBalance] = useState<number>(0);
-  const [hlAddress, setHlAddress] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
   const [positionsCount, setPositionsCount] = useState(0);
   const [ordersCount, setOrdersCount] = useState(0);
@@ -36,25 +32,48 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
   }, [accountId]);
 
   useEffect(() => {
-    if (hlAddress) {
+    if (accountId && walletAddress) {
       loadCounts();
       const interval = setInterval(loadCounts, 5000);
       return () => clearInterval(interval);
     }
-  }, [hlAddress]);
+  }, [accountId, walletAddress]);
+
+  // PHASE 1: Check test status periodically
+  useEffect(() => {
+    if (!accountId || !walletAddress) return;
+
+    const checkTestStatus = async () => {
+      try {
+        const trading = new HyperliquidTrading(accountId, walletAddress);
+        const result = await trading.checkTestStatus();
+        
+        if (result?.shouldPass || result?.status === 'failed') {
+          // Reload account to get updated status
+          loadAccount();
+        }
+      } catch (error) {
+        console.error('Failed to check test status:', error);
+      }
+    };
+
+    checkTestStatus();
+    const interval = setInterval(checkTestStatus, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [accountId, walletAddress]);
 
   const loadCounts = async () => {
-    if (!hlAddress) return;
+    if (!accountId || !walletAddress) return;
 
     try {
-      const [ordersData, positionsData] = await Promise.all([
-        getOpenOrders(hlAddress),
-        getUserPositions(hlAddress),
-      ]);
-
-      setOrdersCount(ordersData.length);
-      const openPositions = positionsData.filter((pos: any) => parseFloat(pos.position.szi) !== 0);
+      // PHASE 1: For test accounts, use database positions
+      const positionsData = await getUserPositions('', accountId, walletAddress);
+      const openPositions = positionsData.filter((pos: any) => {
+        const size = parseFloat(pos.position?.szi || '0');
+        return size !== 0;
+      });
       setPositionsCount(openPositions.length);
+      setOrdersCount(0); // Orders not supported in Phase 1
     } catch (error) {
       console.error('Failed to load counts:', error);
     }
@@ -69,44 +88,11 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
 
     if (data) {
       setAccount(data);
-      await loadHyperliquidBalance(data.hl_api_private_key);
     }
     setLoading(false);
   };
 
-  const loadHyperliquidBalance = async (privateKey: string | null) => {
-    if (!privateKey) return;
-
-    try {
-      const address = getAddressFromPrivateKey(privateKey);
-      setHlAddress(address);
-
-      const balance = await getAccountBalance(address);
-      setHlBalance(balance);
-
-      console.log('Hyperliquid Trading Account:', address);
-      console.log('Available Balance:', balance, 'USDC');
-    } catch (error) {
-      console.error('Error loading Hyperliquid balance:', error);
-    }
-  };
-
-  const updatePrivateKey = async (newKey: string) => {
-    try {
-      const { error } = await supabase
-        .from('test_accounts')
-        .update({ hl_key: newKey })
-        .eq('id', accountId);
-
-      if (error) throw error;
-
-      alert('Private key updated successfully! Reloading...');
-      await loadAccount();
-    } catch (error) {
-      console.error('Error updating private key:', error);
-      alert('Failed to update private key');
-    }
-  };
+  const isAccountActive = account?.status === 'active';
 
   if (loading || !account) {
     return (
@@ -158,67 +144,136 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {hlAddress && (
-          <div className="mb-6 bg-slate-800 border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <Wallet className="w-6 h-6 text-blue-500" />
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Hyperliquid Trading Account</h3>
-                  <p className="text-sm text-slate-400 font-mono">{hlAddress}</p>
+        {/* Trading Account Info - Consolidated */}
+        <div className={`mb-6 bg-slate-800 border rounded-xl p-6 ${
+          isAccountActive ? 'border-slate-700' : 'border-slate-600 opacity-75'
+        }`}>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <Wallet className={`w-6 h-6 ${isAccountActive ? 'text-blue-500' : 'text-slate-500'}`} />
+              <div>
+                <div className="flex items-center space-x-2">
+                  <h3 className={`text-lg font-semibold ${isAccountActive ? 'text-white' : 'text-slate-400'}`}>
+                    Test Trading Account
+                  </h3>
+                  {!isAccountActive && (
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      account.status === 'passed'
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
+                      {account.status === 'passed' ? 'READ ONLY' : 'DISABLED'}
+                    </span>
+                  )}
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-slate-400">Available Balance</div>
-                <div className="text-2xl font-bold text-white">
-                  ${hlBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
+                <p className="text-sm text-slate-400">{account.account_mode.toUpperCase()}</p>
               </div>
             </div>
+            <div className="text-right">
+              <div className="text-sm text-slate-400">Virtual Balance</div>
+              <div className={`text-2xl font-bold ${isAccountActive ? 'text-white' : 'text-slate-500'}`}>
+                ${account.virtual_balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+          </div>
 
-            {account?.hl_key && (
-              <div className="pt-4 border-t border-slate-700">
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-slate-400">Private Key:</span>
-                      <button
-                        onClick={() => {
-                          const newKey = prompt('Paste your Hyperliquid testnet private key (0x...):\n\nThis should be the private key of wallet: 0x58f1...7611');
-                          if (newKey && newKey.startsWith('0x') && newKey.length === 66) {
-                            updatePrivateKey(newKey);
-                          } else if (newKey) {
-                            alert('Invalid private key format. Must start with 0x and be 66 characters long.');
-                          }
-                        }}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                      >
-                        Update Key
-                      </button>
+          {!isAccountActive && (
+            <div className={`mb-6 p-3 rounded-lg border ${
+              account.status === 'passed'
+                ? 'bg-green-500/10 border-green-500/20'
+                : 'bg-red-500/10 border-red-500/20'
+            }`}>
+              <p className={`text-sm font-medium ${
+                account.status === 'passed' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {account.status === 'passed'
+                  ? '✓ Test completed successfully! This account is read-only. You can view positions and history but cannot place new orders.'
+                  : '✗ Trading is disabled for this account. You can view positions and history but cannot place new orders.'}
+              </p>
+            </div>
+          )}
+
+          {/* Account Stats Grid */}
+          {(() => {
+            const profitLoss = account.virtual_balance - account.account_size;
+            const profitLossPercent = (profitLoss / account.account_size) * 100;
+            const isProfit = profitLoss >= 0;
+            const progressPercent = (profitLoss / account.profit_target) * 100;
+            const dailyDDPercent = (account.dd_daily / account.account_size) * 100;
+            const maxDDPercent = (account.dd_max / account.account_size) * 100;
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Account Size</div>
+                  <div className={`text-lg font-semibold ${isAccountActive ? 'text-white' : 'text-slate-500'}`}>
+                    ${account.account_size.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Profit/Loss</div>
+                  <div className={`text-lg font-semibold flex items-center space-x-1 ${
+                    isProfit ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {isProfit ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                    <span>
+                      {isProfit ? '+' : ''}${profitLoss.toLocaleString()} ({profitLossPercent.toFixed(2)}%)
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Profit Target</div>
+                  <div className={`text-lg font-semibold ${isAccountActive ? 'text-white' : 'text-slate-500'}`}>
+                    ${account.profit_target.toLocaleString()}
+                  </div>
+                  <div className="w-full bg-slate-700 rounded-full h-1.5 mt-2">
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${
+                        progressPercent >= 100 ? 'bg-green-500' : 'bg-blue-500'
+                      }`}
+                      style={{ width: `${Math.min(Math.max(progressPercent, 0), 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-500 mt-1">
+                    {Math.max(progressPercent, 0).toFixed(1)}% Complete
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Drawdown Limits</div>
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-1">
+                      <AlertTriangle className="w-3 h-3 text-yellow-400" />
+                      <span className="text-sm text-slate-300">
+                        Daily: ${account.dd_daily.toLocaleString()} ({dailyDDPercent.toFixed(1)}%)
+                      </span>
                     </div>
-                    <div className="mt-1 p-3 bg-slate-900 rounded border border-slate-600">
-                      <code className="text-xs text-amber-400 font-mono break-all select-all">
-                        {account.hl_key}
-                      </code>
+                    <div className="flex items-center space-x-1">
+                      <AlertTriangle className="w-3 h-3 text-red-400" />
+                      <span className="text-sm text-slate-300">
+                        Max: ${account.dd_max.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
+                      </span>
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      ⚠️ This wallet derives address: <span className="text-white font-mono">{hlAddress}</span>
-                      <br />
-                      Make sure this matches your active Hyperliquid testnet wallet (<a href="https://app.hyperliquid-testnet.xyz" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 underline">app.hyperliquid-testnet.xyz</a>)
-                    </p>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            );
+          })()}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Chart Placeholder</h3>
-              <div className="bg-slate-900 rounded-lg h-96 flex items-center justify-center">
-                <p className="text-slate-400">Live chart integration coming soon</p>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">BTC/USDT Price Chart</h3>
+                <span className="text-xs text-slate-400">Powered by TradingView</span>
+              </div>
+              <div className="bg-slate-900 rounded-lg overflow-hidden">
+                <TradingViewChart 
+                  symbol="BINANCE:BTCUSDT" 
+                  theme="dark"
+                  height={500}
+                />
               </div>
             </div>
 
@@ -256,39 +311,62 @@ export function TradingInterface({ accountId, onClose }: TradingInterfaceProps) 
                 </button>
               </div>
 
-              {activeTab === 'positions' && hlAddress && (
-                <PositionsList address={hlAddress} />
-              )}
-              {activeTab === 'orders' && hlAddress && walletAddress && (
-                <OpenOrdersList
+              {activeTab === 'positions' && walletAddress && (
+                <PositionsList 
+                  address="" 
                   accountId={accountId}
                   walletAddress={walletAddress}
-                  address={hlAddress}
-                  privateKey={account?.hl_api_private_key || null}
-                  builderCode={account?.hl_builder_code || null}
-                  onOrderCancelled={loadHyperliquidBalance.bind(null, account?.hl_api_private_key || null)}
+                  isDisabled={!isAccountActive}
                 />
               )}
-              {activeTab === 'history' && hlAddress && (
-                <TradeHistoryList address={hlAddress} />
+              {activeTab === 'orders' && (
+                <div className="text-center py-12 text-slate-400">
+                  Orders not available in Phase 1 (simulated trading)
+                </div>
+              )}
+              {activeTab === 'history' && (
+                <div className="text-center py-12 text-slate-400">
+                  Trade history coming soon
+                </div>
               )}
             </div>
           </div>
 
-          <div className="space-y-6">
-            <AccountStats account={account} />
-            {walletAddress && (
+          <div>
+            {walletAddress && isAccountActive && (
               <OrderForm
                 accountId={accountId}
                 walletAddress={walletAddress}
                 currentPrice={currentPrice}
-                privateKey={account?.hl_api_private_key || null}
-                builderCode={account?.hl_builder_code || null}
+                privateKey={null}
+                builderCode={null}
+                isDisabled={!isAccountActive}
                 onOrderPlaced={() => {
                   loadAccount();
-                  loadHyperliquidBalance(account?.hl_api_private_key || null);
+                  loadCounts();
                 }}
               />
+            )}
+            {walletAddress && !isAccountActive && (
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                <div className="text-center py-8">
+                  <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${
+                    account.status === 'passed'
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {account.status === 'passed' ? '✓' : '✗'}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-300 mb-2">
+                    Trading Disabled
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    {account.status === 'passed'
+                      ? 'This account has completed the evaluation. You can view positions and history below.'
+                      : 'This account has reached its limit. You can view positions and history below.'}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </div>

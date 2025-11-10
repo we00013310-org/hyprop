@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Activity, AlertCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Activity, AlertCircle, Wallet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
 
@@ -44,7 +44,10 @@ export function FundedAccountCard({ account }: FundedAccountCardProps) {
     <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border border-green-500/20 hover:border-green-500/40 transition-colors">
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="text-sm text-green-400 mb-1 font-medium">FUNDED ACCOUNT</div>
+          <div className="flex items-center space-x-2 mb-1">
+            <Wallet className="w-4 h-4 text-green-400" />
+            <span className="text-sm text-green-400 font-medium">FUNDED ACCOUNT</span>
+          </div>
           <div className="text-2xl font-bold text-white">
             ${(account.n_max / account.l_user).toLocaleString()}
           </div>
