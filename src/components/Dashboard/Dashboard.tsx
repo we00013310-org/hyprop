@@ -1,60 +1,28 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { LogOut, TrendingUp, DollarSign, Settings } from "lucide-react";
+
 import { useAuth } from "../../contexts/AuthContext";
-import { supabase } from "../../lib/supabase";
 import { AccountSelection } from "./AccountSelection";
 import { TestAccountCard } from "./TestAccountCard";
 import { FundedAccountCard } from "./FundedAccountCard";
-import { LogOut, TrendingUp, DollarSign, Settings } from "lucide-react";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
-import type { Database } from "../../lib/database.types";
+import { useAccounts } from "../../hooks/useAccounts";
 
-type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
-type FundedAccount = Database["public"]["Tables"]["funded_accounts"]["Row"];
-
-interface DashboardProps {
-  onOpenTrading: (accountId: string) => void;
-  onOpenDemo?: () => void;
-}
-
-export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
-  const { user, walletAddress, disconnectWallet } = useAuth();
-  const [testAccounts, setTestAccounts] = useState<TestAccount[]>([]);
-  const [fundedAccounts, setFundedAccounts] = useState<FundedAccount[]>([]);
+export function Dashboard() {
+  const [, setLocation] = useLocation();
+  const { walletAddress, disconnectWallet } = useAuth();
   const [showAccountSelection, setShowAccountSelection] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { loadAccounts, testAccounts, fundedAccounts, loading } = useAccounts();
   const [builderFees, setBuilderFees] = useState<number>(0);
   const [loadingFees, setLoadingFees] = useState(true);
 
   useEffect(() => {
-    loadAccounts();
-    loadBuilderFees();
-  }, [user]);
-
-  const loadAccounts = async () => {
-    if (!user) return;
-
-    try {
-      const [testResult, fundedResult] = await Promise.all([
-        supabase
-          .from("test_accounts")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("funded_accounts")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
-      ]);
-
-      if (testResult.data) setTestAccounts(testResult.data);
-      if (fundedResult.data) setFundedAccounts(fundedResult.data);
-    } catch (error) {
-      console.error("Error loading accounts:", error);
-    } finally {
-      setLoading(false);
+    if (walletAddress) {
+      loadAccounts();
+      loadBuilderFees();
     }
-  };
+  }, [loadAccounts, walletAddress]);
 
   const loadBuilderFees = async () => {
     try {
@@ -82,21 +50,19 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
               <h1 className="text-2xl font-bold text-white">HyProp</h1>
             </div>
             <div className="flex items-center space-x-4">
-              {walletAddress && (
+              {!!walletAddress && (
                 <div className="text-slate-300 text-sm font-mono">
                   {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                 </div>
               )}
-              {onOpenDemo && (
-                <button
-                  onClick={onOpenDemo}
-                  className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
-                  title="Demo Settings (Testing Only)"
-                >
-                  <Settings className="w-5 h-5" />
-                  <span>Demo</span>
-                </button>
-              )}
+              <button
+                onClick={() => setLocation('/demo')}
+                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
+                title="Demo Settings (Testing Only)"
+              >
+                <Settings className="w-5 h-5" />
+                <span>Demo</span>
+              </button>
               <button
                 onClick={handleDisconnect}
                 className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
@@ -160,7 +126,7 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
                   </span>
                 </div>
               </div>
-              {fundedAccounts.length === 0 ? (
+              {!fundedAccounts.length ? (
                 <div className="bg-slate-800 rounded-xl p-8 text-center">
                   <p className="text-slate-400">
                     No funded accounts yet. Pass an evaluation to get funded!
@@ -193,7 +159,7 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
                   New Evaluation
                 </button>
               </div>
-              {testAccounts.length === 0 ? (
+              {!testAccounts.length ? (
                 <div className="bg-slate-800 rounded-xl p-8 text-center">
                   <p className="text-slate-400 mb-4">
                     No test accounts yet. Start your trading journey!
@@ -212,7 +178,7 @@ export function Dashboard({ onOpenTrading, onOpenDemo }: DashboardProps) {
                       key={account.id}
                       account={account}
                       onUpdate={loadAccounts}
-                      onOpenTrading={() => onOpenTrading(account.id)}
+                      onOpenTrading={() => setLocation(`/trading/${account.id}`)}
                     />
                   ))}
                 </div>

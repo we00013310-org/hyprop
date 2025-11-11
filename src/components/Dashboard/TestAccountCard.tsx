@@ -168,7 +168,7 @@ export function TestAccountCard({
           </div>
         </div>
         <div className="bg-slate-700 rounded-lg p-3">
-          <div className="text-slate-400 mb-1">Daily DD</div>
+          <div className="text-slate-400 mb-1">Daily Loss</div>
           <div className="text-white font-semibold">
             ${account.dd_daily.toLocaleString()}
           </div>

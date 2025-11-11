@@ -1,8 +1,14 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../lib/database.types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 
-type User = Database['public']['Tables']['users']['Row'];
+import { supabase } from "../lib/supabase";
+import { User } from "../types";
 
 interface AuthContextType {
   user: User | null;
@@ -20,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedWallet = localStorage.getItem('wallet_address');
+    const storedWallet = localStorage.getItem("wallet_address");
     if (storedWallet) {
       loadUser(storedWallet);
     } else {
@@ -30,9 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUser = async (address: string) => {
     const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('wallet_address', address)
+      .from("users")
+      .select("*")
+      .eq("wallet_address", address)
       .maybeSingle();
 
     if (data) {
@@ -43,31 +49,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const connectWallet = async () => {
-    if (typeof window.ethereum === 'undefined') {
-      throw new Error('Please install MetaMask or another Web3 wallet');
+    if (typeof window.ethereum === "undefined") {
+      throw new Error("Please install MetaMask or another Web3 wallet");
     }
 
     try {
       const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts',
+        method: "eth_requestAccounts",
       });
 
       const address = accounts[0].toLowerCase();
+      console.log("address", address);
 
       const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('wallet_address', address)
+        .from("users")
+        .select("*")
+        .eq("wallet_address", address)
         .maybeSingle();
 
       if (existingUser) {
         setUser(existingUser);
       } else {
         const { data: newUser, error } = await supabase
-          .from('users')
+          .from("users")
           .insert({
             wallet_address: address,
-            kyc_status: 'none',
+            kyc_status: "none",
           })
           .select()
           .single();
@@ -77,16 +84,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setWalletAddress(address);
-      localStorage.setItem('wallet_address', address);
+      localStorage.setItem("wallet_address", address);
     } catch (error: any) {
-      throw new Error(error.message || 'Failed to connect wallet');
+      throw new Error(error.message || "Failed to connect wallet");
     }
   };
 
   const disconnectWallet = () => {
     setUser(null);
     setWalletAddress(null);
-    localStorage.removeItem('wallet_address');
+    localStorage.removeItem("wallet_address");
   };
 
   const value = {
@@ -103,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

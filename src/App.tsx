@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Route, Switch, useLocation } from 'wouter';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthForm } from './components/Auth/AuthForm';
@@ -8,8 +8,7 @@ import { DemoSettings } from './components/Demo/DemoSettings';
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'trading' | 'demo'>('dashboard');
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [, setLocation] = useLocation();
 
   if (loading) {
     return (
@@ -23,33 +22,40 @@ function AppContent() {
     return <AuthForm />;
   }
 
-  const handleOpenTrading = (accountId: string) => {
-    setSelectedAccountId(accountId);
-    setCurrentView('trading');
-  };
+  return (
+    <Switch>
+      <Route path="/" component={Dashboard} />
 
-  const handleCloseTrade = () => {
-    setCurrentView('dashboard');
-    setSelectedAccountId(null);
-  };
+      <Route path="/trading/:accountId">
+        {(params) => (
+          <TradingInterface
+            accountId={params.accountId}
+            onClose={() => setLocation('/')}
+          />
+        )}
+      </Route>
 
-  const handleOpenDemo = () => {
-    setCurrentView('demo');
-  };
+      <Route path="/demo">
+        <DemoSettings onBack={() => setLocation('/')} />
+      </Route>
 
-  const handleCloseDemo = () => {
-    setCurrentView('dashboard');
-  };
-
-  if (currentView === 'demo') {
-    return <DemoSettings onBack={handleCloseDemo} />;
-  }
-
-  if (currentView === 'trading' && selectedAccountId) {
-    return <TradingInterface accountId={selectedAccountId} onClose={handleCloseTrade} />;
-  }
-
-  return <Dashboard onOpenTrading={handleOpenTrading} onOpenDemo={handleOpenDemo} />;
+      {/* 404 fallback */}
+      <Route>
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-4">404</h1>
+            <p className="text-slate-400 mb-4">Page not found</p>
+            <button
+              onClick={() => setLocation('/')}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </Route>
+    </Switch>
+  );
 }
 
 function App() {
