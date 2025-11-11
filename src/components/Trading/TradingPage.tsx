@@ -380,27 +380,108 @@ const TradingPage = () => {
                         (cp) => cp.checkpoint_number === checkpointNum
                       );
 
+                      // Calculate expected time for this checkpoint
+                      const checkpointIntervalHours = account.checkpoint_interval_hours || 24;
+                      const createdAt = new Date(account.created_at);
+                      const expectedCheckpointTime = new Date(
+                        createdAt.getTime() + checkpointNum * checkpointIntervalHours * 60 * 60 * 1000
+                      );
+
+                      // Calculate required balance for this checkpoint
+                      let requiredBalance = 0;
+                      if (checkpointNum === 1) {
+                        requiredBalance = account.account_size * (1 + profitTargetPercent / 100);
+                      } else {
+                        const prevCheckpoint = checkpoints.find(
+                          (cp) => cp.checkpoint_number === checkpointNum - 1
+                        );
+                        const prevBalance = prevCheckpoint
+                          ? Number(prevCheckpoint.checkpoint_balance)
+                          : account.account_size;
+                        requiredBalance = prevBalance * (1 + profitTargetPercent / 100);
+                      }
+
+                      // For current checkpoint, show current balance, otherwise show checkpoint result
+                      const isCurrentCheckpoint = currentCheckpoint === checkpointNum;
+                      const displayBalance = checkpoint?.checkpoint_balance
+                        ? Number(checkpoint.checkpoint_balance)
+                        : isCurrentCheckpoint
+                        ? account.virtual_balance
+                        : null;
+
+                      const displayRequired = checkpoint?.required_balance
+                        ? Number(checkpoint.required_balance)
+                        : isCurrentCheckpoint
+                        ? requiredBalance
+                        : requiredBalance;
+
                       return (
                         <div
                           key={checkpointNum}
                           className="flex items-center flex-1"
                         >
-                          <div className="flex-1 flex items-center justify-center">
-                            {checkpoint?.checkpoint_passed === true ? (
-                              <CheckCircle className="w-6 h-6 text-green-400" />
-                            ) : checkpoint?.checkpoint_passed === false ? (
-                              <AlertCircle className="w-6 h-6 text-red-400" />
-                            ) : currentCheckpoint === checkpointNum ? (
-                              <div
-                                className={`w-6 h-6 rounded-full border-2 ${
-                                  meetsCurrentRequirement
-                                    ? "border-green-400 bg-green-400/20"
-                                    : "border-blue-400 bg-blue-400/20"
-                                }`}
-                              />
-                            ) : (
-                              <div className="w-6 h-6 rounded-full border-2 border-slate-600" />
-                            )}
+                          <div className="flex-1 flex flex-col items-center">
+                            <div className="flex items-center justify-center">
+                              {checkpoint?.checkpoint_passed === true ? (
+                                <CheckCircle className="w-6 h-6 text-green-400" />
+                              ) : checkpoint?.checkpoint_passed === false ? (
+                                <AlertCircle className="w-6 h-6 text-red-400" />
+                              ) : isCurrentCheckpoint ? (
+                                <div
+                                  className={`w-6 h-6 rounded-full border-2 ${
+                                    meetsCurrentRequirement
+                                      ? "border-green-400 bg-green-400/20"
+                                      : "border-blue-400 bg-blue-400/20"
+                                  }`}
+                                />
+                              ) : (
+                                <div className="w-6 h-6 rounded-full border-2 border-slate-600" />
+                              )}
+                            </div>
+
+                            {/* Show details for all checkpoints */}
+                            <div className="mt-2 text-center h-[52px] flex flex-col justify-start">
+                              <div className="text-xs text-slate-400 mb-1">
+                                {checkpoint?.checkpoint_ts
+                                  ? new Date(checkpoint.checkpoint_ts).toLocaleString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
+                                  : expectedCheckpointTime.toLocaleString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })
+                                }
+                              </div>
+                              {/* Only show balance for completed or current checkpoints */}
+                              {(checkpoint || isCurrentCheckpoint) && (
+                                <>
+                                  <div className={`text-xs font-semibold ${
+                                    checkpoint?.checkpoint_passed === true
+                                      ? 'text-green-400'
+                                      : checkpoint?.checkpoint_passed === false
+                                      ? 'text-red-400'
+                                      : isCurrentCheckpoint && displayBalance
+                                      ? displayBalance >= displayRequired
+                                        ? 'text-green-400'
+                                        : 'text-blue-400'
+                                      : 'text-slate-500'
+                                  }`}>
+                                    {displayBalance !== null
+                                      ? `$${displayBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                                      : '-'
+                                    }
+                                  </div>
+                                  <div className="text-xs text-slate-500">
+                                    / ${displayRequired.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
                           {checkpointNum < numCheckpoints && (
                             <div className="flex-1 h-0.5 bg-slate-600 mx-1" />
