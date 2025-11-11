@@ -8,6 +8,10 @@ import {
   WifiOff,
   Wallet,
   AlertTriangle,
+  Clock,
+  Target,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { useHyperliquidPrice } from "../../hooks/useHyperliquidPrice";
@@ -26,6 +30,8 @@ import type { Database } from "../../lib/database.types";
 import { useParams, useLocation } from "wouter";
 
 type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
+type Checkpoint =
+  Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
 
 const TradingPage = () => {
   const { accountId } = useParams();
@@ -39,6 +45,12 @@ const TradingPage = () => {
   >("positions");
   const [positionsCount, setPositionsCount] = useState(0);
   const [ordersCount, setOrdersCount] = useState(0);
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+  const [countdown, setCountdown] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const {
     price: currentPrice,
     priceChange,
@@ -48,6 +60,7 @@ const TradingPage = () => {
 
   useEffect(() => {
     loadAccount();
+    loadCheckpoints();
   }, [accountId]);
 
   useEffect(() => {
@@ -57,6 +70,52 @@ const TradingPage = () => {
       return () => clearInterval(interval);
     }
   }, [accountId, walletAddress]);
+
+  const loadCheckpoints = async () => {
+    if (!accountId) return;
+
+    const { data } = await supabase
+      .from("test_account_checkpoints")
+      .select("*")
+      .eq("test_account_id", accountId)
+      .order("checkpoint_number", { ascending: true });
+
+    if (data) {
+      setCheckpoints(data);
+    }
+  };
+
+  // Update countdown every second
+  useEffect(() => {
+    if (!account || account.status !== "active") return;
+
+    const updateCountdown = () => {
+      const checkpointIntervalHours = account.checkpoint_interval_hours || 24;
+      const currentCheckpoint = account.current_checkpoint || 1;
+
+      const createdAt = new Date(account.created_at);
+      console.log("createdAt", createdAt);
+      const now = new Date();
+      const timeElapsed = now.getTime() - createdAt.getTime();
+
+      const nextCheckpointMs =
+        currentCheckpoint * checkpointIntervalHours * 60 * 60 * 1000;
+      const remainingMs = Math.max(0, nextCheckpointMs - timeElapsed);
+
+      const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+      const minutes = Math.floor(
+        (remainingMs % (1000 * 60 * 60)) / (1000 * 60)
+      );
+      const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+      setCountdown({ hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [account]);
 
   // PHASE 1: Check test status periodically
   useEffect(() => {
@@ -72,6 +131,7 @@ const TradingPage = () => {
         if (result?.shouldPass || result?.status === "failed") {
           // Reload account to get updated status
           loadAccount();
+          loadCheckpoints();
         }
       } catch (error) {
         console.error("Failed to check test status:", error);
@@ -265,14 +325,126 @@ const TradingPage = () => {
             </div>
           )}
 
+          {/* Checkpoint Evaluation Progress */}
+          {isAccountActive &&
+            (() => {
+              const numCheckpoints = account.num_checkpoints || 3;
+              const profitTargetPercent =
+                account.checkpoint_profit_target_percent || 8.0;
+              const currentCheckpoint = account.current_checkpoint || 1;
+
+              // Calculate required balance for current checkpoint
+              let nextRequiredBalance = 0;
+              if (currentCheckpoint === 1) {
+                nextRequiredBalance =
+                  account.account_size * (1 + profitTargetPercent / 100);
+              } else {
+                const previousCheckpoint = checkpoints.find(
+                  (cp) => cp.checkpoint_number === currentCheckpoint - 1
+                );
+                const previousBalance = previousCheckpoint
+                  ? Number(previousCheckpoint.checkpoint_balance)
+                  : account.account_size;
+                nextRequiredBalance =
+                  previousBalance * (1 + profitTargetPercent / 100);
+              }
+
+              const meetsCurrentRequirement =
+                account.virtual_balance >= nextRequiredBalance;
+
+              return (
+                <div className="mb-6 bg-slate-700/30 rounded-lg p-4 border border-slate-600">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-5 h-5 text-blue-400" />
+                      <span className="text-sm font-medium text-slate-200">
+                        Evaluation Progress: Checkpoint {currentCheckpoint} of{" "}
+                        {numCheckpoints}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-sm font-mono font-semibold text-blue-400">
+                        {String(countdown.hours).padStart(2, "0")}:
+                        {String(countdown.minutes).padStart(2, "0")}:
+                        {String(countdown.seconds).padStart(2, "0")}
+                      </span>
+                      <span className="text-xs text-slate-400">remaining</span>
+                    </div>
+                  </div>
+
+                  {/* Checkpoint Status */}
+                  <div className="flex items-center space-x-2 mb-4">
+                    {Array.from({ length: numCheckpoints }, (_, i) => {
+                      const checkpointNum = i + 1;
+                      const checkpoint = checkpoints.find(
+                        (cp) => cp.checkpoint_number === checkpointNum
+                      );
+
+                      return (
+                        <div
+                          key={checkpointNum}
+                          className="flex items-center flex-1"
+                        >
+                          <div className="flex-1 flex items-center justify-center">
+                            {checkpoint?.checkpoint_passed === true ? (
+                              <CheckCircle className="w-6 h-6 text-green-400" />
+                            ) : checkpoint?.checkpoint_passed === false ? (
+                              <AlertCircle className="w-6 h-6 text-red-400" />
+                            ) : currentCheckpoint === checkpointNum ? (
+                              <div
+                                className={`w-6 h-6 rounded-full border-2 ${
+                                  meetsCurrentRequirement
+                                    ? "border-green-400 bg-green-400/20"
+                                    : "border-blue-400 bg-blue-400/20"
+                                }`}
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full border-2 border-slate-600" />
+                            )}
+                          </div>
+                          {checkpointNum < numCheckpoints && (
+                            <div className="flex-1 h-0.5 bg-slate-600 mx-1" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Current Checkpoint Requirement */}
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Target className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-300">
+                        Checkpoint {currentCheckpoint} Target (
+                        {profitTargetPercent}%):
+                      </span>
+                    </div>
+                    <span
+                      className={`text-2xl font-semibold ${
+                        meetsCurrentRequirement
+                          ? "text-green-400"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      $
+                      {nextRequiredBalance.toLocaleString(undefined, {
+                        maximumFractionDigits: 2,
+                      })}
+                      {meetsCurrentRequirement ? " ✓" : ""}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
           {/* Account Stats Grid */}
           {(() => {
             const profitLoss = account.virtual_balance - account.account_size;
             const profitLossPercent = (profitLoss / account.account_size) * 100;
             const isProfit = profitLoss >= 0;
-            const progressPercent = (profitLoss / account.profit_target) * 100;
-            const dailyDDPercent =
-              (account.dd_daily / account.account_size) * 100;
+            // const progressPercent = (profitLoss / account.profit_target) * 100;
+            // const dailyDDPercent =
+            //   (account.dd_daily / account.account_size) * 100;
             const maxDDPercent = (account.dd_max / account.account_size) * 100;
 
             return (
@@ -307,7 +479,7 @@ const TradingPage = () => {
                     </span>
                   </div>
                 </div>
-                <div>
+                {/* <div>
                   <div className="text-xs text-slate-400 mb-1">
                     Profit Target
                   </div>
@@ -334,19 +506,19 @@ const TradingPage = () => {
                   <div className="text-xs text-slate-500 mt-1">
                     {Math.max(progressPercent, 0).toFixed(1)}% Complete
                   </div>
-                </div>
+                </div> */}
                 <div>
                   <div className="text-xs text-slate-400 mb-1">
                     Drawdown Limits
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center space-x-1">
+                    {/* <div className="flex items-center space-x-1">
                       <AlertTriangle className="w-3 h-3 text-yellow-400" />
                       <span className="text-sm text-slate-300">
                         Daily: ${account.dd_daily.toLocaleString()} (
                         {dailyDDPercent.toFixed(1)}%)
                       </span>
-                    </div>
+                    </div> */}
                     <div className="flex items-center space-x-1">
                       <AlertTriangle className="w-3 h-3 text-red-400" />
                       <span className="text-sm text-slate-300">

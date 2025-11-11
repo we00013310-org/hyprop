@@ -1,3 +1,5 @@
+import { supabase } from "./../../../src/lib/supabase";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { Wallet } from "npm:ethers@6";
@@ -969,8 +971,8 @@ Deno.serve(async (req: Request) => {
 
       result = { updated, closed };
     } else if (action.type === "checkTestStatus") {
-      // PHASE 1: Check if test passes (1 day elapsed, >8% profit, no loss limit hit)
-      console.log("=== CHECKING TEST STATUS ===");
+      // PHASE 1: Check test with dynamic configurable checkpoints
+      console.log("=== CHECKING TEST STATUS (DYNAMIC EVALUATION) ===");
 
       const { data: testAccount } = await supabase
         .from("test_accounts")
@@ -982,15 +984,22 @@ Deno.serve(async (req: Request) => {
         throw new Error("Test account not found");
       }
 
+      // Get configuration
+      const numCheckpoints = testAccount.num_checkpoints || 3;
+      const checkpointIntervalHours =
+        testAccount.checkpoint_interval_hours || 24;
+      const profitTargetPercent =
+        testAccount.checkpoint_profit_target_percent || 8.0;
+
+      console.log(
+        `Evaluation config: ${numCheckpoints} checkpoints, ${checkpointIntervalHours}h intervals, ${profitTargetPercent}% profit target`
+      );
+
       const createdAt = new Date(testAccount.created_at);
       const now = new Date();
-      const oneDayInMs = 24 * 60 * 60 * 1000;
       const timeElapsed = now.getTime() - createdAt.getTime();
-      const oneDayElapsed = timeElapsed >= oneDayInMs;
-
-      const profit = testAccount.virtual_balance - testAccount.account_size;
-      const profitPercent = (profit / testAccount.account_size) * 100;
-      const profitTargetMet = profitPercent >= 8;
+      const hoursElapsed = Math.floor(timeElapsed / 1000 / 60 / 60);
+      const checkpointIntervalMs = checkpointIntervalHours * 60 * 60 * 1000;
 
       // Check if loss limit was hit (virtual_balance dropped below account_size * (1 - dd_max/100))
       const lossLimit =
@@ -1000,8 +1009,21 @@ Deno.serve(async (req: Request) => {
       let newStatus = testAccount.status;
       let shouldPass = false;
 
+      // Load existing checkpoints
+      const { data: existingCheckpoints } = await supabase
+        .from("test_account_checkpoints")
+        .select("*")
+        .eq("test_account_id", accountId)
+        .order("checkpoint_number", { ascending: true });
+
+      const checkpointMap = new Map(
+        (existingCheckpoints || []).map((cp: any) => [cp.checkpoint_number, cp])
+      );
+
       if (testAccount.status === "active") {
+        // First, check loss limit - fails immediately
         if (lossLimitHit) {
+          console.log("Loss limit hit - marking account as failed");
           newStatus = "failed";
           await supabase
             .from("test_accounts")
@@ -1010,33 +1032,128 @@ Deno.serve(async (req: Request) => {
               updated_at: new Date().toISOString(),
             })
             .eq("id", accountId);
-        } else if (oneDayElapsed && profitTargetMet) {
-          newStatus = "passed";
-          shouldPass = true;
-          await supabase
-            .from("test_accounts")
-            .update({
-              status: "passed",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", accountId);
+        } else {
+          // Determine current checkpoint number (1-indexed)
+          const currentCheckpoint = testAccount.current_checkpoint || 1;
+
+          // Check if it's time to evaluate the current checkpoint
+          const checkpointTimeMs = currentCheckpoint * checkpointIntervalMs;
+
+          if (timeElapsed >= checkpointTimeMs) {
+            console.log(
+              `Checking checkpoint ${currentCheckpoint}/${numCheckpoints} (${
+                checkpointIntervalHours * currentCheckpoint
+              }h mark)`
+            );
+
+            // Get previous checkpoint balance (or starting balance for first checkpoint)
+            let previousBalance = testAccount.account_size;
+            if (currentCheckpoint > 1) {
+              const previousCheckpoint = checkpointMap.get(
+                currentCheckpoint - 1
+              );
+              if (previousCheckpoint?.checkpoint_balance) {
+                previousBalance = parseFloat(
+                  previousCheckpoint.checkpoint_balance.toString()
+                );
+              }
+            }
+
+            // Calculate required balance (previous balance * (1 + profitTargetPercent/100))
+            const profitMultiplier = 1 + profitTargetPercent / 100;
+            const requiredBalance = previousBalance * profitMultiplier;
+            const checkpointPassed =
+              testAccount.virtual_balance >= requiredBalance;
+
+            console.log(
+              `Checkpoint ${currentCheckpoint}: Current balance ${testAccount.virtual_balance}, Previous balance ${previousBalance}, Required ${requiredBalance}, Passed: ${checkpointPassed}`
+            );
+
+            // Store checkpoint result
+            await supabase.from("test_account_checkpoints").upsert({
+              test_account_id: accountId,
+              checkpoint_number: currentCheckpoint,
+              checkpoint_balance: testAccount.virtual_balance,
+              checkpoint_passed: checkpointPassed,
+              checkpoint_ts: new Date().toISOString(),
+              required_balance: requiredBalance,
+            });
+
+            if (checkpointPassed) {
+              // Checkpoint passed
+              if (currentCheckpoint >= numCheckpoints) {
+                // This was the final checkpoint - TEST PASSED!
+                console.log(
+                  `Checkpoint ${currentCheckpoint} passed - EVALUATION COMPLETE!`
+                );
+                newStatus = "passed";
+                shouldPass = true;
+                await supabase
+                  .from("test_accounts")
+                  .update({
+                    status: "passed",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", accountId);
+              } else {
+                // Move to next checkpoint
+                console.log(
+                  `Checkpoint ${currentCheckpoint} passed - Moving to checkpoint ${
+                    currentCheckpoint + 1
+                  }`
+                );
+                await supabase
+                  .from("test_accounts")
+                  .update({
+                    current_checkpoint: currentCheckpoint + 1,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", accountId);
+
+                await createRealAccount(testAccount, supabase);
+              }
+            } else {
+              // Checkpoint failed
+              console.log(
+                `Checkpoint ${currentCheckpoint} failed - marking account as failed`
+              );
+              newStatus = "failed";
+              await supabase
+                .from("test_accounts")
+                .update({
+                  status: "failed",
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", accountId);
+            }
+          }
         }
       }
 
+      // Reload checkpoints for response
+      const { data: finalCheckpoints } = await supabase
+        .from("test_account_checkpoints")
+        .select("*")
+        .eq("test_account_id", accountId)
+        .order("checkpoint_number", { ascending: true });
+
       result = {
         status: newStatus,
-        oneDayElapsed,
-        profitPercent: profitPercent.toFixed(2),
-        profitTargetMet,
         lossLimitHit,
         shouldPass,
         createdAt: testAccount.created_at,
-        timeElapsed: Math.floor(timeElapsed / 1000 / 60 / 60), // hours
+        timeElapsed: hoursElapsed,
+        evaluationConfig: {
+          numCheckpoints: numCheckpoints,
+          intervalHours: checkpointIntervalHours,
+          profitTargetPercent: profitTargetPercent,
+        },
+        currentCheckpoint: testAccount.current_checkpoint || 1,
+        checkpoints: finalCheckpoints || [],
       };
     } else {
       throw new Error("Invalid action type");
     }
-
     return new Response(
       JSON.stringify({
         success: true,
@@ -1071,3 +1188,112 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+const createRealAccount = async (testAccount: any, supabase: any) => {
+  // Create funded account with proper parameters
+  console.log("=== CREATING FUNDED ACCOUNT ===");
+  console.log(
+    "Test account passed, creating funded account for user:",
+    testAccount.user_id
+  );
+
+  const profit = testAccount.virtual_balance - testAccount.account_size;
+  const profitPercent = (profit / testAccount.account_size) * 100;
+
+  // Calculate funded account parameters based on test performance
+  const testProfit = testAccount.virtual_balance - testAccount.account_size;
+  const testProfitPercent = profitPercent;
+
+  const fundedAccountSize = testAccount.account_size;
+
+  // Leverage settings (conservative for live trading)
+  const userLeverage = 20; // Max 20x leverage for user
+  const effectiveLeverage = 419; // Backend effective leverage (more conservative)
+
+  // Risk parameters (more conservative than test)
+  const maxDrawdown = testAccount.dd_max;
+  const dailyDrawdown = testAccount.dd_daily;
+
+  // Margin calculations
+  const maxNotional = fundedAccountSize * userLeverage;
+  const initialMargin = fundedAccountSize * 0.2; // 20% initial margin
+  const maintenanceMargin = fundedAccountSize * 0.1; // 10% maintenance margin
+
+  try {
+    const { data: fundedAccount, error: fundedError } = await supabase
+      .from("funded_accounts")
+      .insert({
+        user_id: testAccount.user_id,
+        test_account_id: testAccount.id,
+        primary_symbol: "BTC-PERP",
+        pair_mode: "single", // Start with single pair trading
+        l_user: userLeverage,
+        n_max: maxNotional,
+        l_effective: effectiveLeverage,
+        im_required: initialMargin,
+        maintenance_margin: maintenanceMargin,
+        balance_actual: fundedAccountSize,
+        dd_max: maxDrawdown,
+        dd_daily: dailyDrawdown,
+        e_start: fundedAccountSize,
+        e_day_start: fundedAccountSize,
+        high_water_mark: fundedAccountSize,
+        status: "active",
+        hl_subaccount_id: null, // Will be set when connected to Hyperliquid
+        hl_builder_code: testAccount.hl_builder_code || null,
+      })
+      .select()
+      .single();
+
+    if (fundedError) {
+      console.error("Failed to create funded account:", fundedError);
+      throw new Error(
+        `Failed to create funded account: ${fundedError.message}`
+      );
+    }
+
+    console.log("=== FUNDED ACCOUNT CREATED SUCCESSFULLY ===");
+    console.log("Funded Account ID:", fundedAccount.id);
+    console.log("Funded Account Size:", fundedAccountSize, "USDC");
+    console.log("Max Notional:", maxNotional, "USDC");
+    console.log("User Leverage:", userLeverage, "x");
+    console.log("Max Drawdown:", maxDrawdown, "%");
+
+    // Log the conversion event
+    await supabase.from("events").insert({
+      user_id: testAccount.user_id,
+      account_id: fundedAccount.id,
+      type: "test_account_converted",
+      payload: {
+        test_account_id: accountId,
+        test_profit: testProfit,
+        test_profit_percent: testProfitPercent,
+        funded_account_size: fundedAccountSize,
+        conversion_timestamp: new Date().toISOString(),
+      },
+    });
+
+    shouldPass = true; // Indicate successful conversion
+  } catch (conversionError: any) {
+    console.error("=== FUNDED ACCOUNT CONVERSION FAILED ===");
+    console.error("Conversion error:", conversionError);
+
+    // Log the failed conversion event
+    await supabase.from("events").insert({
+      user_id: testAccount.user_id,
+      type: "test_account_conversion_failed",
+      payload: {
+        test_account_id: accountId,
+        test_profit: testProfit,
+        test_profit_percent: testProfitPercent,
+        error_message: conversionError.message,
+        conversion_timestamp: new Date().toISOString(),
+      },
+    });
+
+    // Still mark test as passed, but note conversion failure
+    console.warn(
+      "Test passed but funded account creation failed. User can contact support."
+    );
+  }
+};

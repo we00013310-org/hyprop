@@ -6,413 +6,745 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
-      users: {
+      config: {
         Row: {
-          id: string
-          email: string | null
-          wallet_address: string | null
-          kyc_status: string
           created_at: string
-          updated_at: string
+          key: string
+          value: Json
         }
         Insert: {
-          id?: string
-          email?: string | null
-          wallet_address?: string | null
-          kyc_status?: string
           created_at?: string
-          updated_at?: string
+          key: string
+          value: Json
         }
         Update: {
-          id?: string
-          email?: string | null
-          wallet_address?: string | null
-          kyc_status?: string
           created_at?: string
-          updated_at?: string
+          key?: string
+          value?: Json
         }
-      }
-      pairs: {
-        Row: {
-          symbol: string
-          display_name: string
-          leverage_cap: number
-          tick_size: number
-          lot_size: number
-          fee_rate_maker: number
-          fee_rate_taker: number
-          status: string
-          last_refreshed_at: string
-        }
-        Insert: {
-          symbol: string
-          display_name: string
-          leverage_cap?: number
-          tick_size?: number
-          lot_size?: number
-          fee_rate_maker?: number
-          fee_rate_taker?: number
-          status?: string
-          last_refreshed_at?: string
-        }
-        Update: {
-          symbol?: string
-          display_name?: string
-          leverage_cap?: number
-          tick_size?: number
-          lot_size?: number
-          fee_rate_maker?: number
-          fee_rate_taker?: number
-          status?: string
-          last_refreshed_at?: string
-        }
-      }
-      test_accounts: {
-        Row: {
-          id: string
-          user_id: string
-          account_size: number
-          account_mode: string
-          fee_paid: number
-          virtual_balance: number
-          dd_max: number
-          dd_daily: number
-          profit_target: number
-          high_water_mark: number
-          last_withdrawal_ts: string | null
-          hl_api_private_key: string | null
-          hl_builder_code: string | null
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          account_size: number
-          account_mode: string
-          fee_paid: number
-          virtual_balance: number
-          dd_max: number
-          dd_daily: number
-          profit_target: number
-          high_water_mark: number
-          last_withdrawal_ts?: string | null
-          hl_api_private_key?: string | null
-          hl_builder_code?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          account_size?: number
-          account_mode?: string
-          fee_paid?: number
-          virtual_balance?: number
-          dd_max?: number
-          dd_daily?: number
-          profit_target?: number
-          high_water_mark?: number
-          last_withdrawal_ts?: string | null
-          hl_api_private_key?: string | null
-          hl_builder_code?: string | null
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      funded_accounts: {
-        Row: {
-          id: string
-          user_id: string
-          test_account_id: string | null
-          primary_symbol: string
-          pair_mode: string
-          l_user: number
-          n_max: number
-          l_effective: number
-          im_required: number
-          maintenance_margin: number
-          balance_actual: number
-          dd_max: number
-          dd_daily: number
-          e_start: number
-          e_day_start: number | null
-          high_water_mark: number
-          last_withdrawal_ts: string | null
-          status: string
-          hl_subaccount_id: string | null
-          hl_builder_code: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          test_account_id?: string | null
-          primary_symbol: string
-          pair_mode?: string
-          l_user: number
-          n_max: number
-          l_effective: number
-          im_required: number
-          maintenance_margin: number
-          balance_actual: number
-          dd_max: number
-          dd_daily: number
-          e_start: number
-          e_day_start?: number | null
-          high_water_mark: number
-          last_withdrawal_ts?: string | null
-          status?: string
-          hl_subaccount_id?: string | null
-          hl_builder_code?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          test_account_id?: string | null
-          primary_symbol?: string
-          pair_mode?: string
-          l_user?: number
-          n_max?: number
-          l_effective?: number
-          im_required?: number
-          maintenance_margin?: number
-          balance_actual?: number
-          dd_max?: number
-          dd_daily?: number
-          e_start?: number
-          e_day_start?: number | null
-          high_water_mark?: number
-          last_withdrawal_ts?: string | null
-          status?: string
-          hl_subaccount_id?: string | null
-          hl_builder_code?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      positions: {
-        Row: {
-          id: string
-          account_id: string
-          symbol: string
-          side: string
-          size: number
-          avg_entry: number
-          upnl: number
-          rpnl: number
-          fees_accrued: number
-          funding_accrued: number
-          last_update_ts: string
-        }
-        Insert: {
-          id?: string
-          account_id: string
-          symbol: string
-          side: string
-          size?: number
-          avg_entry?: number
-          upnl?: number
-          rpnl?: number
-          fees_accrued?: number
-          funding_accrued?: number
-          last_update_ts?: string
-        }
-        Update: {
-          id?: string
-          account_id?: string
-          symbol?: string
-          side?: string
-          size?: number
-          avg_entry?: number
-          upnl?: number
-          rpnl?: number
-          fees_accrued?: number
-          funding_accrued?: number
-          last_update_ts?: string
-        }
+        Relationships: []
       }
       equity_snapshots: {
         Row: {
-          id: string
           account_id: string
-          ts: string
+          daily_drawdown_flag: boolean
           equity: number
-          peak_equity_cached: number
-          upnl: number
-          rpnl: number
           fees_accrued: number
           funding_accrued: number
+          id: string
           mark_seq: number | null
-          daily_drawdown_flag: boolean
           max_drawdown_flag: boolean
+          peak_equity_cached: number
+          rpnl: number
+          ts: string
+          upnl: number
         }
         Insert: {
-          id?: string
           account_id: string
-          ts?: string
+          daily_drawdown_flag?: boolean
           equity: number
-          peak_equity_cached: number
-          upnl?: number
-          rpnl?: number
           fees_accrued?: number
           funding_accrued?: number
+          id?: string
           mark_seq?: number | null
-          daily_drawdown_flag?: boolean
           max_drawdown_flag?: boolean
+          peak_equity_cached: number
+          rpnl?: number
+          ts?: string
+          upnl?: number
         }
         Update: {
-          id?: string
           account_id?: string
-          ts?: string
+          daily_drawdown_flag?: boolean
           equity?: number
-          peak_equity_cached?: number
-          upnl?: number
-          rpnl?: number
           fees_accrued?: number
           funding_accrued?: number
+          id?: string
           mark_seq?: number | null
-          daily_drawdown_flag?: boolean
           max_drawdown_flag?: boolean
+          peak_equity_cached?: number
+          rpnl?: number
+          ts?: string
+          upnl?: number
         }
+        Relationships: [
+          {
+            foreignKeyName: "equity_snapshots_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
-          id: string
-          ts: string
           account_id: string | null
-          user_id: string | null
-          type: string
-          payload: Json
-        }
-        Insert: {
-          id?: string
-          ts?: string
-          account_id?: string | null
-          user_id?: string | null
-          type: string
-          payload?: Json
-        }
-        Update: {
-          id?: string
-          ts?: string
-          account_id?: string | null
-          user_id?: string | null
-          type?: string
-          payload?: Json
-        }
-      }
-      treasury_transfers: {
-        Row: {
           id: string
-          account_id: string
-          tx_hash: string | null
-          direction: string
-          amount: number
-          network: string
-          status: string
-          created_at: string
-          confirmed_at: string | null
+          payload: Json
+          ts: string
+          type: string
+          user_id: string | null
         }
         Insert: {
+          account_id?: string | null
           id?: string
-          account_id: string
-          tx_hash?: string | null
-          direction: string
-          amount: number
-          network: string
-          status?: string
-          created_at?: string
-          confirmed_at?: string | null
+          payload?: Json
+          ts?: string
+          type: string
+          user_id?: string | null
         }
         Update: {
+          account_id?: string | null
           id?: string
-          account_id?: string
-          tx_hash?: string | null
-          direction?: string
-          amount?: number
-          network?: string
-          status?: string
-          created_at?: string
-          confirmed_at?: string | null
+          payload?: Json
+          ts?: string
+          type?: string
+          user_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "events_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funded_accounts: {
+        Row: {
+          balance_actual: number
+          created_at: string
+          dd_daily: number
+          dd_max: number
+          e_day_start: number | null
+          e_start: number
+          high_water_mark: number
+          hl_builder_code: string | null
+          hl_subaccount_id: string | null
+          id: string
+          im_required: number
+          l_effective: number
+          l_user: number
+          last_withdrawal_ts: string | null
+          maintenance_margin: number
+          n_max: number
+          pair_mode: string
+          primary_symbol: string
+          status: string
+          test_account_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_actual: number
+          created_at?: string
+          dd_daily: number
+          dd_max: number
+          e_day_start?: number | null
+          e_start: number
+          high_water_mark: number
+          hl_builder_code?: string | null
+          hl_subaccount_id?: string | null
+          id?: string
+          im_required: number
+          l_effective: number
+          l_user: number
+          last_withdrawal_ts?: string | null
+          maintenance_margin: number
+          n_max: number
+          pair_mode?: string
+          primary_symbol: string
+          status?: string
+          test_account_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_actual?: number
+          created_at?: string
+          dd_daily?: number
+          dd_max?: number
+          e_day_start?: number | null
+          e_start?: number
+          high_water_mark?: number
+          hl_builder_code?: string | null
+          hl_subaccount_id?: string | null
+          id?: string
+          im_required?: number
+          l_effective?: number
+          l_user?: number
+          last_withdrawal_ts?: string | null
+          maintenance_margin?: number
+          n_max?: number
+          pair_mode?: string
+          primary_symbol?: string
+          status?: string
+          test_account_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funded_accounts_primary_symbol_fkey"
+            columns: ["primary_symbol"]
+            isOneToOne: false
+            referencedRelation: "pairs"
+            referencedColumns: ["symbol"]
+          },
+          {
+            foreignKeyName: "funded_accounts_test_account_id_fkey"
+            columns: ["test_account_id"]
+            isOneToOne: false
+            referencedRelation: "test_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funded_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pairs: {
+        Row: {
+          display_name: string
+          fee_rate_maker: number
+          fee_rate_taker: number
+          last_refreshed_at: string
+          leverage_cap: number
+          lot_size: number
+          status: string
+          symbol: string
+          tick_size: number
+        }
+        Insert: {
+          display_name: string
+          fee_rate_maker?: number
+          fee_rate_taker?: number
+          last_refreshed_at?: string
+          leverage_cap?: number
+          lot_size?: number
+          status?: string
+          symbol: string
+          tick_size?: number
+        }
+        Update: {
+          display_name?: string
+          fee_rate_maker?: number
+          fee_rate_taker?: number
+          last_refreshed_at?: string
+          leverage_cap?: number
+          lot_size?: number
+          status?: string
+          symbol?: string
+          tick_size?: number
+        }
+        Relationships: []
       }
       payouts: {
         Row: {
+          account_id: string
+          created_at: string
+          gross_profit: number
+          hyprop_amount: number
           id: string
-          account_id: string
-          period_start: string
+          network: string
           period_end: string
-          gross_profit: number
-          profit_split_trader: number
+          period_start: string
           profit_split_hyprop: number
-          trader_amount: number
-          hyprop_amount: number
-          network: string
-          tx_hash_trader: string | null
-          tx_hash_hyprop: string | null
+          profit_split_trader: number
           status: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          account_id: string
-          period_start: string
-          period_end: string
-          gross_profit: number
-          profit_split_trader?: number
-          profit_split_hyprop?: number
           trader_amount: number
-          hyprop_amount: number
-          network: string
-          tx_hash_trader?: string | null
-          tx_hash_hyprop?: string | null
-          status?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          account_id?: string
-          period_start?: string
-          period_end?: string
-          gross_profit?: number
-          profit_split_trader?: number
-          profit_split_hyprop?: number
-          trader_amount?: number
-          hyprop_amount?: number
-          network?: string
-          tx_hash_trader?: string | null
-          tx_hash_hyprop?: string | null
-          status?: string
-          created_at?: string
-        }
-      }
-      config: {
-        Row: {
-          key: string
-          value: Json
-          created_at: string
+          tx_hash_hyprop: string | null
+          tx_hash_trader: string | null
         }
         Insert: {
-          key: string
-          value: Json
+          account_id: string
           created_at?: string
+          gross_profit: number
+          hyprop_amount: number
+          id?: string
+          network: string
+          period_end: string
+          period_start: string
+          profit_split_hyprop?: number
+          profit_split_trader?: number
+          status?: string
+          trader_amount: number
+          tx_hash_hyprop?: string | null
+          tx_hash_trader?: string | null
         }
         Update: {
-          key?: string
-          value?: Json
+          account_id?: string
           created_at?: string
+          gross_profit?: number
+          hyprop_amount?: number
+          id?: string
+          network?: string
+          period_end?: string
+          period_start?: string
+          profit_split_hyprop?: number
+          profit_split_trader?: number
+          status?: string
+          trader_amount?: number
+          tx_hash_hyprop?: string | null
+          tx_hash_trader?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
+      positions: {
+        Row: {
+          account_id: string
+          avg_entry: number
+          fees_accrued: number
+          funding_accrued: number
+          id: string
+          last_update_ts: string
+          rpnl: number
+          side: string
+          size: number
+          symbol: string
+          upnl: number
+        }
+        Insert: {
+          account_id: string
+          avg_entry?: number
+          fees_accrued?: number
+          funding_accrued?: number
+          id?: string
+          last_update_ts?: string
+          rpnl?: number
+          side: string
+          size?: number
+          symbol: string
+          upnl?: number
+        }
+        Update: {
+          account_id?: string
+          avg_entry?: number
+          fees_accrued?: number
+          funding_accrued?: number
+          id?: string
+          last_update_ts?: string
+          rpnl?: number
+          side?: string
+          size?: number
+          symbol?: string
+          upnl?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "positions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_account_checkpoints: {
+        Row: {
+          checkpoint_balance: number | null
+          checkpoint_number: number
+          checkpoint_passed: boolean | null
+          checkpoint_ts: string | null
+          created_at: string | null
+          id: string
+          required_balance: number | null
+          test_account_id: string
+        }
+        Insert: {
+          checkpoint_balance?: number | null
+          checkpoint_number: number
+          checkpoint_passed?: boolean | null
+          checkpoint_ts?: string | null
+          created_at?: string | null
+          id?: string
+          required_balance?: number | null
+          test_account_id: string
+        }
+        Update: {
+          checkpoint_balance?: number | null
+          checkpoint_number?: number
+          checkpoint_passed?: boolean | null
+          checkpoint_ts?: string | null
+          created_at?: string | null
+          id?: string
+          required_balance?: number | null
+          test_account_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_account_checkpoints_test_account_id_fkey"
+            columns: ["test_account_id"]
+            isOneToOne: false
+            referencedRelation: "test_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_accounts: {
+        Row: {
+          account_mode: string
+          account_size: number
+          checkpoint_interval_hours: number | null
+          checkpoint_profit_target_percent: number | null
+          created_at: string
+          current_checkpoint: number | null
+          dd_daily: number
+          dd_max: number
+          fee_paid: number
+          high_water_mark: number
+          hl_api_private_key: string | null
+          hl_builder_code: string | null
+          hl_key: string | null
+          id: string
+          last_withdrawal_ts: string | null
+          num_checkpoints: number | null
+          profit_target: number
+          status: string
+          updated_at: string
+          user_id: string
+          virtual_balance: number
+        }
+        Insert: {
+          account_mode: string
+          account_size: number
+          checkpoint_interval_hours?: number | null
+          checkpoint_profit_target_percent?: number | null
+          created_at?: string
+          current_checkpoint?: number | null
+          dd_daily: number
+          dd_max: number
+          fee_paid: number
+          high_water_mark: number
+          hl_api_private_key?: string | null
+          hl_builder_code?: string | null
+          hl_key?: string | null
+          id?: string
+          last_withdrawal_ts?: string | null
+          num_checkpoints?: number | null
+          profit_target: number
+          status?: string
+          updated_at?: string
+          user_id: string
+          virtual_balance: number
+        }
+        Update: {
+          account_mode?: string
+          account_size?: number
+          checkpoint_interval_hours?: number | null
+          checkpoint_profit_target_percent?: number | null
+          created_at?: string
+          current_checkpoint?: number | null
+          dd_daily?: number
+          dd_max?: number
+          fee_paid?: number
+          high_water_mark?: number
+          hl_api_private_key?: string | null
+          hl_builder_code?: string | null
+          hl_key?: string | null
+          id?: string
+          last_withdrawal_ts?: string | null
+          num_checkpoints?: number | null
+          profit_target?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+          virtual_balance?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_positions: {
+        Row: {
+          avg_entry: number
+          created_at: string
+          fees_accrued: number
+          id: string
+          last_update_ts: string
+          margin_used: number
+          rpnl: number
+          side: string
+          size: number
+          symbol: string
+          test_account_id: string
+          upnl: number
+        }
+        Insert: {
+          avg_entry?: number
+          created_at?: string
+          fees_accrued?: number
+          id?: string
+          last_update_ts?: string
+          margin_used?: number
+          rpnl?: number
+          side: string
+          size?: number
+          symbol: string
+          test_account_id: string
+          upnl?: number
+        }
+        Update: {
+          avg_entry?: number
+          created_at?: string
+          fees_accrued?: number
+          id?: string
+          last_update_ts?: string
+          margin_used?: number
+          rpnl?: number
+          side?: string
+          size?: number
+          symbol?: string
+          test_account_id?: string
+          upnl?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_positions_test_account_id_fkey"
+            columns: ["test_account_id"]
+            isOneToOne: false
+            referencedRelation: "test_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treasury_transfers: {
+        Row: {
+          account_id: string
+          amount: number
+          confirmed_at: string | null
+          created_at: string
+          direction: string
+          id: string
+          network: string
+          status: string
+          tx_hash: string | null
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          confirmed_at?: string | null
+          created_at?: string
+          direction: string
+          id?: string
+          network: string
+          status?: string
+          tx_hash?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          network?: string
+          status?: string
+          tx_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_transfers_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          kyc_status: string
+          updated_at: string
+          wallet_address: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          kyc_status?: string
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          kyc_status?: string
+          updated_at?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+

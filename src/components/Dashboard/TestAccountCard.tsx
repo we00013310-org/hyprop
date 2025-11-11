@@ -1,13 +1,19 @@
+import { useState, useEffect } from "react";
 import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
   CheckCircle,
   Beaker,
+  Clock,
+  Target,
 } from "lucide-react";
 import type { Database } from "../../lib/database.types";
+import { supabase } from "../../lib/supabase";
 
 type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
+type Checkpoint =
+  Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
 
 interface TestAccountCardProps {
   account: TestAccount;
@@ -19,10 +25,65 @@ export function TestAccountCard({
   account,
   onOpenTrading,
 }: TestAccountCardProps) {
+  const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+
   const profitLoss = account.virtual_balance - account.account_size;
   const profitLossPercent = (profitLoss / account.account_size) * 100;
   const progressPercent = (profitLoss / account.profit_target) * 100;
   const isProfit = profitLoss >= 0;
+
+  // Get evaluation configuration
+  const numCheckpoints = account.num_checkpoints || 3;
+  const checkpointIntervalHours = account.checkpoint_interval_hours || 24;
+  const profitTargetPercent = account.checkpoint_profit_target_percent || 8.0;
+
+  // Calculate time elapsed and remaining
+  const createdAt = new Date(account.created_at);
+  const now = new Date();
+  const timeElapsed = now.getTime() - createdAt.getTime();
+  const hoursElapsed = Math.ceil(timeElapsed / (1000 * 60 * 60));
+  const currentCheckpoint = account.current_day || 1;
+
+  // Calculate next checkpoint time
+  const nextCheckpointHour = currentCheckpoint * checkpointIntervalHours;
+  const hoursRemaining = Math.max(0, nextCheckpointHour - hoursElapsed);
+
+  // Load checkpoints from database
+  useEffect(() => {
+    async function loadCheckpoints() {
+      const { data } = await supabase
+        .from("test_account_checkpoints")
+        .select("*")
+        .eq("test_account_id", account.id)
+        .order("checkpoint_number", { ascending: true });
+
+      if (data) {
+        setCheckpoints(data);
+      }
+    }
+
+    if (account.status === "active") {
+      loadCheckpoints();
+    }
+  }, [account.id, account.status]);
+
+  // Calculate required balance for current checkpoint
+  let nextRequiredBalance = 0;
+  if (currentCheckpoint === 1) {
+    nextRequiredBalance =
+      account.account_size * (1 + profitTargetPercent / 100);
+  } else {
+    const previousCheckpoint = checkpoints.find(
+      (cp) => cp.checkpoint_number === currentCheckpoint - 1
+    );
+    const previousBalance = previousCheckpoint
+      ? Number(previousCheckpoint.checkpoint_balance)
+      : account.account_size;
+    nextRequiredBalance = previousBalance * (1 + profitTargetPercent / 100);
+  }
+
+  const meetsCurrentRequirement =
+    account.virtual_balance >= nextRequiredBalance;
 
   const statusConfig = {
     active: { color: "blue", label: "Active", icon: TrendingUp },
@@ -136,29 +197,83 @@ export function TestAccountCard({
           </span>
         </div>
 
-        <div className="flex justify-between text-sm">
-          <span className="text-slate-400">Target</span>
-          <span className="text-white font-semibold">
-            ${account.profit_target.toLocaleString()}
-          </span>
-        </div>
+        {/* Dynamic Checkpoint Evaluation Progress */}
+        {account.status === "active" && (
+          <div className="bg-slate-700/50 rounded-lg p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-4 h-4 text-blue-400" />
+                <span className="text-xs font-medium text-slate-300">
+                  Checkpoint {currentCheckpoint} of {numCheckpoints}
+                </span>
+              </div>
+              <span className="text-xs text-slate-400">
+                {`${hoursRemaining}h remaining`}
+              </span>
+            </div>
 
-        <div>
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-slate-400">Progress</span>
-            <span className="text-white font-semibold">
-              {Math.min(progressPercent, 100).toFixed(1)}%
-            </span>
+            {/* Dynamic Checkpoint Status */}
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: numCheckpoints }, (_, i) => {
+                const checkpointNum = i + 1;
+                const checkpoint = checkpoints.find(
+                  (cp) => cp.checkpoint_number === checkpointNum
+                );
+
+                return (
+                  <div key={checkpointNum} className="flex items-center flex-1">
+                    <div className="flex-1 flex items-center justify-center">
+                      {checkpoint?.checkpoint_passed === true ? (
+                        <CheckCircle className="w-5 h-5 text-green-400" />
+                      ) : checkpoint?.checkpoint_passed === false ? (
+                        <AlertCircle className="w-5 h-5 text-red-400" />
+                      ) : currentCheckpoint === checkpointNum ? (
+                        <div
+                          className={`w-5 h-5 rounded-full border-2 ${
+                            meetsCurrentRequirement
+                              ? "border-green-400 bg-green-400/20"
+                              : "border-blue-400 bg-blue-400/20"
+                          }`}
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full border-2 border-slate-600" />
+                      )}
+                    </div>
+                    {checkpointNum < numCheckpoints && (
+                      <div className="flex-1 h-0.5 bg-slate-600 mx-1" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Next Checkpoint Requirement */}
+            {currentCheckpoint <= numCheckpoints && (
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-1">
+                  <Target className="w-3 h-3 text-slate-400" />
+                  <span className="text-slate-400">
+                    Checkpoint {currentCheckpoint} Target ({profitTargetPercent}
+                    %):
+                  </span>
+                </div>
+                <span
+                  className={`font-semibold ${
+                    meetsCurrentRequirement
+                      ? "text-green-400"
+                      : "text-slate-300"
+                  }`}
+                >
+                  $
+                  {nextRequiredBalance.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                  })}
+                  {meetsCurrentRequirement ? " ✓" : ""}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="w-full bg-slate-700 rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-all ${
-                progressPercent >= 100 ? "bg-green-500" : "bg-blue-500"
-              }`}
-              style={{ width: `${Math.min(progressPercent, 100)}%` }}
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
