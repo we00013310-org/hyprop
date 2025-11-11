@@ -139,7 +139,7 @@ const TradingPage = () => {
     };
 
     checkTestStatus();
-    const interval = setInterval(checkTestStatus, 60000); // Check every minute
+    const interval = setInterval(checkTestStatus, 15000);
     return () => clearInterval(interval);
   }, [accountId, walletAddress]);
 
