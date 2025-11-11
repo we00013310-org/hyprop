@@ -39,10 +39,11 @@ export function TestAccountCard({
 
   return (
     <div
-      className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border transition-colors ${
+      onClick={onOpenTrading}
+      className={`cursor-pointer  bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 border transition-all ${
         isDisabled
-          ? "border-slate-600 opacity-60"
-          : "border-blue-500/20 hover:border-blue-500/40"
+          ? "border-slate-600 opacity-50 hover:opacity-90"
+          : "border-blue-500/20 hover:scale-105 hover:border-blue-500/40"
       }`}
     >
       <div className="flex justify-between items-start mb-4">
@@ -182,19 +183,7 @@ export function TestAccountCard({
         >
           Open Trading
         </button>
-      ) : (
-        <button
-          onClick={onOpenTrading}
-          className="w-full mt-4 py-2 bg-slate-600 hover:bg-slate-700 text-slate-300 font-medium rounded-lg transition-colors"
-          title={
-            isPassed
-              ? "Account passed - view only"
-              : "Account failed - view only"
-          }
-        >
-          View History (Read Only)
-        </button>
-      )}
+      ) : null}
     </div>
   );
 }

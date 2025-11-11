@@ -1,10 +1,10 @@
-import { Route, Switch, useLocation } from 'wouter';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ToastProvider } from './contexts/ToastContext';
-import { AuthForm } from './components/Auth/AuthForm';
-import { Dashboard } from './components/Dashboard/Dashboard';
-import { TradingInterface } from './components/Trading/TradingInterface';
-import { DemoSettings } from './components/Demo/DemoSettings';
+import { Route, Switch, useLocation } from "wouter";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ToastProvider } from "./contexts/ToastContext";
+import { AuthForm } from "./components/Auth/AuthForm";
+import { Dashboard } from "./components/Dashboard/Dashboard";
+import TradingPage from "./components/Trading/TradingPage";
+import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -26,18 +26,9 @@ function AppContent() {
     <Switch>
       <Route path="/" component={Dashboard} />
 
-      <Route path="/trading/:accountId">
-        {(params) => (
-          <TradingInterface
-            accountId={params.accountId}
-            onClose={() => setLocation('/')}
-          />
-        )}
-      </Route>
+      <Route path="/trading/:accountId" component={TradingPage} />
 
-      <Route path="/demo">
-        <DemoSettings onBack={() => setLocation('/')} />
-      </Route>
+      <Route path="/demo" component={DemoSettingsPage} />
 
       {/* 404 fallback */}
       <Route>
@@ -46,7 +37,7 @@ function AppContent() {
             <h1 className="text-4xl font-bold mb-4">404</h1>
             <p className="text-slate-400 mb-4">Page not found</p>
             <button
-              onClick={() => setLocation('/')}
+              onClick={() => setLocation("/")}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
               Go to Dashboard

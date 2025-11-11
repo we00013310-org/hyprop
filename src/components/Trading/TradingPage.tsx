@@ -23,18 +23,14 @@ import {
   HyperliquidTrading,
 } from "../../lib/hyperliquidTrading";
 import type { Database } from "../../lib/database.types";
+import { useParams, useLocation } from "wouter";
 
 type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
 
-interface TradingInterfaceProps {
-  accountId: string;
-  onClose: () => void;
-}
+const TradingPage = () => {
+  const { accountId } = useParams();
+  const [, setLocation] = useLocation();
 
-export function TradingInterface({
-  accountId,
-  onClose,
-}: TradingInterfaceProps) {
   const { walletAddress } = useAuth();
   const [account, setAccount] = useState<TestAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,7 +108,7 @@ export function TradingInterface({
     const { data } = await supabase
       .from("test_accounts")
       .select("*")
-      .eq("id", accountId)
+      .eq("id", accountId as string)
       .single();
 
     if (data) {
@@ -141,7 +137,7 @@ export function TradingInterface({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <button
-              onClick={onClose}
+              onClick={() => setLocation("/")}
               className="flex items-center space-x-2 text-slate-300 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -423,7 +419,7 @@ export function TradingInterface({
                 <PositionsList
                   key={key}
                   address=""
-                  accountId={accountId}
+                  accountId={accountId as string}
                   walletAddress={walletAddress}
                   isDisabled={!isAccountActive}
                   reloadData={reloadData}
@@ -445,7 +441,7 @@ export function TradingInterface({
           <div>
             {walletAddress && isAccountActive && (
               <OrderForm
-                accountId={accountId}
+                accountId={accountId as string}
                 walletAddress={walletAddress}
                 currentPrice={currentPrice}
                 privateKey={null}
@@ -486,4 +482,6 @@ export function TradingInterface({
       </main>
     </div>
   );
-}
+};
+
+export default TradingPage;

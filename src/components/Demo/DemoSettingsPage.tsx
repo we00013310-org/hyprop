@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
-import { getRealBTCPriceWithFallback } from '../../lib/priceOracle';
-import { supabase } from '../../lib/supabase';
-import { useToast } from '../../contexts/ToastContext';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { useLocation } from "wouter";
 
-interface DemoSettingsProps {
-  onBack: () => void;
-}
+import { getRealBTCPriceWithFallback } from "../../lib/priceOracle";
+import { supabase } from "../../lib/supabase";
+import { useToast } from "../../contexts/ToastContext";
 
-export function DemoSettings({ onBack }: DemoSettingsProps) {
+export default function DemoSettingsPage() {
   const toast = useToast();
-  const [priceOffset, setPriceOffset] = useState<string>('');
+  const [priceOffset, setPriceOffset] = useState<string>("");
   const [currentOffset, setCurrentOffset] = useState<number>(0);
   const [realPrice, setRealPrice] = useState<number | null>(null);
   const [adjustedPrice, setAdjustedPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     // Load current offset from database
@@ -26,9 +26,9 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
   const loadOffsetFromDatabase = async () => {
     try {
       const { data, error } = await supabase
-        .from('config')
-        .select('value')
-        .eq('key', 'demo_btc_price_offset')
+        .from("config")
+        .select("value")
+        .eq("key", "demo_btc_price_offset")
         .maybeSingle();
 
       if (error) throw error;
@@ -39,11 +39,11 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
           setCurrentOffset(offset);
           setPriceOffset(offset.toString());
           // Also update localStorage for frontend price oracle
-          localStorage.setItem('demo_btc_price_offset', offset.toString());
+          localStorage.setItem("demo_btc_price_offset", offset.toString());
         }
       }
     } catch (error) {
-      console.error('Failed to load offset from database:', error);
+      console.error("Failed to load offset from database:", error);
     }
   };
 
@@ -54,10 +54,12 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
       setAdjustedPrice(data.price);
 
       // Calculate real price (remove current offset)
-      const offset = parseFloat(localStorage.getItem('demo_btc_price_offset') || '0');
+      const offset = parseFloat(
+        localStorage.getItem("demo_btc_price_offset") || "0"
+      );
       setRealPrice(data.price - offset);
     } catch (error) {
-      console.error('Failed to fetch price:', error);
+      console.error("Failed to fetch price:", error);
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
   const handleApplyOffset = async () => {
     const offset = parseFloat(priceOffset);
     if (isNaN(offset)) {
-      toast.error('Please enter a valid number');
+      toast.error("Please enter a valid number");
       return;
     }
 
@@ -74,23 +76,26 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
       setLoading(true);
 
       // Save to database
-      const { error } = await supabase
-        .from('config')
-        .upsert({
-          key: 'demo_btc_price_offset',
-          value: offset.toString(),
-        });
+      const { error } = await supabase.from("config").upsert({
+        key: "demo_btc_price_offset",
+        value: offset.toString(),
+      });
 
       if (error) throw error;
 
       // Also save to localStorage for frontend
-      localStorage.setItem('demo_btc_price_offset', offset.toString());
+      localStorage.setItem("demo_btc_price_offset", offset.toString());
       setCurrentOffset(offset);
       await fetchPrice();
-      toast.success(`Price offset set to ${offset >= 0 ? '+' : ''}${offset}. This will affect all PnL calculations including backend operations.`, 5000);
+      toast.success(
+        `Price offset set to ${
+          offset >= 0 ? "+" : ""
+        }${offset}. This will affect all PnL calculations including backend operations.`,
+        5000
+      );
     } catch (error: any) {
-      console.error('Failed to save offset:', error);
-      toast.error(`Failed to save offset: ${error.message || 'Unknown error'}`);
+      console.error("Failed to save offset:", error);
+      toast.error(`Failed to save offset: ${error.message || "Unknown error"}`);
     } finally {
       setLoading(false);
     }
@@ -102,27 +107,32 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
 
       // Delete from database
       const { error } = await supabase
-        .from('config')
+        .from("config")
         .delete()
-        .eq('key', 'demo_btc_price_offset');
+        .eq("key", "demo_btc_price_offset");
 
       if (error) throw error;
 
       // Also clear from localStorage
-      localStorage.removeItem('demo_btc_price_offset');
+      localStorage.removeItem("demo_btc_price_offset");
       setCurrentOffset(0);
-      setPriceOffset('');
+      setPriceOffset("");
       await fetchPrice();
-      toast.success('Price offset cleared');
+      toast.success("Price offset cleared");
     } catch (error: any) {
-      console.error('Failed to clear offset:', error);
-      toast.error(`Failed to clear offset: ${error.message || 'Unknown error'}`);
+      console.error("Failed to clear offset:", error);
+      toast.error(
+        `Failed to clear offset: ${error.message || "Unknown error"}`
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const previewPrice = realPrice && priceOffset ? realPrice + parseFloat(priceOffset || '0') : null;
+  const previewPrice =
+    realPrice && priceOffset
+      ? realPrice + parseFloat(priceOffset || "0")
+      : null;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white p-6">
@@ -130,25 +140,31 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
-            onClick={onBack}
+            onClick={() => setLocation("/")}
             className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
           <div>
             <h1 className="text-3xl font-bold">Demo Settings</h1>
-            <p className="text-slate-400 mt-1">Testing tools for price simulation</p>
+            <p className="text-slate-400 mt-1">
+              Testing tools for price simulation
+            </p>
           </div>
         </div>
 
         {/* Warning Banner */}
         <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <AlertTriangle className="text-yellow-500 flex-shrink-0 mt-0.5" size={20} />
+          <AlertTriangle
+            className="text-yellow-500 flex-shrink-0 mt-0.5"
+            size={20}
+          />
           <div>
             <h3 className="font-semibold text-yellow-500">Demo Mode Only</h3>
             <p className="text-sm text-slate-300 mt-1">
-              This page is for testing purposes only. The price offset will affect all BTC prices displayed
-              in the application and PnL calculations for simulated positions.
+              This page is for testing purposes only. The price offset will
+              affect all BTC prices displayed in the application and PnL
+              calculations for simulated positions.
             </p>
           </div>
         </div>
@@ -163,25 +179,37 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
                 {loading ? (
                   <span className="text-slate-500">Loading...</span>
                 ) : realPrice ? (
-                  `$${realPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                  `$${realPrice.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
                 ) : (
                   <span className="text-slate-500">--</span>
                 )}
               </div>
             </div>
             <div className="bg-slate-700/50 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-1">Adjusted Price (with offset)</div>
+              <div className="text-sm text-slate-400 mb-1">
+                Adjusted Price (with offset)
+              </div>
               <div className="text-2xl font-bold">
                 {loading ? (
                   <span className="text-slate-500">Loading...</span>
                 ) : adjustedPrice ? (
                   <>
-                    <span className={currentOffset !== 0 ? 'text-blue-400' : ''}>
-                      ${adjustedPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span
+                      className={currentOffset !== 0 ? "text-blue-400" : ""}
+                    >
+                      $
+                      {adjustedPrice.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                     {currentOffset !== 0 && (
                       <span className="text-sm text-blue-400 ml-2">
-                        ({currentOffset > 0 ? '+' : ''}{currentOffset})
+                        ({currentOffset > 0 ? "+" : ""}
+                        {currentOffset})
                       </span>
                     )}
                   </>
@@ -196,7 +224,7 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
             disabled={loading}
             className="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50"
           >
-            {loading ? 'Refreshing...' : 'Refresh Price'}
+            {loading ? "Refreshing..." : "Refresh Price"}
           </button>
         </div>
 
@@ -204,8 +232,9 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
         <div className="bg-slate-800 rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Price Offset Control</h2>
           <p className="text-slate-400 text-sm mb-4">
-            Enter a number to adjust the BTC price. Positive values increase the price, negative values decrease it.
-            For example, entering -5000 will reduce the BTC price by $5,000.
+            Enter a number to adjust the BTC price. Positive values increase the
+            price, negative values decrease it. For example, entering -5000 will
+            reduce the BTC price by $5,000.
           </p>
 
           <div className="space-y-4">
@@ -226,9 +255,14 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
               <div className="bg-slate-700/50 rounded-lg p-4">
                 <div className="text-sm text-slate-400 mb-1">Preview Price</div>
                 <div className="text-xl font-bold text-blue-400">
-                  ${previewPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  $
+                  {previewPrice.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                   <span className="text-sm ml-2">
-                    ({parseFloat(priceOffset) > 0 ? '+' : ''}{parseFloat(priceOffset)})
+                    ({parseFloat(priceOffset) > 0 ? "+" : ""}
+                    {parseFloat(priceOffset)})
                   </span>
                 </div>
               </div>
@@ -253,7 +287,8 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
 
             {currentOffset !== 0 && (
               <div className="text-center text-sm text-blue-400">
-                Current offset: {currentOffset > 0 ? '+' : ''}{currentOffset} USD
+                Current offset: {currentOffset > 0 ? "+" : ""}
+                {currentOffset} USD
               </div>
             )}
           </div>
@@ -263,9 +298,20 @@ export function DemoSettings({ onBack }: DemoSettingsProps) {
         <div className="mt-6 bg-slate-800/50 rounded-lg p-6">
           <h3 className="text-lg font-semibold mb-3">Examples</h3>
           <ul className="space-y-2 text-sm text-slate-400">
-            <li>• Enter <code className="bg-slate-700 px-2 py-1 rounded">-5000</code> to decrease BTC price by $5,000</li>
-            <li>• Enter <code className="bg-slate-700 px-2 py-1 rounded">10000</code> to increase BTC price by $10,000</li>
-            <li>• Enter <code className="bg-slate-700 px-2 py-1 rounded">0</code> or clear to use real price</li>
+            <li>
+              • Enter{" "}
+              <code className="bg-slate-700 px-2 py-1 rounded">-5000</code> to
+              decrease BTC price by $5,000
+            </li>
+            <li>
+              • Enter{" "}
+              <code className="bg-slate-700 px-2 py-1 rounded">10000</code> to
+              increase BTC price by $10,000
+            </li>
+            <li>
+              • Enter <code className="bg-slate-700 px-2 py-1 rounded">0</code>{" "}
+              or clear to use real price
+            </li>
           </ul>
         </div>
       </div>

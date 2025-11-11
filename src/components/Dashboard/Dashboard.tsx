@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { LogOut, TrendingUp, DollarSign, Settings } from "lucide-react";
+import { LogOut, DollarSign, Settings } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { AccountSelection } from "./AccountSelection";
@@ -8,6 +8,8 @@ import { TestAccountCard } from "./TestAccountCard";
 import { FundedAccountCard } from "./FundedAccountCard";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
+
+import Logo from "../Logo";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
@@ -45,10 +47,7 @@ export function Dashboard() {
       <nav className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <TrendingUp className="w-8 h-8 text-blue-500" />
-              <h1 className="text-2xl font-bold text-white">HyProp</h1>
-            </div>
+            <Logo />
             <div className="flex items-center space-x-4">
               {!!walletAddress && (
                 <div className="text-slate-300 text-sm font-mono">
@@ -56,7 +55,7 @@ export function Dashboard() {
                 </div>
               )}
               <button
-                onClick={() => setLocation('/demo')}
+                onClick={() => setLocation("/demo")}
                 className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
                 title="Demo Settings (Testing Only)"
               >
@@ -178,7 +177,9 @@ export function Dashboard() {
                       key={account.id}
                       account={account}
                       onUpdate={loadAccounts}
-                      onOpenTrading={() => setLocation(`/trading/${account.id}`)}
+                      onOpenTrading={() =>
+                        setLocation(`/trading/${account.id}`)
+                      }
                     />
                   ))}
                 </div>
