@@ -43,7 +43,7 @@ export function HoverMenu({
       {/* Trigger button with border and arrow */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-2 py-1 text-sm rounded-md border border-btnBorder bg-slate-800 hover:bg-slate-700 transition-colors"
+        className="inline-flex items-center gap-2 px-2 py-1 text-sm rounded-md border border-btnBorder hover:opacity-70 transition-all"
       >
         {trigger}
         <ChevronDown className="w-4 h-4" />

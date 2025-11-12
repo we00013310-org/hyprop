@@ -102,7 +102,7 @@ export function Navbar() {
           {walletAddress && (
             <HoverMenu
               trigger={
-                <span className="text-sm font-medium">
+                <span className="text-sm">
                   {formatWalletAddress(walletAddress)}
                 </span>
               }
