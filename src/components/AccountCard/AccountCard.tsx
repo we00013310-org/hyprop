@@ -106,7 +106,7 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="flex items-center relative bg-cardBorder rounded-tl-2xl rounded-br-2xl mb-1 p-4 top-[-0.75rem] left-[-0.75rem]">
+          <div className="flex items-center relative bg-cardBorder rounded-tl-2xl rounded-br-2xl px-4 py-2 top-[-0.75rem] left-[-0.75rem]">
             <span className="text-cardTypeText text-lg font-medium">
               Exam Account
             </span>
