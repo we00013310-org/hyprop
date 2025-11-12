@@ -6,6 +6,7 @@ import { Dashboard } from "./components/Dashboard/Dashboard";
 import TradingPage from "./components/Trading/TradingPage";
 import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
 import { DashboardV2 } from './components/Dashboard/v2';
+import { Navbar } from './components/Navbar';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -24,30 +25,33 @@ function AppContent() {
   }
 
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/v2" component={DashboardV2} />
+    <div className="min-h-screen bg-slate-900">
+      <Navbar />
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/v2" component={DashboardV2} />
 
-      <Route path="/trading/:accountId" component={TradingPage} />
+        <Route path="/trading/:accountId" component={TradingPage} />
 
-      <Route path="/demo" component={DemoSettingsPage} />
+        <Route path="/demo" component={DemoSettingsPage} />
 
-      {/* 404 fallback */}
-      <Route>
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">404</h1>
-            <p className="text-slate-400 mb-4">Page not found</p>
-            <button
-              onClick={() => setLocation("/")}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              Go to Dashboard
-            </button>
+        {/* 404 fallback */}
+        <Route>
+          <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold mb-4">404</h1>
+              <p className="text-slate-400 mb-4">Page not found</p>
+              <button
+                onClick={() => setLocation("/")}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Go to Dashboard
+              </button>
+            </div>
           </div>
-        </div>
-      </Route>
-    </Switch>
+        </Route>
+      </Switch>
+    </div>
   );
 }
 
