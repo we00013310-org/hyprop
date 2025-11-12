@@ -16,18 +16,20 @@ export function StatCard({
     iconClassName = "text-emerald-400"
 }: StatCardProps) {
     return (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/50 transition-all">
-            <div className="flex items-center gap-3 mb-2">
-                <div className={`w-10 h-10 rounded-lg bg-slate-700/50 flex items-center justify-center ${iconClassName}`}>
-                    <Icon className="w-5 h-5" />
+        <div className="bg-[#1a2332] rounded-2xl p-6 border border-[#2a3647] hover:border-[#3a4657] transition-all shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center ${iconClassName}`}>
+                    <Icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-slate-400 text-sm font-medium">{title}</h3>
             </div>
-            <div className="flex items-baseline gap-2 mt-3">
-                <span className="text-3xl font-bold text-white">{value}</span>
-                {currency && (
-                    <span className="text-slate-400 text-sm font-medium">{currency}</span>
-                )}
+            <div className="space-y-1">
+                <p className="text-slate-400 text-sm font-medium">{title}</p>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-white">{value}</span>
+                    {currency && (
+                        <span className="text-slate-500 text-sm font-medium">{currency}</span>
+                    )}
+                </div>
             </div>
         </div>
     );

@@ -55,21 +55,21 @@ export function DashboardV2() {
     }, 0);
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-[#0a0f1a]">
             {/* Navigation */}
-            <nav className="bg-slate-800 border-b border-slate-700">
+            <nav className="bg-[#1a2332] border-b border-[#2a3647]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <Logo />
                         <div className="flex items-center space-x-4">
                             {!!walletAddress && (
-                                <div className="text-slate-300 text-sm font-mono bg-slate-700/50 px-3 py-1.5 rounded-lg">
+                                <div className="text-slate-300 text-sm font-mono bg-[#0f1824] px-4 py-2 rounded-xl border border-[#2a3647]">
                                     {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                                 </div>
                             )}
                             <button
                                 onClick={() => setLocation("/demo")}
-                                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
+                                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white hover:bg-[#2a3647] rounded-xl transition-all"
                                 title="Demo Settings (Testing Only)"
                             >
                                 <Settings className="w-5 h-5" />
@@ -77,7 +77,7 @@ export function DashboardV2() {
                             </button>
                             <button
                                 onClick={handleDisconnect}
-                                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
+                                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white hover:bg-[#2a3647] rounded-xl transition-all"
                             >
                                 <LogOut className="w-5 h-5" />
                                 <span className="hidden sm:inline">Disconnect</span>
@@ -129,20 +129,20 @@ export function DashboardV2() {
 
                         {/* Funded Accounts Section */}
                         <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-1 h-8 bg-emerald-500 rounded-full"></div>
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-1.5 h-12 bg-gradient-to-b from-emerald-500 to-emerald-600 rounded-full"></div>
                                     <div>
                                         <h3 className="text-2xl font-bold text-white">
                                             Funded Accounts
                                         </h3>
-                                        <p className="text-xs text-emerald-400 mt-0.5">
-                                            Real Money Trading
+                                        <p className="text-sm text-emerald-400 mt-1">
+                                            Real Money Trading • Live
                                         </p>
                                     </div>
                                 </div>
                                 {fundedAccounts.length > 0 && (
-                                    <span className="text-slate-400 text-sm">
+                                    <span className="text-slate-400 text-sm bg-[#1a2332] px-4 py-2 rounded-xl border border-[#2a3647]">
                                         {fundedAccounts.length} {fundedAccounts.length === 1 ? 'account' : 'accounts'}
                                     </span>
                                 )}
@@ -170,21 +170,21 @@ export function DashboardV2() {
 
                         {/* Test Accounts Section */}
                         <div>
-                            <div className="flex justify-between items-center mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-1 h-8 bg-blue-500 rounded-full"></div>
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-1.5 h-12 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full"></div>
                                     <div>
                                         <h3 className="text-2xl font-bold text-white">
                                             Evaluation Accounts
                                         </h3>
-                                        <p className="text-xs text-blue-400 mt-0.5">
-                                            Practice & Evaluation
+                                        <p className="text-sm text-blue-400 mt-1">
+                                            Practice & Evaluation • Simulated
                                         </p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={() => setShowAccountSelection(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all hover:scale-105 active:scale-95"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl active:scale-95"
                                 >
                                     <Plus className="w-4 h-4" />
                                     <span>New Account</span>
