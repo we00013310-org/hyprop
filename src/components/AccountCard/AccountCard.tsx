@@ -1,30 +1,28 @@
 import { useState, useEffect } from "react";
 import {
-  TrendingUp,
-  TrendingDown,
   AlertCircle,
   CheckCircle,
-  Beaker,
   Clock,
   Target,
+  MoveUpRight,
+  MoveDownRight,
 } from "lucide-react";
 import type { Database } from "../../lib/database.types";
 import { supabase } from "../../lib/supabase";
+import Tag from "../ui/Tag";
+import { Button } from "../ui";
 
 type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
 type Checkpoint =
   Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
 
-interface TestAccountCardProps {
+interface AccountCardProps {
   account: TestAccount;
   onUpdate: () => void;
   onOpenTrading: () => void;
 }
 
-export function TestAccountCard({
-  account,
-  onOpenTrading,
-}: TestAccountCardProps) {
+export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
 
   const profitLoss = account.virtual_balance - account.account_size;
@@ -42,7 +40,7 @@ export function TestAccountCard({
   const now = new Date();
   const timeElapsed = now.getTime() - createdAt.getTime();
   const hoursElapsed = Math.ceil(timeElapsed / (1000 * 60 * 60));
-  const currentCheckpoint = account.current_day || 1;
+  const currentCheckpoint = account.current_checkpoint || 1;
 
   // Calculate next checkpoint time
   const nextCheckpointHour = currentCheckpoint * checkpointIntervalHours;
@@ -86,14 +84,13 @@ export function TestAccountCard({
     account.virtual_balance >= nextRequiredBalance;
 
   const statusConfig = {
-    active: { color: "blue", label: "Active", icon: TrendingUp },
+    active: { color: "active", label: "Active", icon: MoveUpRight },
     passed: { color: "green", label: "Passed", icon: CheckCircle },
     failed: { color: "red", label: "Failed", icon: AlertCircle },
     expired: { color: "gray", label: "Expired", icon: AlertCircle },
   };
 
   const config = statusConfig[account.status as keyof typeof statusConfig];
-  const StatusIcon = config.icon;
   const isDisabled = account.status !== "active";
   const isPassed = account.status === "passed";
   // const isFailed = account.status === 'failed';
@@ -109,10 +106,9 @@ export function TestAccountCard({
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="flex items-center space-x-2 mb-1">
-            <Beaker className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-blue-400 font-medium">
-              TEST ACCOUNT
+          <div className="flex items-center relative bg-cardBorder rounded-tl-2xl rounded-br-2xl mb-1 p-4 top-[-0.75rem] left-[-0.75rem]">
+            <span className="text-cardTypeText text-lg font-medium">
+              Exam Account
             </span>
           </div>
           <div className="text-xs text-slate-400 mb-1">
@@ -139,12 +135,7 @@ export function TestAccountCard({
             </div>
           )}
         </div>
-        <div
-          className={`flex items-center space-x-1 px-3 py-1 rounded-full bg-${config.color}-500/10 text-${config.color}-400`}
-        >
-          <StatusIcon className="w-4 h-4" />
-          <span className="text-sm font-medium">{config.label}</span>
-        </div>
+        <Tag label={config.label} color={config.color} icon={config.icon} />
       </div>
 
       <div className="space-y-3 mb-4">
@@ -168,27 +159,23 @@ export function TestAccountCard({
           </div>
         )}
         <div className="flex justify-between text-sm">
-          <span className="text-slate-400">Current Balance</span>
-          <span
-            className={`font-semibold ${
-              isDisabled ? "text-slate-500" : "text-white"
-            }`}
-          >
+          <span className="text-textBtn">Current Balance</span>
+          <span className={` ${isDisabled ? "text-slate-500" : "text-white"}`}>
             ${account.virtual_balance.toLocaleString()}
           </span>
         </div>
 
         <div className="flex justify-between text-sm">
-          <span className="text-slate-400">P&L</span>
+          <span className="text-textBtn">P&L</span>
           <span
-            className={`font-semibold flex items-center space-x-1 ${
-              isProfit ? "text-green-400" : "text-red-400"
+            className={`flex items-center space-x-1 ${
+              isProfit ? "text-green" : "text-red-400"
             }`}
           >
             {isProfit ? (
-              <TrendingUp className="w-4 h-4" />
+              <MoveUpRight className="w-4 h-4" />
             ) : (
-              <TrendingDown className="w-4 h-4" />
+              <MoveDownRight className="w-4 h-4" />
             )}
             <span>
               {isProfit ? "+" : ""}${profitLoss.toLocaleString()} (
@@ -199,15 +186,15 @@ export function TestAccountCard({
 
         {/* Dynamic Checkpoint Evaluation Progress */}
         {account.status === "active" && (
-          <div className="bg-slate-700/50 rounded-lg p-3 space-y-2">
+          <div className="bg-cardBgDark rounded-lg p-3 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-blue-400" />
-                <span className="text-xs font-medium text-slate-300">
+                <Clock className="w-4 h-4 text-textBtn" />
+                <span className="text-xs font-medium text-textBtn">
                   Checkpoint {currentCheckpoint} of {numCheckpoints}
                 </span>
               </div>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-textBtn">
                 {`${hoursRemaining}h remaining`}
               </span>
             </div>
@@ -277,27 +264,26 @@ export function TestAccountCard({
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
-        <div className="bg-slate-700 rounded-lg p-3">
-          <div className="text-slate-400 mb-1">Max DD</div>
-          <div className="text-white font-semibold">
+        <div className="bg-cardBgDark rounded-lg p-3">
+          <div className="text-textBtn text-sm mb-1">Max DD</div>
+          <div className="text-white text-xl font-medium">
             ${account.dd_max.toLocaleString()}
           </div>
         </div>
-        <div className="bg-slate-700 rounded-lg p-3">
-          <div className="text-slate-400 mb-1">Daily Loss</div>
-          <div className="text-white font-semibold">
+        <div className="bg-cardBgDark rounded-lg p-3">
+          <div className="text-textBtn text-sm mb-1">Daily Loss</div>
+          <div className="text-white text-xl font-medium">
             ${account.dd_daily.toLocaleString()}
           </div>
         </div>
       </div>
 
       {account.status === "active" ? (
-        <button
-          onClick={onOpenTrading}
-          className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-        >
-          Open Trading
-        </button>
+        <div className="mt-4">
+          <Button fullWidth onClick={onOpenTrading}>
+            Access Account
+          </Button>
+        </div>
       ) : null}
     </div>
   );

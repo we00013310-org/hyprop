@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  background-color: #0F1A1E;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+}
+
 @layer utilities {
   @keyframes slide-in-from-top {
     from {
@@ -17,4 +23,9 @@
   .animate-in {
     animation: slide-in-from-top 0.3s ease-out;
   }
+}
+
+.btn-blur-bg {
+  background: url("/images/bg_btn_blur.png") no-repeat center right;
+  background-size: cover;
 }

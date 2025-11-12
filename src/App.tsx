@@ -5,8 +5,8 @@ import { AuthForm } from "./components/Auth/AuthForm";
 import { Dashboard } from "./components/Dashboard/Dashboard";
 import TradingPage from "./components/Trading/TradingPage";
 import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
-import { DashboardV2 } from './components/Dashboard/v2';
-import { Navbar } from './components/Navbar';
+import { DashboardV2 } from "./components/Dashboard/v2";
+import { Navbar } from "./components/Navbar";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -14,7 +14,7 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
@@ -25,7 +25,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen">
       <Navbar />
       <Switch>
         <Route path="/" component={Dashboard} />

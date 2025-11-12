@@ -48,7 +48,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-slate-900 border-b border-slate-800">
+    <nav>
       <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
         {/* Left: Logo */}
 
@@ -107,10 +107,17 @@ export function Navbar() {
                 </span>
               }
             >
-              <MenuItem onClick={copyWalletAddress} leftIcon={<Copy className="w-4 h-4" />}>
+              <MenuItem
+                onClick={copyWalletAddress}
+                leftIcon={<Copy className="w-4 h-4" />}
+              >
                 Copy Address
               </MenuItem>
-              <MenuItem variant="danger" onClick={disconnectWallet} leftIcon={<LogOut className="w-4 h-4" />}>
+              <MenuItem
+                variant="danger"
+                onClick={disconnectWallet}
+                leftIcon={<LogOut className="w-4 h-4" />}
+              >
                 Disconnect
               </MenuItem>
             </HoverMenu>

@@ -24,7 +24,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "inline-flex items-center justify-center font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-btnBorder";
+    "inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-btnBorder";
 
   const variantClasses = {
     primary: "bg-primary hover:bg-primary-hover text-white",
