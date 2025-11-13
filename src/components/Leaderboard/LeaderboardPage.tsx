@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import {
   Search,
@@ -346,7 +347,9 @@ export function LeaderboardPage() {
                             <div className="flex flex-col">
                               <span
                                 className={`font-medium ${
-                                  entry.pnl >= 0 ? "text-green" : "text-red-400"
+                                  entry.pnl >= 0
+                                    ? "text-tagGreenText"
+                                    : "text-red-400"
                                 }`}
                               >
                                 {formatCurrency(entry.pnl)}
@@ -357,13 +360,15 @@ export function LeaderboardPage() {
                             <div className="flex items-center gap-2">
                               <span
                                 className={`font-medium ${
-                                  entry.roi >= 0 ? "text-green" : "text-red-400"
+                                  entry.roi >= 0
+                                    ? "text-tagGreenText"
+                                    : "text-red-400"
                                 }`}
                               >
                                 {formatPercent(entry.roi)}
                               </span>
                               {entry.roi > 0 && (
-                                <TrendingUp className="w-4 h-4 text-green" />
+                                <TrendingUp className="w-4 h-4 text-tagGreenText" />
                               )}
                             </div>
                           </td>

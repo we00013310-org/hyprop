@@ -30,7 +30,7 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
 
   const profitLoss = account.virtual_balance - account.account_size;
   const profitLossPercent = (profitLoss / account.account_size) * 100;
-  const progressPercent = (profitLoss / account.profit_target) * 100;
+  // const progressPercent = (profitLoss / account.profit_target) * 100;
   const isProfit = profitLoss >= 0;
 
   // Get evaluation configuration
@@ -171,7 +171,7 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
           <span className="text-textBtn">P&L</span>
           <span
             className={`flex items-center space-x-1 ${
-              isProfit ? "text-green" : "text-red-400"
+              isProfit ? "text-tagGreenText" : "text-red-400"
             }`}
           >
             {isProfit ? (

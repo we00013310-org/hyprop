@@ -3,7 +3,7 @@ import { LucideIcon } from "lucide-react";
 interface TagProps {
   label: string;
   icon: LucideIcon;
-  color: "active" | "blue" | "green" | "red";
+  color: string;
 }
 
 const Tag = ({ label, color, icon }: TagProps) => {
@@ -18,7 +18,9 @@ const Tag = ({ label, color, icon }: TagProps) => {
 
   return (
     <div
-      className={`flex items-center space-x-1 px-3 py-1 rounded-full ${colorClasses[color]}`}
+      className={`flex items-center space-x-1 px-3 py-1 rounded-full ${
+        colorClasses[color as keyof typeof colorClasses]
+      }`}
     >
       <span className="text-sm">{label}</span>
       <StatusIcon className="w-4 h-4" />

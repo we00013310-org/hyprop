@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { Inbox, Plus } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { AccountSelection } from "./AccountSelection";
 import { FundedAccountCard } from "./FundedAccountCard";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
@@ -16,7 +15,6 @@ import feeIcon from "../../assets/icons/ic_fee.svg";
 export function Dashboard() {
   const [, setLocation] = useLocation();
   const { walletAddress } = useAuth();
-  const [showAccountSelection, setShowAccountSelection] = useState(false);
   const { loadAccounts, testAccounts, fundedAccounts, loading } = useAccounts();
   const [builderFees, setBuilderFees] = useState<number>(0);
   const [loadingFees, setLoadingFees] = useState(true);
@@ -135,7 +133,7 @@ export function Dashboard() {
                   </Button>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-x-4 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
                   {testAccounts.map((account) => (
                     <AccountCard
                       key={account.id}
@@ -152,16 +150,6 @@ export function Dashboard() {
           </div>
         )}
       </main>
-
-      {showAccountSelection && (
-        <AccountSelection
-          onClose={() => setShowAccountSelection(false)}
-          onSuccess={() => {
-            setShowAccountSelection(false);
-            loadAccounts();
-          }}
-        />
-      )}
     </div>
   );
 }

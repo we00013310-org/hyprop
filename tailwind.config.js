@@ -26,7 +26,7 @@ export default {
         cardBgDark: "rgba(255, 255, 255, 0.06)",
         // Tag:
         active: "#65C1AC",
-        green: "#00B67A",
+        tagGreenText: "#00B67A",
         tagDarkBg: "#064639",
         tagNormalBg: "#2AD0AA",
         // Border:
