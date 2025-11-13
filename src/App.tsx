@@ -6,6 +6,7 @@ import { Dashboard } from "./components/Dashboard/Dashboard";
 import TradingPage from "./components/Trading/TradingPage";
 import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
 import { LeaderboardPage } from "./components/Leaderboard/LeaderboardPage";
+import { ReferralsPage } from "./components/Referrals/ReferralsPage";
 import { Navbar } from "./components/Navbar";
 
 function AppContent() {
@@ -33,6 +34,8 @@ function AppContent() {
         <Route path="/trading/:accountId" component={TradingPage} />
 
         <Route path="/leaderboard" component={LeaderboardPage} />
+
+        <Route path="/referrals" component={ReferralsPage} />
 
         <Route path="/demo" component={DemoSettingsPage} />
 
