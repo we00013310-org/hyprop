@@ -200,235 +200,241 @@ export function LeaderboardPage() {
   const paginatedEntries = sortedEntries.slice(startIndex, endIndex);
 
   return (
-    <div className="min-h-screen bg-primary-background">
-      <div className="max-w-[1920px] mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Leaderboard</h1>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex items-start justify-start gap-4 mb-6">
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by wallet address..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-sectionBg border border-btnBorder rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary"
-            />
+    <div>
+      <main className="fade-in max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20 flex flex-col gap-10 items-start text-left">
+        <div className="max-w-[1920px] mx-auto px-6 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-5xl font-medium text-white mb-2 font-poppins">
+              Leaderboard
+            </h1>
           </div>
 
-          {/* Time Period Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
-              className="flex items-center gap-2 px-4 py-2 bg-sectionBg border border-btnBorder rounded-lg text-white hover:bg-cardBgDark transition-colors"
-            >
-              <span>{timePeriod}</span>
-              <ChevronDown className="w-4 h-4" />
-            </button>
-
-            {showPeriodDropdown && (
-              <div className="absolute right-0 mt-2 w-32 bg-sectionBg border border-btnBorder rounded-lg shadow-xl py-2 z-50">
-                {(["24H", "7D", "30D", "ALL"] as TimePeriod[]).map((period) => (
-                  <button
-                    key={period}
-                    onClick={() => {
-                      setTimePeriod(period);
-                      setShowPeriodDropdown(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                      timePeriod === period
-                        ? "bg-primary text-white"
-                        : "text-slate-400 hover:text-white hover:bg-cardBgDark"
-                    }`}
-                  >
-                    {period}
-                  </button>
-                ))}
+          <div className="bg-sectionBg rounded-lg border border-btnBorder overflow-hidden">
+            {/* Search and Filters */}
+            <div className="flex items-start justify-start gap-4 mb-2 px-3 py-3">
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by wallet address..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-sectionBg border border-btnBorder rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-primary"
+                />
               </div>
+
+              {/* Time Period Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowPeriodDropdown(!showPeriodDropdown)}
+                  className="flex items-center gap-2 px-4 py-2 bg-sectionBg border border-btnBorder rounded-lg text-white hover:bg-cardBgDark transition-colors"
+                >
+                  <span>{timePeriod}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+
+                {showPeriodDropdown && (
+                  <div className="absolute right-0 mt-2 w-32 bg-sectionBg border border-btnBorder rounded-lg shadow-xl py-2 z-50">
+                    {(["24H", "7D", "30D", "ALL"] as TimePeriod[]).map(
+                      (period) => (
+                        <button
+                          key={period}
+                          onClick={() => {
+                            setTimePeriod(period);
+                            setShowPeriodDropdown(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                            timePeriod === period
+                              ? "bg-primary text-white"
+                              : "text-slate-400 hover:text-white hover:bg-cardBgDark"
+                          }`}
+                        >
+                          {period}
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Table */}
+            {loading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            ) : sortedEntries.length === 0 ? (
+              <div className="text-center py-20">
+                <User className="w-12 h-12 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-400 text-lg">No traders found</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-btnBorder">
+                        <th
+                          className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => handleSort("rank")}
+                        >
+                          Rank
+                        </th>
+                        <th
+                          className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => handleSort("trader")}
+                        >
+                          Trader
+                        </th>
+                        <th
+                          className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => handleSort("accountValue")}
+                        >
+                          Account Value
+                        </th>
+                        <th
+                          className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => handleSort("pnl")}
+                        >
+                          PNL (USD)
+                        </th>
+                        <th
+                          className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => handleSort("roi")}
+                        >
+                          ROI (ROI %)
+                        </th>
+                        <th
+                          className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
+                          onClick={() => handleSort("volume")}
+                        >
+                          Volume (USD)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedEntries.map((entry) => {
+                        const hasUser =
+                          entry.trader && entry.trader !== "Unknown";
+
+                        return (
+                          <tr
+                            key={`${entry.trader}-${entry.rank}`}
+                            className="border-b border-btnBorder hover:bg-cardBgDark transition-colors"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-white font-medium">
+                                  {entry.rank}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                {hasUser && (
+                                  <User className="w-4 h-4 text-slate-400" />
+                                )}
+                                <span className="text-white">
+                                  {hasUser
+                                    ? formatWalletAddress(entry.trader)
+                                    : entry.trader}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-white font-medium">
+                                {formatCurrency(entry.accountValue)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col">
+                                <span
+                                  className={`font-medium ${
+                                    entry.pnl >= 0
+                                      ? "text-tagGreenText"
+                                      : "text-red-400"
+                                  }`}
+                                >
+                                  {formatCurrency(entry.pnl)}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`font-medium ${
+                                    entry.roi >= 0
+                                      ? "text-tagGreenText"
+                                      : "text-red-400"
+                                  }`}
+                                >
+                                  {formatPercent(entry.roi)}
+                                </span>
+                                {entry.roi > 0 && (
+                                  <TrendingUp className="w-4 h-4 text-tagGreenText" />
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-white font-medium">
+                                {formatCurrency(entry.volume)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between px-3 py-3 border-t border-btnBorder">
+                  <div className="text-sm text-slate-400">
+                    Rows per page: {itemsPerPage} · {startIndex + 1}-
+                    {Math.min(endIndex, sortedEntries.length)} of{" "}
+                    {sortedEntries.length}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="p-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-sm text-slate-400">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="p-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Footer Note */}
+                <div className="px-2">
+                  <p className="text-xs text-slate-400">
+                    Excludes accounts with less than 10M USDC account value and
+                    less than 10M USDC trading volume. ROI = PNL / max(10M USDC,
+                    starting account value) ∙ (maximum net deposits for the time
+                    window)
+                  </p>
+                </div>
+              </>
             )}
           </div>
         </div>
-
-        {/* Table */}
-        <div className="bg-sectionBg rounded-lg border border-btnBorder overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          ) : sortedEntries.length === 0 ? (
-            <div className="text-center py-20">
-              <User className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400 text-lg">No traders found</p>
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-btnBorder">
-                      <th
-                        className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => handleSort("rank")}
-                      >
-                        Rank
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => handleSort("trader")}
-                      >
-                        Trader
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => handleSort("accountValue")}
-                      >
-                        Account Value
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => handleSort("pnl")}
-                      >
-                        PNL (USD)
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => handleSort("roi")}
-                      >
-                        ROI (ROI %)
-                      </th>
-                      <th
-                        className="px-6 py-4 text-left text-sm font-medium text-slate-400 cursor-pointer hover:text-white transition-colors"
-                        onClick={() => handleSort("volume")}
-                      >
-                        Volume (USD)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedEntries.map((entry) => {
-                      const hasUser =
-                        entry.trader && entry.trader !== "Unknown";
-
-                      return (
-                        <tr
-                          key={`${entry.trader}-${entry.rank}`}
-                          className="border-b border-btnBorder hover:bg-cardBgDark transition-colors"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-medium">
-                                {entry.rank}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              {hasUser && (
-                                <User className="w-4 h-4 text-slate-400" />
-                              )}
-                              <span className="text-white">
-                                {hasUser
-                                  ? formatWalletAddress(entry.trader)
-                                  : entry.trader}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-white font-medium">
-                              {formatCurrency(entry.accountValue)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col">
-                              <span
-                                className={`font-medium ${
-                                  entry.pnl >= 0
-                                    ? "text-tagGreenText"
-                                    : "text-red-400"
-                                }`}
-                              >
-                                {formatCurrency(entry.pnl)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`font-medium ${
-                                  entry.roi >= 0
-                                    ? "text-tagGreenText"
-                                    : "text-red-400"
-                                }`}
-                              >
-                                {formatPercent(entry.roi)}
-                              </span>
-                              {entry.roi > 0 && (
-                                <TrendingUp className="w-4 h-4 text-tagGreenText" />
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-white font-medium">
-                              {formatCurrency(entry.volume)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Footer Note */}
-              <div className="px-6 py-4 border-t border-btnBorder">
-                <p className="text-xs text-slate-400">
-                  Excludes accounts with less than 10M USDC account value and
-                  less than 10M USDC trading volume. ROI = PNL / max(10M USDC,
-                  starting account value) ∙ (maximum net deposits for the time
-                  window)
-                </p>
-              </div>
-
-              {/* Pagination */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-btnBorder">
-                <div className="text-sm text-slate-400">
-                  Rows per page: {itemsPerPage} · {startIndex + 1}-
-                  {Math.min(endIndex, sortedEntries.length)} of{" "}
-                  {sortedEntries.length}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPage === 1}
-                    className="p-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <span className="text-sm text-slate-400">
-                    {currentPage} / {totalPages}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="p-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
