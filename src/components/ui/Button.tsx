@@ -9,6 +9,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   children?: ReactNode;
+  loading?: boolean;
 }
 
 export function Button({
@@ -21,6 +22,7 @@ export function Button({
   children,
   className = "",
   disabled,
+  loading = false,
   ...props
 }: ButtonProps) {
   const baseClasses =
@@ -59,7 +61,7 @@ export function Button({
 
   return (
     <button className={classes} disabled={disabled} {...props}>
-      {content}
+      {loading ? "Loading..." : content}
     </button>
   );
 }

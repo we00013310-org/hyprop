@@ -7,10 +7,13 @@ import {
   MoveUpRight,
   MoveDownRight,
 } from "lucide-react";
-import type { Database } from "../../lib/database.types";
-import { supabase } from "../../lib/supabase";
+
 import Tag from "../ui/Tag";
 import { Button } from "../ui";
+import CardTag from "../ui/CardTag";
+
+import type { Database } from "../../lib/database.types";
+import { supabase } from "../../lib/supabase";
 
 type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
 type Checkpoint =
@@ -98,7 +101,7 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
   return (
     <div
       onClick={onOpenTrading}
-      className={`cursor-pointer bg-cardBg rounded-2xl p-3 border-[0.6px] border-cardBorder transition-all ${
+      className={`fade-in cursor-pointer bg-cardBg rounded-2xl p-3 border-[0.6px] border-cardBorder transition-all ${
         isDisabled
           ? "border-slate-600 opacity-50 hover:opacity-90"
           : "border-blue-500/20 hover:scale-105"
@@ -106,11 +109,10 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="flex items-center relative bg-cardBorder rounded-tl-2xl rounded-br-2xl px-4 py-2 top-[-0.75rem] left-[-0.75rem]">
-            <span className="text-cardTypeText text-lg font-medium">
-              Exam Account
-            </span>
-          </div>
+          <CardTag
+            text="Exam Account"
+            className="top-[-0.75rem] left-[-0.75rem]"
+          />
           <div className="text-xs text-slate-400 mb-1">
             {account.account_mode.toUpperCase()}
           </div>

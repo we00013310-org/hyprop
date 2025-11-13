@@ -5,3 +5,12 @@ export type FundedAccount =
   Database["public"]["Tables"]["funded_accounts"]["Row"];
 
 export type User = Database["public"]["Tables"]["users"]["Row"];
+
+export type Exam = {
+  id: number;
+  size: number;
+  fee: number;
+  target: number;
+  dailyLoss: number;
+  maxDD: number;
+};

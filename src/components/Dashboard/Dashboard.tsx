@@ -42,14 +42,14 @@ export function Dashboard() {
 
   return (
     <div>
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20">
+      <main className="fade-in max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20">
         <div className="mb-8">
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-3xl font-medium text-white mb-2">
                 Dashboard
               </h2>
-              <p className="text-slate-400">
+              <p className="text-textBtn text-sm">
                 Manage your trading accounts and evaluations
               </p>
             </div>
@@ -111,7 +111,7 @@ export function Dashboard() {
                 </h3>
 
                 <Button
-                  onClick={() => setShowAccountSelection(true)}
+                  onClick={() => setLocation("/new-account")}
                   leftIcon={<Plus />}
                   size="lg"
                 >
@@ -127,7 +127,7 @@ export function Dashboard() {
                     </p>
                   </div>
                   <Button
-                    onClick={() => setShowAccountSelection(true)}
+                    onClick={() => setLocation("/new-account")}
                     leftIcon={<Plus />}
                     size="lg"
                   >

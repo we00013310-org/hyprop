@@ -8,6 +8,7 @@ import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
 import { LeaderboardPage } from "./components/Leaderboard/LeaderboardPage";
 import { ReferralsPage } from "./components/Referrals/ReferralsPage";
 import { Navbar } from "./components/Navbar";
+import NewAccountPage from "./pages/NewAccountPage/NewAccountPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -30,7 +31,7 @@ function AppContent() {
       <Navbar />
       <Switch>
         <Route path="/" component={Dashboard} />
-
+        <Route path="/new-account" component={NewAccountPage} />
         <Route path="/trading/:accountId" component={TradingPage} />
 
         <Route path="/leaderboard" component={LeaderboardPage} />

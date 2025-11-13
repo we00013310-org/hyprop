@@ -18,6 +18,7 @@ export default {
         textBtn: "#A5BDB7",
         textDark: "#005128",
         sectionBg: "#1D272B",
+        subtitle: "#C0C0C0",
         // Card
         cardBg: "#1D272B",
         cardBorder: "#2AD0AA",
@@ -26,6 +27,10 @@ export default {
         // Tag:
         active: "#65C1AC",
         green: "#00B67A",
+        tagDarkBg: "#064639",
+        tagNormalBg: "#2AD0AA",
+        // Border:
+        lightBorder: "#2A3437",
       },
       borderRadius: {
         sm: "6px",
