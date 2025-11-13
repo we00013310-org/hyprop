@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import clsx from "clsx";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 import CardTag from "../ui/CardTag";
 import { Button } from "../ui";
@@ -8,15 +9,14 @@ import { Button } from "../ui";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 import { Exam } from "../../types";
-
-import "./ExamCard.css";
 import { useToast } from "../../contexts/ToastContext";
 import {
   CHECKPOINT_INTERVAL_HOURS,
   CHECKPOINT_PROFIT_TARGET,
   NUM_CHECKPOINTS,
 } from "../../configs";
-import { useLocation } from "wouter";
+
+import "./ExamCard.css";
 
 const ExamDescriptionLine = ({
   label,
@@ -39,7 +39,7 @@ const ExamDescriptionLine = ({
 
   return (
     <div
-      className={`flex justify-between items-center border-b-[0.6px] ${borderCn} py-2 font-normal`}
+      className={`flex justify-between items-center border-b-[0.6px] ${borderCn} py-2`}
     >
       <p className="text-textBtn">{label}</p>
       <p className={clsx("text-white", { "text-xl font-medium": large })}>

@@ -19,6 +19,7 @@ export default {
         textDark: "#005128",
         sectionBg: "#1D272B",
         subtitle: "#C0C0C0",
+        textFeature: "#AED1CA",
         // Card
         cardBg: "#1D272B",
         cardBorder: "#2AD0AA",

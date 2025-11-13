@@ -65,9 +65,7 @@ export function Dashboard() {
                   ) : (
                     <div className="text-3xl font-medium text-white">
                       ${builderFees.toFixed(4)}{" "}
-                      <span className="text-sm font-normal text-textBtn">
-                        USDC
-                      </span>
+                      <span className="text-sm text-textBtn">USDC</span>
                     </div>
                   )}
                 </div>
