@@ -5,7 +5,6 @@ import { AuthForm } from "./components/Auth/AuthForm";
 import { Dashboard } from "./components/Dashboard/Dashboard";
 import TradingPage from "./components/Trading/TradingPage";
 import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
-import { DashboardV2 } from "./components/Dashboard/v2";
 import { LeaderboardPage } from "./components/Leaderboard/LeaderboardPage";
 import { Navbar } from "./components/Navbar";
 
@@ -30,7 +29,6 @@ function AppContent() {
       <Navbar />
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/v2" component={DashboardV2} />
 
         <Route path="/trading/:accountId" component={TradingPage} />
 
