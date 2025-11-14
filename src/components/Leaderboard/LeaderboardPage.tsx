@@ -202,7 +202,7 @@ export function LeaderboardPage() {
   return (
     <div>
       <main className="fade-in max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20 flex flex-col gap-10 items-start text-left">
-        <div className="max-w-[1920px] mx-auto px-6 py-8">
+        <div className="w-full">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-5xl font-medium text-white mb-2 font-poppins">
