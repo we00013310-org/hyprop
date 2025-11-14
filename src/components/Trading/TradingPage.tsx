@@ -381,16 +381,24 @@ const TradingPage = () => {
                       );
 
                       // Calculate expected time for this checkpoint
-                      const checkpointIntervalHours = account.checkpoint_interval_hours || 24;
+                      const checkpointIntervalHours =
+                        account.checkpoint_interval_hours || 24;
                       const createdAt = new Date(account.created_at);
                       const expectedCheckpointTime = new Date(
-                        createdAt.getTime() + checkpointNum * checkpointIntervalHours * 60 * 60 * 1000
+                        createdAt.getTime() +
+                          checkpointNum *
+                            checkpointIntervalHours *
+                            60 *
+                            60 *
+                            1000
                       );
 
                       // Calculate required balance for this checkpoint
                       let requiredBalance = 0;
                       if (checkpointNum === 1) {
-                        requiredBalance = account.account_size * (1 + profitTargetPercent / 100);
+                        requiredBalance =
+                          account.account_size *
+                          (1 + profitTargetPercent / 100);
                       } else {
                         const prevCheckpoint = checkpoints.find(
                           (cp) => cp.checkpoint_number === checkpointNum - 1
@@ -398,11 +406,13 @@ const TradingPage = () => {
                         const prevBalance = prevCheckpoint
                           ? Number(prevCheckpoint.checkpoint_balance)
                           : account.account_size;
-                        requiredBalance = prevBalance * (1 + profitTargetPercent / 100);
+                        requiredBalance =
+                          prevBalance * (1 + profitTargetPercent / 100);
                       }
 
                       // For current checkpoint, show current balance, otherwise show checkpoint result
-                      const isCurrentCheckpoint = currentCheckpoint === checkpointNum;
+                      const isCurrentCheckpoint =
+                        currentCheckpoint === checkpointNum;
                       const displayBalance = checkpoint?.checkpoint_balance
                         ? Number(checkpoint.checkpoint_balance)
                         : isCurrentCheckpoint
@@ -443,41 +453,53 @@ const TradingPage = () => {
                             <div className="mt-2 text-center h-[52px] flex flex-col justify-start">
                               <div className="text-xs text-slate-400 mb-1">
                                 {checkpoint?.checkpoint_ts
-                                  ? new Date(checkpoint.checkpoint_ts).toLocaleString(undefined, {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
+                                  ? new Date(
+                                      checkpoint.checkpoint_ts
+                                    ).toLocaleString(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
                                     })
-                                  : expectedCheckpointTime.toLocaleString(undefined, {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })
-                                }
+                                  : expectedCheckpointTime.toLocaleString(
+                                      undefined,
+                                      {
+                                        month: "short",
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      }
+                                    )}
                               </div>
                               {/* Only show balance for completed or current checkpoints */}
                               {(checkpoint || isCurrentCheckpoint) && (
                                 <>
-                                  <div className={`text-xs font-semibold ${
-                                    checkpoint?.checkpoint_passed === true
-                                      ? 'text-green-400'
-                                      : checkpoint?.checkpoint_passed === false
-                                      ? 'text-red-400'
-                                      : isCurrentCheckpoint && displayBalance
-                                      ? displayBalance >= displayRequired
-                                        ? 'text-green-400'
-                                        : 'text-blue-400'
-                                      : 'text-slate-500'
-                                  }`}>
+                                  <div
+                                    className={`text-xs font-semibold ${
+                                      checkpoint?.checkpoint_passed === true
+                                        ? "text-green-400"
+                                        : checkpoint?.checkpoint_passed ===
+                                          false
+                                        ? "text-red-400"
+                                        : isCurrentCheckpoint && displayBalance
+                                        ? displayBalance >= displayRequired
+                                          ? "text-green-400"
+                                          : "text-blue-400"
+                                        : "text-slate-500"
+                                    }`}
+                                  >
                                     {displayBalance !== null
-                                      ? `$${displayBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                                      : '-'
-                                    }
+                                      ? `$${displayBalance.toLocaleString(
+                                          undefined,
+                                          { maximumFractionDigits: 2 }
+                                        )}`
+                                      : "-"}
                                   </div>
                                   <div className="text-xs text-slate-500">
-                                    / ${displayRequired.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                    / $
+                                    {displayRequired.toLocaleString(undefined, {
+                                      maximumFractionDigits: 2,
+                                    })}
                                   </div>
                                 </>
                               )}
@@ -621,17 +643,21 @@ const TradingPage = () => {
                 <h3 className="text-lg font-semibold text-white">
                   BTC/USDT Price Chart
                 </h3>
-                <span className="text-xs text-slate-400">
-                  Powered by TradingView
-                </span>
               </div>
-              <div className="bg-slate-900 rounded-lg overflow-hidden">
+              <div className="absolute w-full h-[120px] bg-slate-900"></div>
+              <iframe
+                src="https://app.hyperliquid.xyz"
+                width="100%"
+                height="800"
+              ></iframe>
+              <div className="absolute w-full h-[300px] bg-slate-800 bottom-0"></div>
+              {/* <div className="bg-slate-900 rounded-lg overflow-hidden">
                 <TradingViewChart
                   symbol="BINANCE:BTCUSDT"
                   theme="dark"
                   height={500}
                 />
-              </div>
+              </div> */}
             </div>
 
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
