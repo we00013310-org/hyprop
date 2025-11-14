@@ -100,11 +100,11 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
 
   return (
     <div
-      onClick={onOpenTrading}
-      className={`fade-in cursor-pointer bg-cardBg rounded-2xl p-3 border-[0.6px] border-cardBorder transition-all ${
+      onClick={!isDisabled ? onOpenTrading : undefined}
+      className={`fade-in bg-cardBg rounded-2xl p-3 border-[0.6px] border-cardBorder transition-all ${
         isDisabled
           ? "border-slate-600 opacity-50 hover:opacity-90"
-          : "border-blue-500/20 hover:scale-105"
+          : "border-blue-500/20 hover:scale-105 cursor-pointer"
       }`}
     >
       <div className="flex justify-between items-start mb-4">

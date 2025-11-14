@@ -9,6 +9,8 @@ import { LeaderboardPage } from "./components/Leaderboard/LeaderboardPage";
 import { ReferralsPage } from "./components/Referrals/ReferralsPage";
 import { Navbar } from "./components/Navbar";
 import NewAccountPage from "./pages/NewAccountPage/NewAccountPage";
+import AccountTradingPage from "./pages/AccountTradingPage/AccountTradingPage";
+import { Button } from "./components/ui";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -33,6 +35,7 @@ function AppContent() {
         <Route path="/" component={Dashboard} />
         <Route path="/new-account" component={NewAccountPage} />
         <Route path="/trading/:accountId" component={TradingPage} />
+        <Route path="/account-trading" component={AccountTradingPage} />
 
         <Route path="/leaderboard" component={LeaderboardPage} />
 
@@ -42,16 +45,13 @@ function AppContent() {
 
         {/* 404 fallback */}
         <Route>
-          <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+          <div className="min-h-screen flex items-center justify-center text-white">
             <div className="text-center">
               <h1 className="text-4xl font-bold mb-4">404</h1>
               <p className="text-slate-400 mb-4">Page not found</p>
-              <button
-                onClick={() => setLocation("/")}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
+              <Button size="lg" onClick={() => setLocation("/")}>
                 Go to Dashboard
-              </button>
+              </Button>
             </div>
           </div>
         </Route>

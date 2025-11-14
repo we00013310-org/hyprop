@@ -20,6 +20,7 @@ export default {
         sectionBg: "#1D272B",
         subtitle: "#C0C0C0",
         textFeature: "#AED1CA",
+        activeBorder: "#4FD2A9",
         // Card
         cardBg: "#1D272B",
         cardBorder: "#2AD0AA",
@@ -32,6 +33,16 @@ export default {
         tagNormalBg: "#2AD0AA",
         // Border:
         lightBorder: "#2A3437",
+        // Trading View:
+        tradingBg: "#1D272B",
+        tradingBgDark: "#252E32",
+        tradingBorder: "#3A4549",
+        tradingGreen: "#2AD0AA",
+        tradingGreenHover: "#24B894",
+        tradingCyan: "#7FFFD4",
+        tradingSlider: "#2AD0AA",
+        tradingText: "#9CA3AF",
+        tradingTextLight: "#D1D5DB",
       },
       borderRadius: {
         sm: "6px",

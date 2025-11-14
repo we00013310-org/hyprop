@@ -49,7 +49,7 @@ export function Navbar() {
 
   return (
     <nav>
-      <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1920px] mx-auto px-4 h-16 flex items-center justify-between">
         {/* Left: Logo */}
 
         <Logo />

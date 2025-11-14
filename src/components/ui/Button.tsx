@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { ButtonHTMLAttributes, ReactNode } from "react";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "outline";
+  variant?: "primary" | "outline" | "ghost";
   size?: "md" | "lg";
   fullWidth?: boolean;
   href?: string;
@@ -32,6 +32,7 @@ export function Button({
     primary: "bg-primary hover:bg-primary-hover text-white",
     outline: "border border-primary text-primary hover:bg-primary/10",
     icon: "bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white",
+    ghost: "bg-transparent border-transparent text-textBtn hover:text-white",
   };
 
   const sizeClasses = {

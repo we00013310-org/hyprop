@@ -10,3 +10,5 @@ export const ACCOUNT_TIERS = {
     { id: 2, size: 5000, fee: 50, target: 500, dailyLoss: 0.05, maxDD: 400 },
   ],
 };
+
+export const USD = "USDC";
