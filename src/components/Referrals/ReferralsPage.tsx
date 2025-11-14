@@ -176,7 +176,7 @@ export function ReferralsPage() {
             <div className="flex border-b border-btnBorder">
               <button
                 onClick={() => setActiveTab("Referrals")}
-                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+                className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === "Referrals"
                     ? "text-white border-b-2 border-primary"
                     : "text-slate-400 hover:text-white"
@@ -186,7 +186,7 @@ export function ReferralsPage() {
               </button>
               <button
                 onClick={() => setActiveTab("Legacy Reward History")}
-                className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+                className={`px-6 py-4 text-sm font-medium transition-colors ${
                   activeTab === "Legacy Reward History"
                     ? "text-white border-b-2 border-primary"
                     : "text-slate-400 hover:text-white"
