@@ -52,7 +52,7 @@ export function HoverMenu({
       {/* Dropdown menu */}
       {isOpen && (
         <div
-          className={`absolute top-full mt-1 ${alignClasses[align]} min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 animate-in fade-in duration-200`}
+          className={`absolute top-full mt-1 ${alignClasses[align]} min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 animate-in duration-200`}
         >
           {children}
         </div>

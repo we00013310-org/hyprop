@@ -3,6 +3,8 @@ import { useState } from "react";
 import SectionWrapper from "../../components/ui/SectionWrapper";
 import OrderForm from "./components/OrderForm";
 import Chart from "./components/Chart";
+import AccountForm from "./components/AccountForm";
+import TargetInfo from "./components/TargetInfo";
 
 const AccountTradingPage = () => {
   const [orderType, setOrderType] = useState<"cross" | "20x" | "one-way">(
@@ -23,9 +25,17 @@ const AccountTradingPage = () => {
       <SectionWrapper className="w-[800px] xl:w-[1192px] h-fit">
         <Chart token="BTC" />
       </SectionWrapper>
-      <SectionWrapper className="flex-1">
-        <OrderForm />
-      </SectionWrapper>
+      <div className="flex flex-1 flex-col gap-2">
+        <SectionWrapper>
+          <OrderForm />
+        </SectionWrapper>
+        <SectionWrapper>
+          <AccountForm />
+        </SectionWrapper>
+        <SectionWrapper>
+          <TargetInfo />
+        </SectionWrapper>
+      </div>
     </div>
   );
 };

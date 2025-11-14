@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 
 interface ListProps {
   data: {
-    label: string;
+    label: ReactNode;
     value: ReactNode;
   }[];
   hasBorder?: boolean;
@@ -12,10 +12,10 @@ interface ListProps {
 const List = ({ data, hasBorder = false }: ListProps) => {
   return (
     <div className="flex flex-col w-full">
-      {data.map((o) => {
+      {data.map((o, i) => {
         return (
           <div
-            key={o.label}
+            key={i}
             className={clsx("flex py-1 text-white text-sm gap-2", {
               "border-b-[0.6px] border-btnBorder text-base py-4": hasBorder,
             })}

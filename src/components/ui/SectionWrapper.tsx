@@ -8,9 +8,7 @@ interface SectionWrapperProps {
 const SectionWrapper = ({ children, className = "" }: SectionWrapperProps) => {
   return (
     <div
-      className={clsx("bg-tradingBg p-3 rounded-2xl flex flex-col", {
-        [className]: !!className,
-      })}
+      className={clsx("bg-tradingBg p-3 rounded-2xl flex flex-col", className)}
     >
       {children}
     </div>
