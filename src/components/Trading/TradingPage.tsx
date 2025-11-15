@@ -643,21 +643,17 @@ const TradingPage = () => {
                 <h3 className="text-lg font-semibold text-white">
                   BTC/USDT Price Chart
                 </h3>
+                <span className="text-xs text-slate-400">
+                  Powered by TradingView
+                </span>
               </div>
-              <div className="absolute w-full h-[120px] bg-slate-900"></div>
-              <iframe
-                src="https://app.hyperliquid.xyz"
-                width="100%"
-                height="800"
-              ></iframe>
-              <div className="absolute w-full h-[300px] bg-slate-800 bottom-0"></div>
-              {/* <div className="bg-slate-900 rounded-lg overflow-hidden">
+              <div className="bg-slate-900 rounded-lg overflow-hidden">
                 <TradingViewChart
                   symbol="BINANCE:BTCUSDT"
                   theme="dark"
                   height={500}
                 />
-              </div> */}
+              </div>
             </div>
 
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">

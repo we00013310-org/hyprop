@@ -15,8 +15,8 @@ const TargetInfo = () => {
           <p className="text-xs text-textBtn">{progress}% completed</p>
         </div>
       </div>
-      <div className="relative bg-gradient-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-tradingGreen/10 to-transparent" />
+      <div className="relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden">
+        <div className="absolute inset-0 bg-linear-to-br from-tradingGreen/10 to-transparent" />
         <div className="relative z-10">
           <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
           <div className="text-white text-xl">$400 (4.0%)</div>

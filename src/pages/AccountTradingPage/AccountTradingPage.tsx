@@ -5,6 +5,7 @@ import OrderForm from "./components/OrderForm";
 import Chart from "./components/Chart";
 import AccountForm from "./components/AccountForm";
 import TargetInfo from "./components/TargetInfo";
+import AccountTable from "./components/AccountTable/AccountTable";
 
 const AccountTradingPage = () => {
   const [orderType, setOrderType] = useState<"cross" | "20x" | "one-way">(
@@ -21,10 +22,15 @@ const AccountTradingPage = () => {
   const [accountType, setAccountType] = useState<"perps" | "spot">("perps");
 
   return (
-    <div className="bg-primary-background flex p-4 gap-2">
-      <SectionWrapper className="w-[800px] xl:w-[1192px] h-fit">
-        <Chart token="BTC" />
-      </SectionWrapper>
+    <div className="flex p-4 gap-2">
+      <div className="w-[800px] xl:w-[1192px] flex flex-col gap-2">
+        <SectionWrapper className="w-full h-fit">
+          <Chart token="BTC" />
+        </SectionWrapper>
+        <SectionWrapper className="w-full">
+          <AccountTable />
+        </SectionWrapper>
+      </div>
       <div className="flex flex-1 flex-col gap-2">
         <SectionWrapper>
           <OrderForm />

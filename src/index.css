@@ -6,8 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 
-body {
-  background-color: #0F1A1E;
+body {  
+  background: url("/images/back_lines.svg") 0% 0% / cover no-repeat #0F1A1E;
   font-family: 'Roboto', sans-serif;
   font-weight: 300;
 }
