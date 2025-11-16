@@ -2,7 +2,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
 import { HyperliquidTrading } from "@/lib/hyperliquidTrading";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 export const useCreateOrder = ({
@@ -171,4 +171,35 @@ export const useClosePosition = ({
     closingPositions,
     isPending: mutation.isPending,
   };
+};
+
+export const useCheckAndClosePosition = ({
+  accountId,
+  positionsLength,
+  isDisabled = false,
+}: {
+  accountId: string;
+  positionsLength: number;
+  isDisabled?: boolean;
+}) => {
+  const { walletAddress } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ["check_close_positions", accountId],
+    queryFn: async () => {
+      try {
+        const trading = new HyperliquidTrading(accountId, walletAddress!);
+        await trading.updatePositionPnL();
+        queryClient.invalidateQueries({ queryKey: ["test-positions"] });
+        queryClient.invalidateQueries({ queryKey: ["test-account"] });
+
+        return true;
+      } catch (error) {
+        console.error("Failed to update position PnL:", error);
+      }
+    },
+    enabled: !!(positionsLength && accountId && walletAddress && !isDisabled),
+    refetchInterval: 3000,
+  });
 };

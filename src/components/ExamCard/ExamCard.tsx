@@ -82,7 +82,7 @@ const ExamCard = ({ type = "basic", data }: ExamCardProps) => {
         .insert({
           user_id: user.id,
           account_size: data.size,
-          account_mode: isBasic ? "2-step" : "1-step",
+          account_mode: !isBasic ? "2-step" : "1-step",
           fee_paid: data.fee,
           virtual_balance: data.size,
           dd_max: data.maxDD,

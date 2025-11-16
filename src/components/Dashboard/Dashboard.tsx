@@ -138,7 +138,7 @@ export function Dashboard() {
                       account={account}
                       onUpdate={loadAccounts}
                       onOpenTrading={() =>
-                        setLocation(`/trading/${account.id}`)
+                        setLocation(`/account-trading/${account.id}`)
                       }
                     />
                   ))}

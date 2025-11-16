@@ -18,14 +18,14 @@ const AccountTradingPage = () => {
 
   if (isPending || !account) {
     return (
-      <div className="flex p-4 gap-2">
+      <div className="flex p-4 gap-2 fade-in">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex p-4 gap-2">
+    <div className="flex p-4 gap-2 fade-in">
       <div className="w-[800px] xl:w-[1192px] flex flex-col gap-2">
         <SectionWrapper className="w-full h-fit">
           <Chart token="BTC" />

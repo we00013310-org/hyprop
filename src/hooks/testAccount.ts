@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { getUserPositions } from "@/lib/hyperliquidTrading";
+import { getUserPositions, HyperliquidTrading } from "@/lib/hyperliquidTrading";
 
 export const useTestAccount = (accountId: string) => {
   const { walletAddress } = useAuth();
@@ -10,6 +10,9 @@ export const useTestAccount = (accountId: string) => {
   return useQuery({
     queryKey: ["test-account", accountId],
     queryFn: async () => {
+      const trading = new HyperliquidTrading(accountId, walletAddress!);
+      await trading.checkTestStatus();
+
       const { data } = await supabase
         .from("test_accounts")
         .select("*")

@@ -18,7 +18,7 @@ import {
 import { Pencil } from "lucide-react";
 import clsx from "clsx";
 import { usePositions } from "@/hooks/testAccount";
-import { useClosePosition } from "@/hooks/order";
+import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
 import { Button } from "@/components/ui/MyButton";
 
 // Position type matching Hyperliquid's position structure
@@ -87,7 +87,13 @@ const PositionTable = ({
         };
       }) || []
     );
-  }, [currentPrice, data]);
+  }, [data]);
+
+  useCheckAndClosePosition({
+    accountId,
+    positionsLength: parsedData.length,
+    isDisabled,
+  });
 
   const columns: ColumnDef<Position>[] = [
     {
@@ -241,7 +247,7 @@ const PositionTable = ({
                   size: +row.original.size,
                 })
               }
-              className="text-highlight transition-all cursor-pointer text-xs"
+              className="text-highlight hover:underline transition-all cursor-pointer text-xs"
             >
               Market
             </button>
