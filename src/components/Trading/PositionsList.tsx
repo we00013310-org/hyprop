@@ -10,10 +10,9 @@ import {
   calculateRealWorldPNL,
   calculatePNLPercentage,
 } from "../../lib/priceOracle";
-import { useToast } from "../../contexts/ToastContext";
+import { useClosePosition } from "../../hooks/order";
 
 interface PositionsListProps {
-  address: string;
   accountId: string;
   walletAddress: string;
   isDisabled?: boolean;
@@ -21,19 +20,23 @@ interface PositionsListProps {
 }
 
 export function PositionsList({
-  address,
   accountId,
   walletAddress,
   isDisabled = false,
   reloadData,
 }: PositionsListProps) {
-  const toast = useToast();
   const [positions, setPositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [realBTCPrice, setRealBTCPrice] = useState<number | null>(null);
-  const [closingPositions, setClosingPositions] = useState<Set<string>>(
-    new Set()
-  );
+
+  const { closePosition, isClosing } = useClosePosition({
+    accountId,
+    isDisabled,
+    onSuccess: async () => {
+      await loadPositions();
+      reloadData();
+    },
+  });
 
   const loadRealBTCPrice = async () => {
     try {
@@ -48,7 +51,7 @@ export function PositionsList({
     setLoading(true);
     try {
       // PHASE 1: Get positions from database for test accounts
-      const data = await getUserPositions(address, accountId, walletAddress);
+      const data = await getUserPositions(accountId, walletAddress);
       const openPositions = data.filter((pos: any) => {
         const size = parseFloat(pos.position?.szi || "0");
         return size !== 0;
@@ -59,41 +62,10 @@ export function PositionsList({
     } finally {
       setLoading(false);
     }
-  }, [address, accountId, walletAddress]);
+  }, [accountId, walletAddress]);
 
-  const handleClosePosition = async (coin: string, size: number) => {
-    if (isDisabled) {
-      toast.error("Cannot close positions on a disabled account");
-      return;
-    }
-
-    const positionKey = `${coin}-${size}`;
-
-    setClosingPositions((prev) => new Set(prev).add(positionKey));
-
-    try {
-      const trading = new HyperliquidTrading(accountId, walletAddress);
-      await trading.closePosition(coin, size);
-
-      // Wait a moment for the order to process
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Reload positions
-      await loadPositions();
-
-      reloadData();
-
-      toast.success(`Successfully closed ${coin} position`);
-    } catch (error: any) {
-      console.error("Failed to close position:", error);
-      toast.error(`Failed to close position: ${error.message || "Unknown error"}`);
-    } finally {
-      setClosingPositions((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(positionKey);
-        return newSet;
-      });
-    }
+  const handleClosePosition = (coin: string, size: number) => {
+    closePosition({ coin, size });
   };
 
   const checkAndCloseLosingPositions = useCallback(async () => {
@@ -123,7 +95,7 @@ export function PositionsList({
       loadRealBTCPrice();
     }, 5000);
     return () => clearInterval(interval);
-  }, [address, accountId, walletAddress, loadPositions]);
+  }, [loadPositions]);
 
   // Check for auto-close when positions change (only for active accounts)
   useEffect(() => {
@@ -193,8 +165,7 @@ export function PositionsList({
 
         // const isLosing = realWorldPNL < 0;
         const lossExceedsThreshold = realWorldPNLPercentage < -5;
-        const positionKey = `${coin}-${size}`;
-        const isClosing = closingPositions.has(positionKey);
+        const positionIsClosing = isClosing(coin, size);
 
         return (
           <div
@@ -239,11 +210,11 @@ export function PositionsList({
               {!isDisabled && (
                 <button
                   onClick={() => handleClosePosition(coin, size)}
-                  disabled={isClosing}
+                  disabled={positionIsClosing}
                   className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Close Position"
                 >
-                  {isClosing ? (
+                  {positionIsClosing ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-400"></div>
                   ) : (
                     <X className="w-4 h-4" />
@@ -258,7 +229,7 @@ export function PositionsList({
                   <AlertTriangle className="w-4 h-4" />
                   <span>
                     Loss exceeds 5% ({realWorldPNLPercentage.toFixed(2)}%).{" "}
-                    {isClosing
+                    {positionIsClosing
                       ? "Closing position..."
                       : "Position will be closed automatically."}
                   </span>

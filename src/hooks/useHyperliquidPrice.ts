@@ -1,12 +1,13 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { getDemoPriceOffset } from "@/lib/priceOracle";
+import { useEffect, useState, useRef, useCallback } from "react";
 
-interface TradeData {
-  coin: string;
-  side: string;
-  px: string;
-  sz: string;
-  time: number;
-}
+// interface TradeData {
+//   coin: string;
+//   side: string;
+//   px: string;
+//   sz: string;
+//   time: number;
+// }
 
 interface AllMidsData {
   mids: Record<string, string>;
@@ -18,10 +19,10 @@ interface PriceData {
   isConnected: boolean;
 }
 
-const TESTNET_WS_URL = 'wss://api.hyperliquid-testnet.xyz/ws';
-const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz/info';
+const TESTNET_WS_URL = "wss://api.hyperliquid-testnet.xyz/ws";
+const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz/info";
 
-export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
+export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
   const [price, setPrice] = useState<number>(0);
   const [priceChange, setPriceChange] = useState<number>(0);
   const [isConnected, setIsConnected] = useState(false);
@@ -33,12 +34,12 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
   const fetchInitialPrice = useCallback(async () => {
     try {
       const response = await fetch(TESTNET_API_URL, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          type: 'allMids',
+          type: "allMids",
         }),
       });
 
@@ -47,13 +48,14 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
       if (data && data[coin]) {
         const initialPrice = parseFloat(data[coin]);
         if (initialPrice && !isNaN(initialPrice)) {
-          setPrice(initialPrice);
+          const demoOffset = getDemoPriceOffset();
+          setPrice(initialPrice + demoOffset);
           previousPriceRef.current = initialPrice;
           console.log(`Initial ${coin} price from REST API:`, initialPrice);
         }
       }
     } catch (error) {
-      console.error('Failed to fetch initial price:', error);
+      console.error("Failed to fetch initial price:", error);
     }
   }, [coin]);
 
@@ -66,20 +68,22 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
           return;
         }
 
-        console.log(`Connecting to Hyperliquid testnet WebSocket for ${coin}...`);
+        console.log(
+          `Connecting to Hyperliquid testnet WebSocket for ${coin}...`
+        );
         const ws = new WebSocket(TESTNET_WS_URL);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('✓ Connected to Hyperliquid testnet');
+          console.log("✓ Connected to Hyperliquid testnet");
           setIsConnected(true);
           reconnectAttemptsRef.current = 0;
 
           ws.send(
             JSON.stringify({
-              method: 'subscribe',
+              method: "subscribe",
               subscription: {
-                type: 'trades',
+                type: "trades",
                 coin: coin,
               },
             })
@@ -88,29 +92,30 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
 
           ws.send(
             JSON.stringify({
-              method: 'subscribe',
+              method: "subscribe",
               subscription: {
-                type: 'allMids',
+                type: "allMids",
               },
             })
           );
-          console.log('Subscribed to allMids');
+          console.log("Subscribed to allMids");
         };
 
         ws.onmessage = (event) => {
           try {
-            if (!event.data || event.data === '') {
+            if (!event.data || event.data === "") {
               return;
             }
 
             const data = JSON.parse(event.data);
 
-            if (data.channel === 'trades' && data.data) {
+            if (data.channel === "trades" && data.data) {
               const trades = Array.isArray(data.data) ? data.data : [data.data];
 
               for (const trade of trades) {
                 if (trade.coin === coin) {
-                  const newPrice = parseFloat(trade.px);
+                  const demoOffset = getDemoPriceOffset();
+                  const newPrice = parseFloat(trade.px) + demoOffset;
 
                   if (newPrice && !isNaN(newPrice)) {
                     const change = previousPriceRef.current
@@ -125,45 +130,54 @@ export function useHyperliquidPrice(coin: string = 'BTC'): PriceData {
               }
             }
 
-            if (data.channel === 'allMids' && data.data) {
+            if (data.channel === "allMids" && data.data) {
               const midsData = data.data as AllMidsData;
               if (midsData.mids && midsData.mids[coin]) {
                 const midPrice = parseFloat(midsData.mids[coin]);
 
                 if (midPrice && !isNaN(midPrice)) {
                   if (price === 0) {
-                    setPrice(midPrice);
+                    const demoOffset = getDemoPriceOffset();
+                    setPrice(midPrice + demoOffset);
                     previousPriceRef.current = midPrice;
                   }
                 }
               }
             }
           } catch (error) {
-            console.error('Error parsing WebSocket message:', error, event.data);
+            console.error(
+              "Error parsing WebSocket message:",
+              error,
+              event.data
+            );
           }
         };
 
         ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          console.error("WebSocket error:", error);
           setIsConnected(false);
         };
 
         ws.onclose = (event) => {
-          console.log('WebSocket closed:', event.code, event.reason);
+          console.log("WebSocket closed:", event.code, event.reason);
           setIsConnected(false);
           wsRef.current = null;
 
           reconnectAttemptsRef.current++;
           const delay = Math.min(5000 * reconnectAttemptsRef.current, 30000);
 
-          console.log(`Reconnecting in ${delay / 1000}s... (attempt ${reconnectAttemptsRef.current})`);
+          console.log(
+            `Reconnecting in ${delay / 1000}s... (attempt ${
+              reconnectAttemptsRef.current
+            })`
+          );
 
           reconnectTimeoutRef.current = setTimeout(() => {
             connectWebSocket();
           }, delay);
         };
       } catch (error) {
-        console.error('Failed to connect to WebSocket:', error);
+        console.error("Failed to connect to WebSocket:", error);
         setIsConnected(false);
       }
     };

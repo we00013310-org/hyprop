@@ -1,0 +1,103 @@
+import { ArrowLeftRight, TrendingDown, TrendingUp } from "lucide-react";
+
+import List from "@/components/ui/List";
+import { Button } from "@/components/ui/MyButton";
+import SectionWrapper from "@/components/ui/SectionWrapper";
+import { TestAccount } from "@/types";
+
+interface AccountFormProps {
+  account: TestAccount;
+}
+
+const AccountForm = ({ account }: AccountFormProps) => {
+  const profitLoss = account.virtual_balance - account.account_size;
+  const profitLossPercent = (profitLoss / account.account_size) * 100;
+  const isProfit = profitLoss >= 0;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Button className="bg-highlight! text-outlineBg!" fullWidth>
+        Deposit
+      </Button>
+
+      <div className="flex w-full gap-2">
+        <Button variant="outline" className="flex-1">
+          Perps
+          <ArrowLeftRight className="w-4" />
+          Spot
+        </Button>
+        <Button variant="outline" className="flex-1">
+          Withdraw
+        </Button>
+      </div>
+
+      <SectionWrapper className="mt-2 bg-cardBgDarker!">
+        <List
+          data={[
+            {
+              label: (
+                <span className="text-white font-medium">Account Equity</span>
+              ),
+              value: "",
+            },
+            {
+              label: "Type",
+              value: account.account_mode,
+            },
+            {
+              label: "Size",
+              value: `$${account.account_size.toLocaleString()}`,
+            },
+            {
+              label: (
+                <span className="text-white font-medium">Perps Overview</span>
+              ),
+              value: (
+                <span className="text-highlight">Est: 0% / Max: 8.00%</span>
+              ),
+            },
+            {
+              label: "Virtual Balance",
+              value: `$${account.virtual_balance.toLocaleString()}`,
+            },
+            {
+              label: "PNL",
+              value: (
+                <div
+                  className={`font-semibold flex items-center space-x-1 ${
+                    isProfit ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {isProfit ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isProfit ? "+" : "-"}$
+                    {Math.abs(profitLoss).toLocaleString()} (
+                    {profitLossPercent.toFixed(2)}%)
+                  </span>
+                </div>
+              ),
+            },
+            {
+              label: "Cross Margin Ratio",
+              value: <span className="text-highlight">$0.00</span>,
+            },
+            {
+              label: "Maintenance Margin",
+              value: "$0.00",
+            },
+            {
+              label: "Cross Account Leverage",
+              value: "0.00x",
+            },
+          ]}
+        />
+      </SectionWrapper>
+    </div>
+  );
+};
+
+export default AccountForm;

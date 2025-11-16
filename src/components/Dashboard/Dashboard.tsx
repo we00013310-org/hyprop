@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { LogOut, DollarSign, Settings } from "lucide-react";
+import { Inbox, Plus } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { AccountSelection } from "./AccountSelection";
-import { TestAccountCard } from "./TestAccountCard";
 import { FundedAccountCard } from "./FundedAccountCard";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
+import MySpinner from "../ui/MySpinner";
+import { Button } from "../ui";
+import { AccountCard } from "../AccountCard/AccountCard";
 
-import Logo from "../Logo";
+import feeIcon from "../../assets/icons/ic_fee.svg";
 
 export function Dashboard() {
   const [, setLocation] = useLocation();
-  const { walletAddress, disconnectWallet } = useAuth();
-  const [showAccountSelection, setShowAccountSelection] = useState(false);
+  const { walletAddress } = useAuth();
   const { loadAccounts, testAccounts, fundedAccounts, loading } = useAccounts();
   const [builderFees, setBuilderFees] = useState<number>(0);
   const [loadingFees, setLoadingFees] = useState(true);
@@ -38,97 +38,57 @@ export function Dashboard() {
     }
   };
 
-  const handleDisconnect = () => {
-    disconnectWallet();
-  };
-
   return (
-    <div className="min-h-screen bg-slate-900">
-      <nav className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Logo />
-            <div className="flex items-center space-x-4">
-              {!!walletAddress && (
-                <div className="text-slate-300 text-sm font-mono">
-                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                </div>
-              )}
-              <button
-                onClick={() => setLocation("/demo")}
-                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
-                title="Demo Settings (Testing Only)"
-              >
-                <Settings className="w-5 h-5" />
-                <span>Demo</span>
-              </button>
-              <button
-                onClick={handleDisconnect}
-                className="flex items-center space-x-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Disconnect</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div>
+      <main className="fade-in max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20">
         <div className="mb-8">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-2">Dashboard</h2>
-              <p className="text-slate-400">
+              <h2 className="text-3xl font-medium text-white mb-2">
+                Dashboard
+              </h2>
+              <p className="text-textBtn text-sm">
                 Manage your trading accounts and evaluations
               </p>
             </div>
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
-              <div className="flex items-center space-x-2 mb-1">
-                <DollarSign className="w-5 h-5 text-green-500" />
-                <span className="text-slate-400 text-sm font-medium">
-                  Builder Fees Collected
-                </span>
+            {/* Button */}
+            <div className="rounded-2xl p-4 border border-btnBorder btn-blur-bg">
+              <div className="flex items-center gap-2">
+                <img src={feeIcon} />
+                <div className="flex flex-col gap-1">
+                  <span className="text-textBtn text-sm">Rebate Collected</span>
+                  {loadingFees ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                      <span className="text-textBtn text-sm">Loading...</span>
+                    </div>
+                  ) : (
+                    <div className="text-3xl font-medium text-white">
+                      ${builderFees.toFixed(4)}{" "}
+                      <span className="text-sm text-textBtn">USDC</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              {loadingFees ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
-                  <span className="text-slate-500 text-sm">Loading...</span>
-                </div>
-              ) : (
-                <div className="text-2xl font-bold text-white">
-                  ${builderFees.toFixed(4)}{" "}
-                  <span className="text-sm font-normal text-slate-400">
-                    USDC
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <MySpinner />
           </div>
         ) : (
           <div className="space-y-8">
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                  <h3 className="text-xl font-semibold text-white">
-                    Funded Accounts
-                  </h3>
-                  <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
-                    Real Money
-                  </span>
-                </div>
-              </div>
+              <h3 className="text-xl font-medium text-white mb-4">
+                Funded Accounts
+              </h3>
               {!fundedAccounts.length ? (
-                <div className="bg-slate-800 rounded-xl p-8 text-center">
-                  <p className="text-slate-400">
-                    No funded accounts yet. Pass an evaluation to get funded!
+                <div className="bg-sectionBg rounded-2xl p-6 flex justify-center items-center gap-2 text-sm">
+                  <Inbox className="text-textDark w-4" />
+                  <p className="text-textBtn">
+                    No funded accounts yet. Pass an evaluation to get funded
                   </p>
                 </div>
               ) : (
@@ -142,43 +102,43 @@ export function Dashboard() {
 
             <div>
               <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
-                  <h3 className="text-xl font-semibold text-white">
-                    Test Accounts
-                  </h3>
-                  <span className="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">
-                    Simulated
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowAccountSelection(true)}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                <h3 className="text-xl font-semibold text-white">
+                  Test Accounts
+                </h3>
+
+                <Button
+                  onClick={() => setLocation("/new-account")}
+                  leftIcon={<Plus />}
+                  size="lg"
                 >
-                  New Evaluation
-                </button>
+                  New Account
+                </Button>
               </div>
               {!testAccounts.length ? (
-                <div className="bg-slate-800 rounded-xl p-8 text-center">
-                  <p className="text-slate-400 mb-4">
-                    No test accounts yet. Start your trading journey!
-                  </p>
-                  <button
-                    onClick={() => setShowAccountSelection(true)}
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                <div className="bg-sectionBg rounded-2xl p-6 flex flex-col justify-center items-center gap-2 text-sm">
+                  <div className="flex justify-center items-center gap-2">
+                    <Inbox className="text-textDark w-4" />
+                    <p className="text-textBtn">
+                      No exam accounts yet. Start your trading journey!
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setLocation("/new-account")}
+                    leftIcon={<Plus />}
+                    size="lg"
                   >
-                    Begin Evaluation
-                  </button>
+                    New Account
+                  </Button>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-x-4 gap-y-12 md:grid-cols-2 lg:grid-cols-3">
                   {testAccounts.map((account) => (
-                    <TestAccountCard
+                    <AccountCard
                       key={account.id}
                       account={account}
                       onUpdate={loadAccounts}
                       onOpenTrading={() =>
-                        setLocation(`/trading/${account.id}`)
+                        setLocation(`/account-trading/${account.id}`)
                       }
                     />
                   ))}
@@ -188,16 +148,6 @@ export function Dashboard() {
           </div>
         )}
       </main>
-
-      {showAccountSelection && (
-        <AccountSelection
-          onClose={() => setShowAccountSelection(false)}
-          onSuccess={() => {
-            setShowAccountSelection(false);
-            loadAccounts();
-          }}
-        />
-      )}
     </div>
   );
 }
