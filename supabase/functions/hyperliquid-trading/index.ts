@@ -350,8 +350,8 @@ async function simulatePosition(
     throw new Error("Test account not found");
   }
 
-  // Calculate margin used (simplified: assume 10x leverage for now)
-  const leverage = 10;
+  // Calculate margin used (simplified: assume 1X leverage for now)
+  const leverage = 1;
   const notional = size * entryPrice;
   const marginUsed = notional / leverage;
 

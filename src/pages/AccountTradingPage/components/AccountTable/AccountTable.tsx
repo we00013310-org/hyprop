@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import PositionTable from "./PositionTable";
 import ComingSoon from "./ComingSoon";
+import { TestAccount } from "@/types";
 
 enum Tab {
   Balances = "Balances",
@@ -14,17 +15,27 @@ enum Tab {
   OrderHistory = "Order History",
 }
 
-const AccountTable = () => {
+interface AccountTableProps {
+  account: TestAccount;
+  currentPrice: number;
+}
+
+const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
   const [tab, setTab] = useState<Tab>(Tab.Positions);
 
   const renderContent = useCallback(() => {
     switch (tab) {
       case Tab.Positions:
-        return <PositionTable />;
+        return (
+          <PositionTable
+            accountId={account.id as string}
+            currentPrice={currentPrice}
+          />
+        );
       default:
         return <ComingSoon />;
     }
-  }, [tab]);
+  }, [account.id, currentPrice, tab]);
 
   return (
     <div className="w-full flex flex-col gap-1">

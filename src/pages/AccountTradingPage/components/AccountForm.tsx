@@ -1,10 +1,19 @@
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, TrendingDown, TrendingUp } from "lucide-react";
 
 import List from "@/components/ui/List";
 import { Button } from "@/components/ui/MyButton";
 import SectionWrapper from "@/components/ui/SectionWrapper";
+import { TestAccount } from "@/types";
 
-const AccountForm = () => {
+interface AccountFormProps {
+  account: TestAccount;
+}
+
+const AccountForm = ({ account }: AccountFormProps) => {
+  const profitLoss = account.virtual_balance - account.account_size;
+  const profitLossPercent = (profitLoss / account.account_size) * 100;
+  const isProfit = profitLoss >= 0;
+
   return (
     <div className="flex flex-col gap-4">
       <Button className="bg-highlight! text-outlineBg!" fullWidth>
@@ -32,12 +41,12 @@ const AccountForm = () => {
               value: "",
             },
             {
-              label: "Spot",
-              value: "$0.00",
+              label: "Type",
+              value: account.account_mode,
             },
             {
-              label: "Perps",
-              value: "$0.00",
+              label: "Size",
+              value: `$${account.account_size.toLocaleString()}`,
             },
             {
               label: (
@@ -48,12 +57,29 @@ const AccountForm = () => {
               ),
             },
             {
-              label: "Balance",
-              value: "$0.00",
+              label: "Virtual Balance",
+              value: `$${account.virtual_balance.toLocaleString()}`,
             },
             {
-              label: "Unrealized PNL",
-              value: "$0.00",
+              label: "PNL",
+              value: (
+                <div
+                  className={`font-semibold flex items-center space-x-1 ${
+                    isProfit ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {isProfit ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  <span>
+                    {isProfit ? "+" : "-"}$
+                    {Math.abs(profitLoss).toLocaleString()} (
+                    {profitLossPercent.toFixed(2)}%)
+                  </span>
+                </div>
+              ),
             },
             {
               label: "Cross Margin Ratio",

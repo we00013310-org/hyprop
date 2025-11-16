@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz";
 
 export class HyperliquidTrading {
@@ -53,7 +54,7 @@ export class HyperliquidTrading {
     price: number | null,
     orderType: "market" | "limit",
     reduceOnly: boolean = false
-  ): Promise<any> {
+  ) {
     try {
       return await this.callEdgeFunction({
         type: "placeOrder",
@@ -193,7 +194,6 @@ export async function getUserFills(address: string): Promise<any[]> {
 }
 
 export async function getUserPositions(
-  address: string,
   accountId?: string,
   walletAddress?: string
 ): Promise<any[]> {
@@ -244,7 +244,7 @@ export async function getUserPositions(
       },
       body: JSON.stringify({
         type: "clearinghouseState",
-        user: address,
+        user: walletAddress,
       }),
     });
 

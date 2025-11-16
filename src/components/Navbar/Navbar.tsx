@@ -96,7 +96,7 @@ export function Navbar() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Button href="/dashboard">Dashboard</Button>
 
           {walletAddress && (

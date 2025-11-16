@@ -14,17 +14,23 @@ import {
 import { useState } from "react";
 
 interface SizeInputProps {
+  value: number;
   tokens: string[];
+  onChangeToken: (val: string) => void;
 }
-const SizeInput = ({ tokens }: SizeInputProps) => {
+const SizeInput = ({ tokens, value, onChangeToken }: SizeInputProps) => {
   const [selectedOpt, setSelected] = useState<string>(tokens[0]);
+  const handleChange = (val: string) => {
+    setSelected(val);
+    onChangeToken(val);
+  };
 
   return (
     <InputGroup>
-      <InputGroupInput type="number" placeholder="Size" />
+      <InputGroupInput value={value} type="number" placeholder="Size" />
       <InputGroupAddon align="inline-end">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger>
             <InputGroupButton
               className="text-textBtn hover:bg-transparent font-light hover:text-white cursor-pointer"
               variant="ghost"
@@ -32,9 +38,13 @@ const SizeInput = ({ tokens }: SizeInputProps) => {
               {selectedOpt} <ChevronDownIcon />
             </InputGroupButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent className="bg-cardBg border-textBtn" align="end">
             {tokens.map((o) => (
-              <DropdownMenuItem onClick={() => setSelected(o)} key={o}>
+              <DropdownMenuItem
+                className="text-textBtn hover:bg-textBtn hover:text-cardBg"
+                onClick={() => handleChange(o)}
+                key={o}
+              >
                 {o.toUpperCase()}
               </DropdownMenuItem>
             ))}

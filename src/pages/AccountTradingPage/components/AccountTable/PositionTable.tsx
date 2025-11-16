@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/table";
 import { Pencil } from "lucide-react";
 import clsx from "clsx";
+import { usePositions } from "@/hooks/testAccount";
+import { useClosePosition } from "@/hooks/order";
+import { Button } from "@/components/ui/MyButton";
 
 // Position type matching Hyperliquid's position structure
 export type Position = {
@@ -29,7 +32,7 @@ export type Position = {
   markPrice: number;
   pnl: number;
   roe: number;
-  liqPrice: number;
+  liqPrice: number | string;
   margin: number;
   marginType: "Isolated" | "Cross";
   funding: number;
@@ -37,46 +40,54 @@ export type Position = {
   slPrice?: string;
 };
 
-const PositionTable = () => {
-  const [sorting, setSorting] = useState<SortingState>([]);
+interface PositionTableProps {
+  accountId: string;
+  currentPrice: number;
+  isDisabled?: boolean;
+}
 
-  // Sample data - replace with actual position data
-  const data: Position[] = [
-    {
-      type: "long",
-      coin: "BTC",
-      leverage: "5x",
-      size: "0.00001 BTC",
-      positionValue: 0.96,
-      entryPrice: 95722,
-      markPrice: 95668,
-      pnl: 0.0,
-      roe: 0.3,
-      liqPrice: 113460,
-      margin: 0.19,
-      marginType: "Isolated",
-      funding: -0.0,
-      tpPrice: "--",
-      slPrice: "--",
-    },
-    {
-      type: "short",
-      coin: "BTC",
-      leverage: "5x",
-      size: "0.00001 BTC",
-      positionValue: 0.96,
-      entryPrice: 95722,
-      markPrice: 95668,
-      pnl: -0.1,
-      roe: -0.3,
-      liqPrice: 113460,
-      margin: 0.19,
-      marginType: "Isolated",
-      funding: -0.0,
-      tpPrice: "--",
-      slPrice: "--",
-    },
-  ];
+const PositionTable = ({
+  accountId,
+  currentPrice,
+  isDisabled = false,
+}: PositionTableProps) => {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const { closePosition, isClosing } = useClosePosition({
+    accountId,
+    isDisabled,
+  });
+
+  const { data } = usePositions(accountId);
+  const parsedData: Position[] = useMemo(() => {
+    return (
+      data?.map((pos) => {
+        const size = parseFloat(pos.position.szi);
+        const entryPx = parseFloat(pos.position.entryPx ?? "0");
+        const marginUsed = parseFloat(pos.position.marginUsed ?? "0");
+        const unrealizedPnl = parseFloat(pos.position.unrealizedPnl ?? "0");
+        const isLong = size > 0;
+        const coin = pos.position.coin;
+
+        return {
+          type: isLong ? "long" : "short",
+          coin: coin,
+          leverage: pos.position.leverage ?? "1X",
+          size: `${Math.abs(size).toFixed(5)}`,
+          positionValue: +(Math.abs(size) * entryPx).toFixed(2),
+          entryPrice: entryPx,
+          markPrice: currentPrice,
+          pnl: unrealizedPnl,
+          roe: marginUsed > 0 ? (unrealizedPnl / marginUsed) * 100 : 0,
+          liqPrice: "--",
+          margin: marginUsed,
+          marginType: pos.position.marginType ?? "Isolated",
+          funding: parseFloat(pos.position.funding ?? "0"),
+          tpPrice: pos.position.tpPx ?? "--",
+          slPrice: pos.position.slPx ?? "--",
+        };
+      }) || []
+    );
+  }, [currentPrice, data]);
 
   const columns: ColumnDef<Position>[] = [
     {
@@ -210,18 +221,31 @@ const PositionTable = () => {
     },
     {
       id: "closeAll",
-      header: () => {
-        return (
-          <button className="text-highlight transition-all cursor-pointer text-xs">
-            Close All
-          </button>
-        );
-      },
-      cell: () => (
+      header: "Close Action",
+      // header: () => {
+      //   return (
+      //     <button className="text-highlight transition-all cursor-pointer text-xs">
+      //       Close Action
+      //     </button>
+      //   );
+      // },
+      cell: ({ row }) => (
         <div className="flex gap-1">
-          <button className="text-highlight transition-all cursor-pointer text-xs">
-            Market
-          </button>
+          {isClosing(row.original.coin, +row.original.size) ? (
+            <Button loading />
+          ) : (
+            <button
+              onClick={() =>
+                closePosition({
+                  coin: row.original.coin,
+                  size: +row.original.size,
+                })
+              }
+              className="text-highlight transition-all cursor-pointer text-xs"
+            >
+              Market
+            </button>
+          )}
         </div>
       ),
     },
@@ -246,7 +270,7 @@ const PositionTable = () => {
   ];
 
   const table = useReactTable({
-    data,
+    data: parsedData,
     columns,
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
@@ -299,7 +323,7 @@ const PositionTable = () => {
               </TableRow>
             ))
           ) : (
-            <TableRow>
+            <TableRow className="border-b border-tradingBorder hover:bg-tradingBgDark transition-colors">
               <TableCell
                 colSpan={columns.length}
                 className="h-24 text-center text-tradingText"

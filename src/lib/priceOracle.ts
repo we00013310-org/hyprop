@@ -3,7 +3,7 @@
  * Uses CoinGecko API as primary source
  */
 
-const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3';
+const COINGECKO_API_URL = "https://api.coingecko.com/api/v3";
 
 export interface PriceData {
   price: number;
@@ -19,9 +19,9 @@ export async function getRealBTCPrice(): Promise<number> {
     const response = await fetch(
       `${COINGECKO_API_URL}/simple/price?ids=bitcoin&vs_currencies=usd`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Accept': 'application/json',
+          Accept: "application/json",
         },
       }
     );
@@ -33,13 +33,13 @@ export async function getRealBTCPrice(): Promise<number> {
     const data = await response.json();
     const price = data.bitcoin?.usd;
 
-    if (!price || typeof price !== 'number') {
-      throw new Error('Invalid price data from CoinGecko');
+    if (!price || typeof price !== "number") {
+      throw new Error("Invalid price data from CoinGecko");
     }
 
     return price;
   } catch (error) {
-    console.error('Failed to fetch BTC price from CoinGecko:', error);
+    console.error("Failed to fetch BTC price from CoinGecko:", error);
     throw error;
   }
 }
@@ -47,9 +47,9 @@ export async function getRealBTCPrice(): Promise<number> {
 /**
  * Get demo price offset from localStorage (for testing only)
  */
-function getDemoPriceOffset(): number {
+export function getDemoPriceOffset(): number {
   try {
-    const offset = localStorage.getItem('demo_btc_price_offset');
+    const offset = localStorage.getItem("demo_btc_price_offset");
     if (offset) {
       const parsed = parseFloat(offset);
       if (!isNaN(parsed)) {
@@ -57,7 +57,7 @@ function getDemoPriceOffset(): number {
       }
     }
   } catch (error) {
-    console.error('Failed to read demo price offset:', error);
+    console.error("Failed to read demo price offset:", error);
   }
   return 0;
 }
@@ -75,19 +75,20 @@ export async function getRealBTCPriceWithFallback(): Promise<PriceData> {
     return {
       price: adjustedPrice,
       timestamp: Date.now(),
-      source: demoOffset !== 0 ? 'coingecko (demo offset applied)' : 'coingecko',
+      source:
+        demoOffset !== 0 ? "coingecko (demo offset applied)" : "coingecko",
     };
   } catch (error) {
-    console.warn('CoinGecko failed, trying Binance fallback:', error);
+    console.warn("CoinGecko failed, trying Binance fallback:", error);
 
     // Fallback to Binance
     try {
       const response = await fetch(
-        'https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT',
+        "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
         {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Accept': 'application/json',
+            Accept: "application/json",
           },
         }
       );
@@ -100,7 +101,7 @@ export async function getRealBTCPriceWithFallback(): Promise<PriceData> {
       const price = parseFloat(data.price);
 
       if (!price || isNaN(price)) {
-        throw new Error('Invalid price data from Binance');
+        throw new Error("Invalid price data from Binance");
       }
 
       const demoOffset = getDemoPriceOffset();
@@ -109,11 +110,11 @@ export async function getRealBTCPriceWithFallback(): Promise<PriceData> {
       return {
         price: adjustedPrice,
         timestamp: Date.now(),
-        source: demoOffset !== 0 ? 'binance (demo offset applied)' : 'binance',
+        source: demoOffset !== 0 ? "binance (demo offset applied)" : "binance",
       };
     } catch (binanceError) {
-      console.error('Both price sources failed:', binanceError);
-      throw new Error('Failed to fetch BTC price from all sources');
+      console.error("Both price sources failed:", binanceError);
+      throw new Error("Failed to fetch BTC price from all sources");
     }
   }
 }
@@ -150,12 +151,10 @@ export function calculateRealWorldPNL(
  * @param marginUsed - Margin used for the position
  * @returns PNL as percentage
  */
-export function calculatePNLPercentage(pnl: number, marginUsed: number): number {
+export function calculatePNLPercentage(
+  pnl: number,
+  marginUsed: number
+): number {
   if (marginUsed === 0) return 0;
   return (pnl / marginUsed) * 100;
 }
-
-
-
-
-

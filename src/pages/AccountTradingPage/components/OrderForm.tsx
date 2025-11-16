@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import clsx from "clsx";
 
 import { Button } from "../../../components/ui";
 import List from "../../../components/ui/List";
-import { USD } from "../../../configs";
 import {
   Tabs,
   TabsList,
@@ -17,6 +16,8 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import SectionWrapper from "@/components/ui/SectionWrapper";
+import { TestAccount } from "@/types";
+import { useCreateOrder } from "@/hooks/order";
 
 enum TradeType {
   Market = "Market",
@@ -29,25 +30,84 @@ enum OrderType {
   Sell = "Sell",
 }
 
-const OrderForm = () => {
+interface OrderFormProps {
+  account: TestAccount;
+  currentPrice: number;
+  token?: string;
+}
+
+const OrderForm = ({
+  account,
+  currentPrice,
+  token = "BTC",
+}: OrderFormProps) => {
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.Market);
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Buy);
-  const balance = 5000;
-  const tokens = ["BTC", "USDC"];
+
+  const balance = account.virtual_balance;
+
+  const tokens = [token, "USD"];
+  const [selectedToken, setSelectedToken] = useState(tokens[0]);
+  const handleChangeSelectedToken = (newToken: string) => {
+    handleChangePct(0);
+    setSelectedToken(newToken);
+  };
+
+  const [size, setSize] = useState(0);
 
   const [reduceOnly, setReduceOnly] = useState(false);
-  const [tpsl, setTpsl] = useState(true);
-
+  const [tpsl, setTpsl] = useState(false);
   const [pct, setPct] = useState(0);
+
+  const handleChangePct = (newVal: number) => {
+    if (selectedToken === "USD") {
+      setSize(Math.floor((newVal * balance) / 100.0));
+    } else {
+      let tmpVal = newVal;
+      if (tmpVal === 100) {
+        tmpVal = 99.92;
+      }
+      setSize(+((tmpVal / 100.0) * (balance / currentPrice)).toFixed(6));
+    }
+    setPct(newVal);
+  };
+
+  const orderValue = useMemo(() => {
+    if (selectedToken === "USD") {
+      return size;
+    } else {
+      return Math.floor(size * currentPrice);
+    }
+  }, [currentPrice, selectedToken, size]);
+
+  const { mutate, isPending } = useCreateOrder({
+    accountId: account.id,
+    onSuccess: () => {
+      handleChangePct(0);
+    },
+  });
+
+  const handleSubmitOrder = () => {
+    const tSize = orderValue / currentPrice;
+
+    mutate({
+      side: orderType === OrderType.Buy ? "long" : "short",
+      size: tSize,
+      orderType: tradeType.toLowerCase(),
+      currentPrice,
+      reduceOnly,
+      token,
+    });
+  };
 
   return (
     <>
       <div className="w-full flex justify-between gap-2">
         <div className="flex-1">
-          <Button fullWidth>Cross</Button>
+          <Button fullWidth>Isolated</Button>
         </div>
         <div className="flex-1">
-          <Button fullWidth>20x</Button>
+          <Button fullWidth>1x</Button>
         </div>
         <div className="flex-1">
           <Button fullWidth>One-Way</Button>
@@ -85,7 +145,7 @@ const OrderForm = () => {
         data={[
           {
             label: "Available to Trade",
-            value: `${balance.toLocaleString()} ${USD}`,
+            value: `$${balance.toLocaleString()}`,
           },
         ]}
       />
@@ -109,11 +169,15 @@ const OrderForm = () => {
           </TabsTrigger>
         </TabsList>
 
-        <SizeInput tokens={tokens} />
+        <SizeInput
+          value={size}
+          onChangeToken={handleChangeSelectedToken}
+          tokens={tokens}
+        />
 
         <div className="flex items-center gap-2 my-2">
           <Slider
-            onValueChange={(o) => setPct(o[0])}
+            onValueChange={(o) => handleChangePct(o[0])}
             className="my-2"
             value={[pct]}
             max={100}
@@ -122,7 +186,7 @@ const OrderForm = () => {
           <InputGroup className="w-[120px]">
             <InputGroupInput
               type="number"
-              onChange={(o) => setPct(+o.target.value)}
+              onChange={(o) => handleChangePct(+o.target.value)}
               value={pct}
               min={0}
               max={100}
@@ -154,23 +218,25 @@ const OrderForm = () => {
         </div>
 
         <div className="mt-8 w-full">
-          <Button fullWidth>Place Order</Button>
+          <Button fullWidth loading={isPending} onClick={handleSubmitOrder}>
+            Place Order
+          </Button>
         </div>
 
         <SectionWrapper className="mt-2 bg-cardBgDarker!">
           <List
             data={[
               {
-                label: "Liquidation Price",
-                value: "N/A",
+                label: "Current Price",
+                value: `$${currentPrice.toLocaleString()}`,
               },
               {
                 label: "Order Value",
-                value: "N/A",
+                value: `$${orderValue}`,
               },
               {
                 label: "Margin Value",
-                value: "N/A",
+                value: `$${orderValue}`,
               },
               {
                 label: "Slippage",

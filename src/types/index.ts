@@ -14,3 +14,5 @@ export type Exam = {
   dailyLoss: number;
   maxDD: number;
 };
+export type Checkpoint =
+  Database["public"]["Tables"]["test_account_checkpoints"]["Row"];

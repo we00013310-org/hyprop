@@ -148,11 +148,7 @@ const TradingPage = () => {
 
     try {
       // PHASE 1: For test accounts, use database positions
-      const positionsData = await getUserPositions(
-        "",
-        accountId,
-        walletAddress
-      );
+      const positionsData = await getUserPositions(accountId, walletAddress);
       const openPositions = positionsData.filter((pos: any) => {
         const size = parseFloat(pos.position?.szi || "0");
         return size !== 0;
@@ -693,7 +689,6 @@ const TradingPage = () => {
               {activeTab === "positions" && !!walletAddress && (
                 <PositionsList
                   key={key}
-                  address=""
                   accountId={accountId as string}
                   walletAddress={walletAddress}
                   isDisabled={!isAccountActive}

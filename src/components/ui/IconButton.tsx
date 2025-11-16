@@ -13,7 +13,7 @@ export function IconButton({
   ...props
 }: IconButtonProps) {
   const baseClasses =
-    "inline-flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-transparent border border-btnBorder text-slate-400 hover:text-slate-300";
+    "inline-flex items-center justify-center transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed bg-transparent border border-btnBorder text-slate-400 hover:text-slate-300";
 
   const sizeClasses = {
     md: "w-7 h-7 rounded-sm",

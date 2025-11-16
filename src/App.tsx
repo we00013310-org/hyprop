@@ -35,7 +35,10 @@ function AppContent() {
         <Route path="/" component={Dashboard} />
         <Route path="/new-account" component={NewAccountPage} />
         <Route path="/trading/:accountId" component={TradingPage} />
-        <Route path="/account-trading" component={AccountTradingPage} />
+        <Route
+          path="/account-trading/:accountId"
+          component={AccountTradingPage}
+        />
 
         <Route path="/leaderboard" component={LeaderboardPage} />
 
