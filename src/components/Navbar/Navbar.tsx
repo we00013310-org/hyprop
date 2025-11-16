@@ -79,14 +79,14 @@ export function Navbar() {
             </button>
 
             {showMoreDropdown && (
-              <div className="absolute top-full mt-2 right-0 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50">
+              <div className="absolute top-full mt-2 right-0 w-48 bg-cardBg rounded-lg shadow-xl py-2 z-50">
                 <NavLink href="/about">
-                  <span className="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700">
+                  <span className="block px-4 py-2 text-sm text-slate-400 hover:text-white">
                     About
                   </span>
                 </NavLink>
                 <NavLink href="/help">
-                  <span className="block px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-700">
+                  <span className="block px-4 py-2 text-sm text-slate-400 hover:text-white">
                     Help
                   </span>
                 </NavLink>

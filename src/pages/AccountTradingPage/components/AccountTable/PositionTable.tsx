@@ -7,7 +7,7 @@ import {
   SortingState,
   getSortedRowModel,
 } from "@tanstack/react-table";
-import { Pencil } from "lucide-react";
+import { Inbox, Pencil } from "lucide-react";
 import clsx from "clsx";
 
 import {
@@ -333,9 +333,12 @@ const PositionTable = ({
             <TableRow className="fade-in border-b border-tradingBorder hover:bg-tradingBgDark transition-colors">
               <TableCell
                 colSpan={columns.length}
-                className="h-24 text-center text-tradingText"
+                className="h-24 text-center text-textBtn"
               >
-                No positions.
+                <span className="flex flex-col justify-center items-center gap-1 h-40">
+                  <Inbox className="w-6 h-6" />
+                  <span>No positions</span>
+                </span>
               </TableCell>
             </TableRow>
           )}

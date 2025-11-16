@@ -14,6 +14,7 @@ import NewAccountPage from "./pages/NewAccountPage/NewAccountPage";
 import AccountTradingPage from "./pages/AccountTradingPage/AccountTradingPage";
 import LeaderboardPage from "./pages/LeaderboardPage/LeaderboardPage";
 import ReferralsPage from "./pages/ReferralsPage/ReferralsPage";
+import PortfolioPage from "./pages/PortfolioPage/PortfolioPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -42,6 +43,8 @@ function AppContent() {
           path="/account-trading/:accountId"
           component={AccountTradingPage}
         />
+
+        <Route path="/portfolio" component={PortfolioPage} />
 
         <Route path="/leaderboard" component={LeaderboardPage} />
 

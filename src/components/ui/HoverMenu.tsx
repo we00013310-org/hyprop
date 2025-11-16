@@ -52,7 +52,7 @@ export function HoverMenu({
       {/* Dropdown menu */}
       {isOpen && (
         <div
-          className={`absolute top-full mt-1 ${alignClasses[align]} min-w-[200px] bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 animate-in duration-200`}
+          className={`absolute top-full mt-1 ${alignClasses[align]} min-w-[200px] bg-cardBg rounded-lg shadow-xl py-2 z-50 animate-in duration-200`}
         >
           {children}
         </div>
@@ -82,9 +82,9 @@ export function MenuItem({
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-2 text-sm transition-colors ${variantClasses[variant]} hover:bg-slate-700 flex items-center gap-2`}
+      className={`w-full text-left px-4 py-2 text-sm transition-colors ${variantClasses[variant]} cursor-pointer flex items-center gap-2`}
     >
-      {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
+      {leftIcon && <span className="shrink-0">{leftIcon}</span>}
       {children}
     </button>
   );

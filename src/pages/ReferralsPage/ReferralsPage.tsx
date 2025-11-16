@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DollarSign, Users, Gift } from "lucide-react";
 import { Button } from "../../components/ui";
+import StatCard from "@/components/StatCard/StatCard";
 
 interface Referral {
   address: string;
@@ -74,21 +75,6 @@ export default function ReferralsPage() {
     return address;
   };
 
-  const handleEnterCode = () => {
-    // Placeholder for enter code functionality
-    console.log("Enter referral code clicked");
-  };
-
-  const handleCreateCode = () => {
-    // Placeholder for create code functionality
-    console.log("Create referral code clicked");
-  };
-
-  const handleClaimRewards = () => {
-    // Placeholder for claim rewards functionality
-    console.log("Claim rewards clicked");
-  };
-
   return (
     <div>
       <main className="fade-in max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20 flex flex-col gap-10 items-start text-left">
@@ -113,13 +99,13 @@ export default function ReferralsPage() {
                 </div>
 
                 <div className="w-full md:w-1/2 flex items-center md:justify-end gap-4">
-                  <Button variant="outline" onClick={handleEnterCode}>
+                  <Button className="w-40" variant="outline" size="lg">
                     Enter Code
                   </Button>
-                  <Button variant="outline" onClick={handleCreateCode}>
+                  <Button className="w-40" variant="outline" size="lg">
                     Create Code
                   </Button>
-                  <Button variant="primary" onClick={handleClaimRewards}>
+                  <Button className="w-40" size="lg">
                     Claim Rewards
                   </Button>
                 </div>
@@ -130,45 +116,28 @@ export default function ReferralsPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {/* Traders Referred */}
-            <div className="bg-sectionBg border border-btnBorder rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-slate-400 text-sm">Traders Referred</span>
-              </div>
-              <div className="text-3xl font-bold text-white">
-                {stats.tradersReferred}
-              </div>
-            </div>
+            <StatCard
+              title="Traders Referred"
+              value={"$" + stats.tradersReferred}
+              icon={<Users className="w-5 h-5 text-highlight" />}
+              showHelp
+            />
 
             {/* Revenues Earned */}
-            <div className="bg-sectionBg border border-btnBorder rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-slate-400 text-sm">Revenues Earned</span>
-              </div>
-              <div className="text-3xl font-bold text-white">
-                {formatCurrency(stats.revenuesEarned)}
-              </div>
-            </div>
+            <StatCard
+              title="Revenues Earned"
+              value={"$" + stats.revenuesEarned}
+              icon={<DollarSign className="w-5 h-5 text-highlight" />}
+              showHelp
+            />
 
             {/* Claimable Rewards */}
-            <div className="bg-sectionBg border border-btnBorder rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-slate-400 text-sm">
-                  Claimable Rewards
-                </span>
-              </div>
-              <div className="text-3xl font-bold text-white">
-                {formatCurrency(stats.claimableRewards)}
-              </div>
-            </div>
+            <StatCard
+              title="Claimable Rewards"
+              value={"$" + stats.claimableRewards}
+              icon={<Gift className="w-5 h-5 text-highlight" />}
+              showHelp
+            />
           </div>
           {/* Tabs and Table */}
           <div className="bg-sectionBg rounded-lg border border-btnBorder overflow-hidden">

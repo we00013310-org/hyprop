@@ -97,7 +97,7 @@ const ExamCard = ({ type = "basic", data }: ExamCardProps) => {
 
       if (insertError) throw insertError;
 
-      success("Bought new Exam");
+      success("Created new Test Account");
       setLocation("/");
     } catch (err: any) {
       error(err.message || "Failed to create test account");

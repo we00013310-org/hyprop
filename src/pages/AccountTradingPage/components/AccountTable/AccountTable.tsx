@@ -33,7 +33,11 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
           />
         );
       default:
-        return <ComingSoon />;
+        return (
+          <span className="flex flex-col justify-center items-center gap-1 h-58">
+            <ComingSoon />
+          </span>
+        );
     }
   }, [account.id, currentPrice, tab]);
 
