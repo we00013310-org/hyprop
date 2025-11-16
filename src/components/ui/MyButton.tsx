@@ -62,7 +62,7 @@ export function Button({
   }
 
   return (
-    <button className={classes} disabled={disabled} {...props}>
+    <button className={classes} disabled={disabled || loading} {...props}>
       {loading ? "Loading..." : content}
     </button>
   );

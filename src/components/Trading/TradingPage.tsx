@@ -119,7 +119,6 @@ const TradingPage = () => {
 
   // PHASE 1: Check test status periodically
   useEffect(() => {
-    console.log("accountId", accountId, walletAddress);
     if (!accountId || !walletAddress) return;
 
     const checkTestStatus = async () => {

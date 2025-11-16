@@ -39,7 +39,7 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
 
   return (
     <div className="w-full flex flex-col gap-1">
-      <div className="w-full flex justify-between mt-3 border-b-[0.6px] border-textBtn">
+      <div className="w-full flex justify-between border-b-[0.6px] border-textBtn">
         {Object.values(Tab).map((o) => {
           const isActive = tab === o;
 

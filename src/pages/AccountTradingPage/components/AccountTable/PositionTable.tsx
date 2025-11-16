@@ -7,6 +7,9 @@ import {
   SortingState,
   getSortedRowModel,
 } from "@tanstack/react-table";
+import { Pencil } from "lucide-react";
+import clsx from "clsx";
+
 import {
   Table,
   TableBody,
@@ -15,11 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pencil } from "lucide-react";
-import clsx from "clsx";
 import { usePositions } from "@/hooks/testAccount";
 import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
-import { Button } from "@/components/ui/MyButton";
+import { Spinner } from "@/components/ui/spinner";
 
 // Position type matching Hyperliquid's position structure
 export type Position = {
@@ -238,7 +239,7 @@ const PositionTable = ({
       cell: ({ row }) => (
         <div className="flex gap-1">
           {isClosing(row.original.coin, +row.original.size) ? (
-            <Button loading />
+            <Spinner className="text-highlight" />
           ) : (
             <button
               onClick={() =>
@@ -316,7 +317,7 @@ const PositionTable = ({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="border-b border-tradingBorder hover:bg-tradingBgDark transition-colors"
+                className="fade-in border-b border-tradingBorder hover:bg-tradingBgDark transition-colors"
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
@@ -329,7 +330,7 @@ const PositionTable = ({
               </TableRow>
             ))
           ) : (
-            <TableRow className="border-b border-tradingBorder hover:bg-tradingBgDark transition-colors">
+            <TableRow className="fade-in border-b border-tradingBorder hover:bg-tradingBgDark transition-colors">
               <TableCell
                 colSpan={columns.length}
                 className="h-24 text-center text-tradingText"

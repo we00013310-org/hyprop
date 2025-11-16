@@ -18,6 +18,7 @@ import {
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { TestAccount } from "@/types";
 import { useCreateOrder } from "@/hooks/order";
+import { usePositions } from "@/hooks/testAccount";
 
 enum TradeType {
   Market = "Market",
@@ -41,10 +42,17 @@ const OrderForm = ({
   currentPrice,
   token = "BTC",
 }: OrderFormProps) => {
+  const { data: positionsData } = usePositions(account.id);
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.Market);
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Buy);
 
-  const balance = account.virtual_balance;
+  const balance = useMemo(() => {
+    const usedBalance = positionsData?.reduce((res, cur) => {
+      return res + cur.position.szi * cur.position.entryPx;
+    }, 0);
+
+    return Math.max(0, account.virtual_balance - usedBalance);
+  }, [account.virtual_balance, positionsData]);
 
   const tokens = [token, "USD"];
   const [selectedToken, setSelectedToken] = useState(tokens[0]);
@@ -218,7 +226,12 @@ const OrderForm = ({
         </div>
 
         <div className="mt-8 w-full">
-          <Button fullWidth loading={isPending} onClick={handleSubmitOrder}>
+          <Button
+            disabled={!size}
+            fullWidth
+            loading={isPending}
+            onClick={handleSubmitOrder}
+          >
             Place Order
           </Button>
         </div>

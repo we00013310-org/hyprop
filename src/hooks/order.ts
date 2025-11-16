@@ -193,6 +193,7 @@ export const useCheckAndClosePosition = ({
         await trading.updatePositionPnL();
         queryClient.invalidateQueries({ queryKey: ["test-positions"] });
         queryClient.invalidateQueries({ queryKey: ["test-account"] });
+        console.log("Updated position PnL");
 
         return true;
       } catch (error) {

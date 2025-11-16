@@ -6,7 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { FundedAccountCard } from "./FundedAccountCard";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
-import Spinner from "../ui/Spinner";
+import MySpinner from "../ui/MySpinner";
 import { Button } from "../ui";
 import { AccountCard } from "../AccountCard/AccountCard";
 
@@ -76,7 +76,7 @@ export function Dashboard() {
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <Spinner />
+            <MySpinner />
           </div>
         ) : (
           <div className="space-y-8">
