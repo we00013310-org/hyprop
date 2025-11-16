@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DollarSign, Users, Gift } from "lucide-react";
-import { Button } from "../ui";
+import { Button } from "../../components/ui";
 
 interface Referral {
   address: string;
@@ -12,7 +12,7 @@ interface Referral {
 
 type TabType = "Referrals" | "Legacy Reward History";
 
-export function ReferralsPage() {
+export default function ReferralsPage() {
   const [activeTab, setActiveTab] = useState<TabType>("Referrals");
 
   // Demo data matching the screenshot

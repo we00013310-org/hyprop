@@ -24,7 +24,7 @@ type SortColumn = "rank" | "trader" | "accountValue" | "pnl" | "roi" | "volume";
 type SortDirection = "asc" | "desc";
 type TimePeriod = "30D" | "7D" | "24H" | "ALL";
 
-export function LeaderboardPage() {
+export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");

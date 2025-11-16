@@ -1,16 +1,19 @@
 import { Route, Switch, useLocation } from "wouter";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+
 import { ToastProvider } from "./contexts/ToastContext";
 import { AuthForm } from "./components/Auth/AuthForm";
 import { Dashboard } from "./components/Dashboard/Dashboard";
 import TradingPage from "./components/Trading/TradingPage";
-import DemoSettingsPage from "./components/Demo/DemoSettingsPage";
-import { LeaderboardPage } from "./components/Leaderboard/LeaderboardPage";
-import { ReferralsPage } from "./components/Referrals/ReferralsPage";
+
 import { Navbar } from "./components/Navbar";
+import { Button } from "./components/ui";
+
+import DemoSettingsPage from "./pages/DemoSettingsPage/DemoSettingsPage";
 import NewAccountPage from "./pages/NewAccountPage/NewAccountPage";
 import AccountTradingPage from "./pages/AccountTradingPage/AccountTradingPage";
-import { Button } from "./components/ui";
+import LeaderboardPage from "./pages/LeaderboardPage/LeaderboardPage";
+import ReferralsPage from "./pages/ReferralsPage/ReferralsPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
