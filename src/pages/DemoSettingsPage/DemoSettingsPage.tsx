@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle, DollarSign, TrendingUp, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
 
 import { getRealBTCPriceWithFallback } from "../../lib/priceOracle";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../contexts/ToastContext";
+import { Button } from "../../components/ui";
+import MySpinner from "../../components/ui/MySpinner";
 
 export default function DemoSettingsPage() {
   const toast = useToast();
@@ -135,33 +137,32 @@ export default function DemoSettingsPage() {
       : null;
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-primaryBg text-white">
+      <main className="fade-in max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-20">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => setLocation("/")}
-            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-3 hover:bg-sectionBg rounded-2xl border border-btnBorder transition-colors"
           >
-            <ArrowLeft size={24} />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold">Demo Settings</h1>
-            <p className="text-slate-400 mt-1">
+            <h1 className="text-3xl font-medium text-white">Demo Settings</h1>
+            <p className="text-textBtn text-sm mt-1">
               Testing tools for price simulation
             </p>
           </div>
         </div>
 
         {/* Warning Banner */}
-        <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <AlertTriangle
-            className="text-yellow-500 flex-shrink-0 mt-0.5"
-            size={20}
-          />
+        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-6 mb-8 flex items-start gap-4 fade-in" style={{ animationDelay: "0.1s" }}>
+          <div className="p-3 bg-yellow-500/10 rounded-2xl border border-yellow-500/30">
+            <AlertTriangle className="text-yellow-500 w-6 h-6" />
+          </div>
           <div>
-            <h3 className="font-semibold text-yellow-500">Demo Mode Only</h3>
-            <p className="text-sm text-slate-300 mt-1">
+            <h3 className="font-semibold text-yellow-400 text-lg">Demo Mode Only</h3>
+            <p className="text-sm text-textBtn mt-2">
               This page is for testing purposes only. The price offset will
               affect all BTC prices displayed in the application and PnL
               calculations for simulated positions.
@@ -170,35 +171,61 @@ export default function DemoSettingsPage() {
         </div>
 
         {/* Current Price Info */}
-        <div className="bg-slate-800 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Current BTC Price</h2>
+        <div className="bg-sectionBg rounded-2xl border border-btnBorder p-6 lg:p-8 mb-8 fade-in" style={{ animationDelay: "0.2s" }}>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-white">Current BTC Price</h2>
+            <Button
+              onClick={fetchPrice}
+              disabled={loading}
+              loading={loading}
+              size="md"
+              variant="outline"
+              leftIcon={<RefreshCw className="w-4 h-4" />}
+            >
+              Refresh
+            </Button>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-700/50 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-1">Real Price</div>
-              <div className="text-2xl font-bold">
+            <div className="bg-primaryBg rounded-2xl border border-btnBorder p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-sectionBg rounded-xl border border-btnBorder">
+                  <DollarSign className="w-5 h-5 text-textBtn" />
+                </div>
+                <div className="text-sm text-textBtn">Real Price</div>
+              </div>
+              <div className="text-3xl font-bold text-white">
                 {loading ? (
-                  <span className="text-slate-500">Loading...</span>
+                  <div className="flex items-center gap-2">
+                    <MySpinner />
+                  </div>
                 ) : realPrice ? (
                   `$${realPrice.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}`
                 ) : (
-                  <span className="text-slate-500">--</span>
+                  <span className="text-textBtn">--</span>
                 )}
               </div>
             </div>
-            <div className="bg-slate-700/50 rounded-lg p-4">
-              <div className="text-sm text-slate-400 mb-1">
-                Adjusted Price (with offset)
+            <div className="bg-primaryBg rounded-2xl border border-btnBorder p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-sectionBg rounded-xl border border-btnBorder">
+                  <TrendingUp className="w-5 h-5 text-highlight" />
+                </div>
+                <div className="text-sm text-textBtn">
+                  Adjusted Price (with offset)
+                </div>
               </div>
-              <div className="text-2xl font-bold">
+              <div className="text-3xl font-bold text-white">
                 {loading ? (
-                  <span className="text-slate-500">Loading...</span>
+                  <div className="flex items-center gap-2">
+                    <MySpinner />
+                  </div>
                 ) : adjustedPrice ? (
                   <>
                     <span
-                      className={currentOffset !== 0 ? "text-blue-400" : ""}
+                      className={currentOffset !== 0 ? "text-highlight" : ""}
                     >
                       $
                       {adjustedPrice.toLocaleString("en-US", {
@@ -207,39 +234,32 @@ export default function DemoSettingsPage() {
                       })}
                     </span>
                     {currentOffset !== 0 && (
-                      <span className="text-sm text-blue-400 ml-2">
+                      <span className="text-base text-highlight ml-2">
                         ({currentOffset > 0 ? "+" : ""}
                         {currentOffset})
                       </span>
                     )}
                   </>
                 ) : (
-                  <span className="text-slate-500">--</span>
+                  <span className="text-textBtn">--</span>
                 )}
               </div>
             </div>
           </div>
-          <button
-            onClick={fetchPrice}
-            disabled={loading}
-            className="mt-4 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors disabled:opacity-50"
-          >
-            {loading ? "Refreshing..." : "Refresh Price"}
-          </button>
         </div>
 
         {/* Price Offset Control */}
-        <div className="bg-slate-800 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Price Offset Control</h2>
-          <p className="text-slate-400 text-sm mb-4">
+        <div className="bg-sectionBg rounded-2xl border border-btnBorder p-6 lg:p-8 fade-in" style={{ animationDelay: "0.3s" }}>
+          <h2 className="text-xl font-semibold text-white mb-4">Price Offset Control</h2>
+          <p className="text-textBtn text-sm mb-6">
             Enter a number to adjust the BTC price. Positive values increase the
             price, negative values decrease it. For example, entering -5000 will
             reduce the BTC price by $5,000.
           </p>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-white mb-3">
                 Price Offset (USD)
               </label>
               <input
@@ -247,20 +267,20 @@ export default function DemoSettingsPage() {
                 value={priceOffset}
                 onChange={(e) => setPriceOffset(e.target.value)}
                 placeholder="e.g., -5000"
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-primaryBg border border-btnBorder rounded-2xl px-4 py-3 text-white placeholder-textBtn focus:outline-none focus:ring-2 focus:ring-highlight focus:border-transparent transition-all"
               />
             </div>
 
             {priceOffset && !isNaN(parseFloat(priceOffset)) && previewPrice && (
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <div className="text-sm text-slate-400 mb-1">Preview Price</div>
-                <div className="text-xl font-bold text-blue-400">
+              <div className="bg-primaryBg rounded-2xl border border-btnBorder p-6 fade-in">
+                <div className="text-sm text-textBtn mb-2">Preview Price</div>
+                <div className="text-2xl font-bold text-highlight">
                   $
                   {previewPrice.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
-                  <span className="text-sm ml-2">
+                  <span className="text-base ml-2">
                     ({parseFloat(priceOffset) > 0 ? "+" : ""}
                     {parseFloat(priceOffset)})
                   </span>
@@ -268,53 +288,76 @@ export default function DemoSettingsPage() {
               </div>
             )}
 
-            <div className="flex gap-3">
-              <button
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
                 onClick={handleApplyOffset}
                 disabled={!priceOffset || isNaN(parseFloat(priceOffset))}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:text-slate-500 py-2 px-4 rounded-lg font-medium transition-colors"
+                loading={loading}
+                size="lg"
+                fullWidth
               >
                 Apply Offset
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleClearOffset}
-                disabled={currentOffset === 0}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-700 disabled:text-slate-500 py-2 px-4 rounded-lg font-medium transition-colors"
+                disabled={currentOffset === 0 || loading}
+                size="lg"
+                fullWidth
+                variant="outline"
               >
                 Clear Offset
-              </button>
+              </Button>
             </div>
 
             {currentOffset !== 0 && (
-              <div className="text-center text-sm text-blue-400">
-                Current offset: {currentOffset > 0 ? "+" : ""}
-                {currentOffset} USD
+              <div className="text-center py-3 px-4 bg-primaryBg rounded-2xl border border-btnBorder">
+                <span className="text-sm text-textBtn">Current offset: </span>
+                <span className="text-sm font-semibold text-highlight">
+                  {currentOffset > 0 ? "+" : ""}
+                  {currentOffset} USD
+                </span>
               </div>
             )}
           </div>
         </div>
 
         {/* Examples */}
-        <div className="mt-6 bg-slate-800/50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold mb-3">Examples</h3>
-          <ul className="space-y-2 text-sm text-slate-400">
-            <li>
-              • Enter{" "}
-              <code className="bg-slate-700 px-2 py-1 rounded">-5000</code> to
-              decrease BTC price by $5,000
+        <div className="mt-8 bg-sectionBg/50 rounded-2xl border border-btnBorder p-6 lg:p-8 fade-in" style={{ animationDelay: "0.4s" }}>
+          <h3 className="text-lg font-semibold text-white mb-4">Examples</h3>
+          <ul className="space-y-3 text-sm">
+            <li className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 bg-highlight rounded-full mt-2"></div>
+              <span className="text-textBtn">
+                Enter{" "}
+                <code className="bg-primaryBg border border-btnBorder px-2 py-1 rounded-lg text-white font-mono">
+                  -5000
+                </code>{" "}
+                to decrease BTC price by $5,000
+              </span>
             </li>
-            <li>
-              • Enter{" "}
-              <code className="bg-slate-700 px-2 py-1 rounded">10000</code> to
-              increase BTC price by $10,000
+            <li className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 bg-highlight rounded-full mt-2"></div>
+              <span className="text-textBtn">
+                Enter{" "}
+                <code className="bg-primaryBg border border-btnBorder px-2 py-1 rounded-lg text-white font-mono">
+                  10000
+                </code>{" "}
+                to increase BTC price by $10,000
+              </span>
             </li>
-            <li>
-              • Enter <code className="bg-slate-700 px-2 py-1 rounded">0</code>{" "}
-              or clear to use real price
+            <li className="flex items-start gap-3">
+              <div className="w-1.5 h-1.5 bg-highlight rounded-full mt-2"></div>
+              <span className="text-textBtn">
+                Enter{" "}
+                <code className="bg-primaryBg border border-btnBorder px-2 py-1 rounded-lg text-white font-mono">
+                  0
+                </code>{" "}
+                or clear to use real price
+              </span>
             </li>
           </ul>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

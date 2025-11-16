@@ -86,7 +86,7 @@ export function AuthForm() {
           <div className="fade-in" style={{ animationDelay: "0.1s" }}>
             <div className="bg-sectionBg rounded-2xl border border-btnBorder p-8 lg:p-10">
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-highlight to-highlight/70 rounded-2xl mb-6 shadow-lg shadow-highlight/20">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-highlight to-highlight/70 rounded-2xl mb-6 shadow-lg shadow-highlight/20">
                   <Wallet className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-3">
