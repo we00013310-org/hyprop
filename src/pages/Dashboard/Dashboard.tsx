@@ -3,16 +3,17 @@ import { useLocation } from "wouter";
 import { Inbox, Plus } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { FundedAccountCard } from "./FundedAccountCard";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
-import MySpinner from "../ui/MySpinner";
-import { Button } from "../ui";
-import { AccountCard } from "../AccountCard/AccountCard";
+
+import { FundedAccountCard } from "./components/FundedAccountCard";
+import MySpinner from "@/components/ui/MySpinner";
+import { Button } from "@/components/ui/MyButton";
+import { AccountCard } from "@/components/AccountCard/AccountCard";
 
 import feeIcon from "../../assets/icons/ic_fee.svg";
 
-export function Dashboard() {
+export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { walletAddress } = useAuth();
   const { loadAccounts, testAccounts, fundedAccounts, loading } = useAccounts();

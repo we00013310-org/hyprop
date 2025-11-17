@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 import { ToastProvider } from "./contexts/ToastContext";
 import { AuthForm } from "./components/Auth/AuthForm";
-import { Dashboard } from "./components/Dashboard/Dashboard";
 import TradingPage from "./components/Trading/TradingPage";
 
 import { Navbar } from "./components/Navbar";
@@ -15,6 +14,7 @@ import AccountTradingPage from "./pages/AccountTradingPage/AccountTradingPage";
 import LeaderboardPage from "./pages/LeaderboardPage/LeaderboardPage";
 import ReferralsPage from "./pages/ReferralsPage/ReferralsPage";
 import PortfolioPage from "./pages/PortfolioPage/PortfolioPage";
+import DashboardPage from "./pages/Dashboard/Dashboard";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -36,7 +36,7 @@ function AppContent() {
     <div className="min-h-screen">
       <Navbar />
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={DashboardPage} />
         <Route path="/new-account" component={NewAccountPage} />
         <Route path="/trading/:accountId" component={TradingPage} />
         <Route
