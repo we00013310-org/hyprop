@@ -1038,7 +1038,9 @@ Deno.serve(async (req: Request) => {
           // Check if it's time to evaluate the current checkpoint
           const checkpointTimeMs = currentCheckpoint * checkpointIntervalMs;
 
-          if (timeElapsed >= checkpointTimeMs) {
+          const isLastCheckpoint = currentCheckpoint === numCheckpoints;
+
+          if (timeElapsed >= checkpointTimeMs || isLastCheckpoint) {
             console.log(
               `Checking checkpoint ${currentCheckpoint}/${numCheckpoints} (${
                 checkpointIntervalHours * currentCheckpoint
@@ -1112,18 +1114,20 @@ Deno.serve(async (req: Request) => {
                 await createRealAccount(testAccount, supabase);
               }
             } else {
-              // Checkpoint failed
-              console.log(
-                `Checkpoint ${currentCheckpoint} failed - marking account as failed`
-              );
-              newStatus = "failed";
-              await supabase
-                .from("test_accounts")
-                .update({
-                  status: "failed",
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("id", accountId);
+              if (timeElapsed >= checkpointTimeMs) {
+                // Checkpoint failed
+                console.log(
+                  `Checkpoint ${currentCheckpoint} failed - marking account as failed`
+                );
+                newStatus = "failed";
+                await supabase
+                  .from("test_accounts")
+                  .update({
+                    status: "failed",
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("id", accountId);
+              }
             }
           }
         }

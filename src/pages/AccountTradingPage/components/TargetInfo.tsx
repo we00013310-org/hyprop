@@ -21,7 +21,7 @@ const TargetInfo = ({ account }: TargetInfoProps) => {
           <p className="text-sm text-textBtn">Profit Target</p>
           <p className="text-sm text-white">${profitTaget.toLocaleString()}</p>
         </div>
-        <Progress value={progress} />
+        <Progress key={progress} value={progress} />
         <div className="flex justify-end">
           <p className="text-xs text-textBtn">{progress}% completed</p>
         </div>
