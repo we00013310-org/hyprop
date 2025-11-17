@@ -1,5 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState } from "react";
+import { useLocation } from "wouter";
+
 import ExamCard from "../../components/ExamCard/ExamCard";
-import { ACCOUNT_TIERS } from "../../configs";
+import PaymentModal from "./components/PaymentModal/PaymentModal";
+import {
+  ACCOUNT_TIERS,
+  CHECKPOINT_INTERVAL_HOURS,
+  CHECKPOINT_PROFIT_TARGET,
+  NUM_CHECKPOINTS,
+} from "../../configs";
+import { Exam } from "@/types";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
 
 import ApplePay from "../../assets/brands/apple-pay.svg";
 import GooglePay from "../../assets/brands/google-pay.svg";
@@ -14,11 +28,56 @@ import CryptoPay4 from "../../assets/crypto-pay/4.svg";
 import CryptoPay5 from "../../assets/crypto-pay/5.svg";
 
 const NewAccountPage = () => {
+  const { user } = useAuth();
+  const { success, error } = useToast();
+  const [, setLocation] = useLocation();
+
   const basicAccounts = ACCOUNT_TIERS["1-step"];
   const proAccounts = ACCOUNT_TIERS["2-step"];
 
   const acc1Step = basicAccounts[0];
   const acc2Step = proAccounts[0];
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [selectedIsBasic, setSelectedIsBasic] = useState(true);
+
+  const handleExamCardClick = (exam: Exam, isBasic: boolean) => {
+    setSelectedExam(exam);
+    setSelectedIsBasic(isBasic);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePurchase = async (data: Exam, isBasic: boolean) => {
+    if (!user) return;
+
+    try {
+      const { error: insertError } = await supabase
+        .from("test_accounts")
+        .insert({
+          user_id: user.id,
+          account_size: data.size,
+          account_mode: !isBasic ? "2-step" : "1-step",
+          fee_paid: data.fee,
+          virtual_balance: data.size,
+          dd_max: data.maxDD,
+          dd_daily: data.size * data.dailyLoss,
+          profit_target: data.target,
+          high_water_mark: data.size,
+          num_checkpoints: NUM_CHECKPOINTS,
+          checkpoint_interval_hours: CHECKPOINT_INTERVAL_HOURS,
+          checkpoint_profit_target_percent: CHECKPOINT_PROFIT_TARGET,
+          status: "active",
+        });
+
+      if (insertError) throw insertError;
+
+      success("Created new Test Account");
+      setLocation("/");
+    } catch (err: any) {
+      error(err.message || "Failed to create test account");
+    }
+  };
 
   return (
     <div>
@@ -37,12 +96,28 @@ const NewAccountPage = () => {
 
         <div className="flex gap-4">
           {basicAccounts.map((o) => (
-            <ExamCard key={o.id} data={o} />
+            <ExamCard key={o.id} data={o} onClick={handleExamCardClick} />
           ))}
           {proAccounts.map((o) => (
-            <ExamCard key={o.id} data={o} type="pro" />
+            <ExamCard
+              key={o.id}
+              data={o}
+              type="pro"
+              onClick={handleExamCardClick}
+            />
           ))}
         </div>
+
+        {/* Payment Modal */}
+        {selectedExam && (
+          <PaymentModal
+            isOpen={isPaymentModalOpen}
+            onClose={() => setIsPaymentModalOpen(false)}
+            examData={selectedExam}
+            isBasic={selectedIsBasic}
+            onSubmit={handlePurchase}
+          />
+        )}
 
         {/* Payment Section */}
         <div className="flex flex-col items-center mt-12 gap-8">
