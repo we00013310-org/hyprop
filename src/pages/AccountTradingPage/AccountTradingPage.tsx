@@ -18,7 +18,7 @@ const AccountTradingPage = () => {
 
   if (isPending || !account) {
     return (
-      <div className="flex p-4 gap-2 fade-in">
+      <div className="flex p-4 gap-2 fade-in h-[50vh] w-full justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
