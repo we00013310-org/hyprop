@@ -1096,6 +1096,8 @@ Deno.serve(async (req: Request) => {
                     updated_at: new Date().toISOString(),
                   })
                   .eq("id", accountId);
+
+                await createRealAccount(testAccount, supabase);
               } else {
                 // Move to next checkpoint
                 console.log(
@@ -1110,8 +1112,6 @@ Deno.serve(async (req: Request) => {
                     updated_at: new Date().toISOString(),
                   })
                   .eq("id", accountId);
-
-                await createRealAccount(testAccount, supabase);
               }
             } else {
               if (timeElapsed >= checkpointTimeMs) {
