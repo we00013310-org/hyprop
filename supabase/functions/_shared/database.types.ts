@@ -149,85 +149,57 @@ export type Database = {
       }
       funded_accounts: {
         Row: {
-          balance_actual: number
+          account_mode: string
+          account_size: number
           created_at: string
           dd_daily: number
           dd_max: number
-          e_day_start: number | null
-          e_start: number
+          fee_paid: number
           high_water_mark: number
-          hl_builder_code: string | null
-          hl_subaccount_id: string | null
           id: string
-          im_required: number
-          l_effective: number
-          l_user: number
           last_withdrawal_ts: string | null
-          maintenance_margin: number
-          n_max: number
-          pair_mode: string
-          primary_symbol: string
+          profit_target: number
           status: string
-          test_account_id: string | null
+          test_account_id: string
           updated_at: string
           user_id: string
+          virtual_balance: number
         }
         Insert: {
-          balance_actual: number
+          account_mode: string
+          account_size: number
           created_at?: string
           dd_daily: number
           dd_max: number
-          e_day_start?: number | null
-          e_start: number
+          fee_paid?: number
           high_water_mark: number
-          hl_builder_code?: string | null
-          hl_subaccount_id?: string | null
           id?: string
-          im_required: number
-          l_effective: number
-          l_user: number
           last_withdrawal_ts?: string | null
-          maintenance_margin: number
-          n_max: number
-          pair_mode?: string
-          primary_symbol: string
+          profit_target: number
           status?: string
-          test_account_id?: string | null
+          test_account_id: string
           updated_at?: string
           user_id: string
+          virtual_balance: number
         }
         Update: {
-          balance_actual?: number
+          account_mode?: string
+          account_size?: number
           created_at?: string
           dd_daily?: number
           dd_max?: number
-          e_day_start?: number | null
-          e_start?: number
+          fee_paid?: number
           high_water_mark?: number
-          hl_builder_code?: string | null
-          hl_subaccount_id?: string | null
           id?: string
-          im_required?: number
-          l_effective?: number
-          l_user?: number
           last_withdrawal_ts?: string | null
-          maintenance_margin?: number
-          n_max?: number
-          pair_mode?: string
-          primary_symbol?: string
+          profit_target?: number
           status?: string
-          test_account_id?: string | null
+          test_account_id?: string
           updated_at?: string
           user_id?: string
+          virtual_balance?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "funded_accounts_primary_symbol_fkey"
-            columns: ["primary_symbol"]
-            isOneToOne: false
-            referencedRelation: "pairs"
-            referencedColumns: ["symbol"]
-          },
           {
             foreignKeyName: "funded_accounts_test_account_id_fkey"
             columns: ["test_account_id"]
