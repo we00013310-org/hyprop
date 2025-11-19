@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus, Settings, Menu } from "lucide-react";
+import { X, Plus, Menu } from "lucide-react";
 
 import Chart from "../AccountTradingPage/components/Chart";
 import DashboardTab from "./components/DashboardTab";
@@ -15,7 +15,6 @@ const TradingDashboardPage = () => {
     "dashboard" | "journal" | "account"
   >("dashboard");
   const [showChartPanel, setShowChartPanel] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <div className="min-h-screen">
