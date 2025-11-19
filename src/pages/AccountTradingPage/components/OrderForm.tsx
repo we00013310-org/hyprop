@@ -16,9 +16,9 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import SectionWrapper from "@/components/ui/SectionWrapper";
-import { TestAccount } from "@/types";
+import { FundedAccount, TestAccount } from "@/types";
 import { useCreateOrder } from "@/hooks/order";
-import { usePositions } from "@/hooks/testAccount";
+import { usePositions } from "@/hooks/account";
 
 enum TradeType {
   Market = "Market",
@@ -32,7 +32,7 @@ enum OrderType {
 }
 
 interface OrderFormProps {
-  account: TestAccount;
+  account: TestAccount | FundedAccount;
   currentPrice: number;
   token?: string;
 }
@@ -42,14 +42,18 @@ const OrderForm = ({
   currentPrice,
   token = "BTC",
 }: OrderFormProps) => {
-  const { data: positionsData } = usePositions(account.id);
+  const isFundedAccount = !!(account as FundedAccount).test_account_id;
+  const { data: positionsData } = usePositions(account.id, isFundedAccount);
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.Market);
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Buy);
 
   const balance = useMemo(() => {
-    const usedBalance = positionsData?.reduce((res, cur) => {
-      return res + cur.position.szi * cur.position.entryPx;
-    }, 0);
+    const usedBalance = positionsData?.reduce(
+      (res: number, cur: { position: { szi: number; entryPx: number } }) => {
+        return res + cur.position.szi * cur.position.entryPx;
+      },
+      0
+    );
 
     return Math.max(0, account.virtual_balance - usedBalance);
   }, [account.virtual_balance, positionsData]);
@@ -93,6 +97,7 @@ const OrderForm = ({
     onSuccess: () => {
       handleChangePct(0);
     },
+    isFundedAccount,
   });
 
   const handleSubmitOrder = () => {

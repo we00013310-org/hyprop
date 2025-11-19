@@ -7,12 +7,14 @@ export type TestPosition =
   Database["public"]["Tables"]["test_positions"]["Row"];
 export type Checkpoint =
   Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
+export type FundedCheckpoint =
+  Database["public"]["Tables"]["funded_account_checkpoints"]["Row"];
 export type User = Database["public"]["Tables"]["users"]["Row"];
 export type FundedAccount =
   Database["public"]["Tables"]["funded_accounts"]["Row"];
 
 export interface PlaceOrderAction {
-  type: "placeOrder";
+  type: "placeOrder" | "placeFundedOrder";
   coin: string;
   isBuy: boolean;
   size: string;
@@ -42,12 +44,24 @@ export interface GetTestPositionsAction {
   type: "getTestPositions";
 }
 
+export interface GetFundedPositionsAction {
+  type: "getFundedPositions";
+}
+
 export interface UpdatePositionPnLAction {
   type: "updatePositionPnL";
 }
 
+export interface UpdateFundedPositionPnLAction {
+  type: "updateFundedPositionPnL";
+}
+
 export interface CheckTestStatusAction {
   type: "checkTestStatus";
+}
+
+export interface CheckFundedStatusAction {
+  type: "checkFundedStatus";
 }
 
 export type Action =
@@ -57,16 +71,11 @@ export type Action =
   | ApproveBuilderFeeAction
   | GetBuilderFeesAction
   | GetTestPositionsAction
+  | GetFundedPositionsAction
   | UpdatePositionPnLAction
-  | CheckTestStatusAction;
-
-export interface PositionSimulationResult {
-  success: boolean;
-  position: TestPosition | null;
-  realizedPnL: number;
-  tradingFee: number;
-  newBalance: number;
-}
+  | UpdateFundedPositionPnLAction
+  | CheckTestStatusAction
+  | CheckFundedStatusAction;
 
 export interface CheckpointEvaluationResult {
   status: string;

@@ -4,7 +4,7 @@ import { getRealOraclePrice, calculatePnL } from "../utils/priceOracle.ts";
 export async function handleGetTestPositions(
   supabase: SupabaseClient,
   accountId: string
-): Promise<any> {
+) {
   console.log("=== GETTING TEST POSITIONS ===");
 
   const { data: positions, error: positionsError } = await supabase

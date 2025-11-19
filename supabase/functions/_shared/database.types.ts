@@ -147,17 +147,62 @@ export type Database = {
           },
         ]
       }
+      funded_account_checkpoints: {
+        Row: {
+          checkpoint_balance: number | null
+          checkpoint_number: number
+          checkpoint_passed: boolean | null
+          checkpoint_ts: string | null
+          created_at: string | null
+          funded_account_id: string
+          id: string
+          required_balance: number | null
+        }
+        Insert: {
+          checkpoint_balance?: number | null
+          checkpoint_number: number
+          checkpoint_passed?: boolean | null
+          checkpoint_ts?: string | null
+          created_at?: string | null
+          funded_account_id: string
+          id?: string
+          required_balance?: number | null
+        }
+        Update: {
+          checkpoint_balance?: number | null
+          checkpoint_number?: number
+          checkpoint_passed?: boolean | null
+          checkpoint_ts?: string | null
+          created_at?: string | null
+          funded_account_id?: string
+          id?: string
+          required_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funded_account_checkpoints_funded_account_id_fkey"
+            columns: ["funded_account_id"]
+            isOneToOne: false
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funded_accounts: {
         Row: {
           account_mode: string
           account_size: number
+          checkpoint_interval_hours: number | null
+          checkpoint_profit_target_percent: number | null
           created_at: string
+          current_checkpoint: number | null
           dd_daily: number
           dd_max: number
           fee_paid: number
           high_water_mark: number
           id: string
           last_withdrawal_ts: string | null
+          num_checkpoints: number | null
           profit_target: number
           status: string
           test_account_id: string
@@ -168,13 +213,17 @@ export type Database = {
         Insert: {
           account_mode: string
           account_size: number
+          checkpoint_interval_hours?: number | null
+          checkpoint_profit_target_percent?: number | null
           created_at?: string
+          current_checkpoint?: number | null
           dd_daily: number
           dd_max: number
           fee_paid?: number
           high_water_mark: number
           id?: string
           last_withdrawal_ts?: string | null
+          num_checkpoints?: number | null
           profit_target: number
           status?: string
           test_account_id: string
@@ -185,13 +234,17 @@ export type Database = {
         Update: {
           account_mode?: string
           account_size?: number
+          checkpoint_interval_hours?: number | null
+          checkpoint_profit_target_percent?: number | null
           created_at?: string
+          current_checkpoint?: number | null
           dd_daily?: number
           dd_max?: number
           fee_paid?: number
           high_water_mark?: number
           id?: string
           last_withdrawal_ts?: string | null
+          num_checkpoints?: number | null
           profit_target?: number
           status?: string
           test_account_id?: string

@@ -4,17 +4,23 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { getUserPositions, HyperliquidTrading } from "@/lib/hyperliquidTrading";
 
-export const useTestAccount = (accountId: string) => {
+export const useAccount = (accountId: string, isFundedAccount = false) => {
   const { walletAddress } = useAuth();
+  const mainKey = isFundedAccount ? "funded-account" : "test-account";
 
   return useQuery({
-    queryKey: ["test-account", accountId],
+    queryKey: [mainKey, accountId],
     queryFn: async () => {
       const trading = new HyperliquidTrading(accountId, walletAddress!);
-      await trading.checkTestStatus();
+      if (isFundedAccount) {
+        await trading.checkFundedStatus();
+      } else {
+        await trading.checkTestStatus();
+      }
 
+      const table = isFundedAccount ? "funded_accounts" : "test_accounts";
       const { data } = await supabase
-        .from("test_accounts")
+        .from(table)
         .select("*")
         .eq("id", accountId as string)
         .single();
@@ -26,16 +32,21 @@ export const useTestAccount = (accountId: string) => {
   });
 };
 
-export const useCheckpoints = (accountId: string) => {
+export const useCheckpoints = (accountId: string, isFundedAccount = false) => {
   const { walletAddress } = useAuth();
+  const baseKey = isFundedAccount ? "funded" : "test";
 
   return useQuery({
-    queryKey: ["test-account-checkpoints", accountId],
+    queryKey: [`${baseKey}-account-checkpoints`, accountId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("test_account_checkpoints")
+        .from(
+          isFundedAccount
+            ? "funded_account_checkpoints"
+            : "test_account_checkpoints"
+        )
         .select("*")
-        .eq("test_account_id", accountId)
+        .eq(isFundedAccount ? "account_id" : "test_account_id", accountId)
         .order("checkpoint_number", { ascending: true });
 
       return data;
@@ -44,12 +55,19 @@ export const useCheckpoints = (accountId: string) => {
   });
 };
 
-export const usePositions = (accountId: string) => {
+export const usePositions = (accountId: string, isFundedAccount = false) => {
   const { walletAddress } = useAuth();
   return useQuery({
-    queryKey: ["test-positions", accountId],
+    queryKey: [
+      isFundedAccount ? "funded-positions" : "test-positions",
+      accountId,
+    ],
     queryFn: async () => {
-      const data = await getUserPositions(accountId, walletAddress!);
+      const data = await getUserPositions(
+        accountId,
+        walletAddress!,
+        isFundedAccount
+      );
 
       return data.filter((pos) => {
         const size = parseFloat(pos.position?.szi || "0");

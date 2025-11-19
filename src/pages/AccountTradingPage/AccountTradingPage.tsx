@@ -9,14 +9,22 @@ import AccountTable from "./components/AccountTable/AccountTable";
 import PassedSection from "./components/PassedSection";
 import FailedSection from "./components/FailedSection";
 
-import { useTestAccount } from "@/hooks/testAccount";
+import { useAccount } from "@/hooks/account";
 import { useHyperliquidPrice } from "@/hooks/useHyperliquidPrice";
+import { TestAccount } from "@/types";
 
-const AccountTradingPage = () => {
+interface AccountTradingPageProps {
+  isFundedAccount: boolean;
+}
+
+const AccountTradingPage = ({ isFundedAccount }: AccountTradingPageProps) => {
   const { accountId } = useParams();
   const [, setLocation] = useLocation();
 
-  const { data: account, isPending } = useTestAccount(accountId as string);
+  const { data: account, isPending } = useAccount(
+    accountId as string,
+    isFundedAccount
+  );
   const { price: currentPrice } = useHyperliquidPrice("BTC");
   const isPassed = account?.status === "passed";
   const isFailed = account?.status === "failed";
@@ -34,11 +42,11 @@ const AccountTradingPage = () => {
     );
   }
 
-  // Show PassedSection if account has passed the evaluation
+  // Show PassedSection if account has passed the evaluation (only for Test Account)
   if (isPassed) {
     return (
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <PassedSection account={account} />
+        <PassedSection account={account as TestAccount} />
       </div>
     );
   }
@@ -47,7 +55,11 @@ const AccountTradingPage = () => {
   if (isFailed) {
     return (
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <FailedSection account={account} onTryAgain={handleTryAgain} />
+        <FailedSection
+          account={account as TestAccount}
+          onTryAgain={handleTryAgain}
+          isFundedAccount={isFundedAccount}
+        />
       </div>
     );
   }

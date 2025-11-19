@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/MyButton";
 import clsx from "clsx";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import PositionTable from "./PositionTable";
 import ComingSoon from "./ComingSoon";
-import { TestAccount } from "@/types";
+import { FundedAccount, TestAccount } from "@/types";
 
 enum Tab {
   Balances = "Balances",
@@ -16,12 +16,16 @@ enum Tab {
 }
 
 interface AccountTableProps {
-  account: TestAccount;
+  account: TestAccount | FundedAccount;
   currentPrice: number;
 }
 
 const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
   const [tab, setTab] = useState<Tab>(Tab.Positions);
+  const isFundedAccount = useMemo(
+    () => !!(account as FundedAccount).test_account_id,
+    [account]
+  );
 
   const renderContent = useCallback(() => {
     switch (tab) {
@@ -30,6 +34,7 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
           <PositionTable
             accountId={account.id as string}
             currentPrice={currentPrice}
+            isFundedAccount={isFundedAccount}
           />
         );
       default:
@@ -39,7 +44,7 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
           </span>
         );
     }
-  }, [account.id, currentPrice, tab]);
+  }, [account.id, currentPrice, isFundedAccount, tab]);
 
   return (
     <div className="w-full flex flex-col gap-1">

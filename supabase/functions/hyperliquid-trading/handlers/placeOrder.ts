@@ -1,14 +1,17 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+
 import type { PlaceOrderAction } from "../types.ts";
 import { validateOrderParams } from "../utils/validation.ts";
 import { getRealOraclePrice } from "../utils/priceOracle.ts";
 import { simulatePosition } from "../services/positionSimulator.ts";
+import { simulateFundedPosition } from "../services/fundedPositionSimulator.ts";
 
 export async function handlePlaceOrder(
   supabase: SupabaseClient,
   action: PlaceOrderAction,
-  accountId: string
-): Promise<any> {
+  accountId: string,
+  isFundedAccount = false
+) {
   const { coin, isBuy, size, price, orderType, reduceOnly } = action;
 
   console.log("=== ORDER DETAILS ===");
@@ -33,15 +36,25 @@ export async function handlePlaceOrder(
     console.log("Limit order: Using specified price:", entryPrice);
   }
 
-  const simulationResult = await simulatePosition(
-    supabase,
-    accountId,
-    coin,
-    isBuy,
-    parseFloat(size),
-    entryPrice,
-    reduceOnly || false
-  );
+  const simulationResult = await (isFundedAccount
+    ? simulateFundedPosition(
+        supabase,
+        accountId,
+        coin,
+        isBuy,
+        parseFloat(size),
+        entryPrice,
+        reduceOnly || false
+      )
+    : simulatePosition(
+        supabase,
+        accountId,
+        coin,
+        isBuy,
+        parseFloat(size),
+        entryPrice,
+        reduceOnly || false
+      ));
 
   console.log("=== SIMULATED ORDER SUCCESS ===");
   console.log("Result:", JSON.stringify(simulationResult));

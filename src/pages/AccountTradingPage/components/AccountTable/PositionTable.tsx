@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState } from "react";
 import {
   ColumnDef,
@@ -18,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePositions } from "@/hooks/testAccount";
+import { usePositions } from "@/hooks/account";
 import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -45,23 +46,26 @@ interface PositionTableProps {
   accountId: string;
   currentPrice: number;
   isDisabled?: boolean;
+  isFundedAccount?: boolean;
 }
 
 const PositionTable = ({
   accountId,
   currentPrice,
   isDisabled = false,
+  isFundedAccount = false,
 }: PositionTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { closePosition, isClosing } = useClosePosition({
     accountId,
     isDisabled,
+    isFundedAccount,
   });
 
-  const { data } = usePositions(accountId);
+  const { data } = usePositions(accountId, isFundedAccount);
   const parsedData: Position[] = useMemo(() => {
     return (
-      data?.map((pos) => {
+      data?.map((pos: any) => {
         const size = parseFloat(pos.position.szi);
         const entryPx = parseFloat(pos.position.entryPx ?? "0");
         const marginUsed = parseFloat(pos.position.marginUsed ?? "0");
@@ -94,6 +98,7 @@ const PositionTable = ({
     accountId,
     positionsLength: parsedData.length,
     isDisabled,
+    isFundedAccount,
   });
 
   const columns: ColumnDef<Position>[] = [

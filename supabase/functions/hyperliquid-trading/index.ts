@@ -19,8 +19,11 @@ import {
 import { handleApproveBuilderFee } from "./handlers/approveBuilderFee.ts";
 import { handleGetBuilderFees } from "./handlers/getBuilderFees.ts";
 import { handleGetTestPositions } from "./handlers/getTestPositions.ts";
+import { handleGetFundedPositions } from "./handlers/getFundedPositions.ts";
 import { handleUpdatePositionPnL } from "./handlers/updatePositionPnL.ts";
+import { handleUpdateFundedPositionPnL } from "./handlers/updateFundedPositionPnL.ts";
 import { handleCheckTestStatus } from "./handlers/checkTestStatus.ts";
+import { handleCheckFundedStatus } from "./handlers/checkFundedStatus.ts";
 
 interface RequestContext {
   supabase: ReturnType<typeof createClient>;
@@ -60,23 +63,30 @@ async function loadAccount(
   accountId: string,
   userId: string
 ): Promise<TestAccount> {
-  const { data: account, error: accountError } = await supabase
-    .from("test_accounts")
-    .select("*")
-    .eq("id", accountId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  const [res1, res2] = await Promise.all([
+    supabase
+      .from("test_accounts")
+      .select("*")
+      .eq("id", accountId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+    supabase
+      .from("funded_accounts")
+      .select("*")
+      .eq("id", accountId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
 
-  if (accountError) {
-    console.error("Account query error:", accountError);
-    throw new Error(`Account error: ${accountError.message}`);
+  if (res1.accountError && res2.accountError) {
+    throw new Error("Account error");
   }
 
-  if (!account) {
+  if (!res1.data && !res2.data) {
     throw new Error("Account not found or unauthorized");
   }
 
-  return account;
+  return res1.data || res2.data;
 }
 
 function initializeWallet(account: TestAccount): {
@@ -121,6 +131,10 @@ async function routeAction(
       validateAccountForTrading(account);
       return await handlePlaceOrder(supabase, action, accountId);
 
+    case "placeFundedOrder":
+      validateAccountForTrading(account);
+      return await handlePlaceOrder(supabase, action, accountId, true);
+
     case "cancelOrder":
       return await handleCancelOrder();
 
@@ -133,11 +147,20 @@ async function routeAction(
     case "getTestPositions":
       return await handleGetTestPositions(supabase, accountId);
 
+    case "getFundedPositions":
+      return await handleGetFundedPositions(supabase, accountId);
+
     case "updatePositionPnL":
       return await handleUpdatePositionPnL(supabase, accountId);
 
+    case "updateFundedPositionPnL":
+      return await handleUpdateFundedPositionPnL(supabase, accountId);
+
     case "checkTestStatus":
       return await handleCheckTestStatus(supabase, accountId);
+
+    case "checkFundedStatus":
+      return await handleCheckFundedStatus(supabase, accountId);
 
     default:
       throw new Error("Invalid action type");

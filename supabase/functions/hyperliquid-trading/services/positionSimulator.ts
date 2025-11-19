@@ -1,11 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 import { TAKER_FEE_RATE, DEFAULT_LEVERAGE } from "../constants.ts";
-import type {
-  TestAccount,
-  TestPosition,
-  PositionSimulationResult,
-} from "../types.ts";
+import type { TestAccount, TestPosition } from "../types.ts";
 import { getRealOraclePrice, calculatePnL } from "../utils/priceOracle.ts";
 import { getTestAccount } from "./accountCreator.ts";
 
@@ -264,7 +260,7 @@ export async function simulatePosition(
   size: number,
   entryPrice: number,
   reduceOnly: boolean
-): Promise<PositionSimulationResult> {
+) {
   console.log("=== SIMULATING POSITION FOR TEST ACCOUNT ===");
   console.log("Test Account ID:", testAccountId);
   console.log("Coin:", coin);
@@ -287,7 +283,7 @@ export async function simulatePosition(
   let realizedPnL = 0;
 
   if (existingPosition) {
-    const existingSize = parseFloat(existingPosition.size.toString());
+    // const existingSize = parseFloat(existingPosition.size.toString());
     const existingSide = existingPosition.side;
 
     const isClosing =

@@ -14,6 +14,7 @@ import { TestAccount } from "@/types";
 interface FailedSectionProps {
   account: TestAccount;
   onTryAgain?: () => void;
+  isFundedAccount?: boolean;
 }
 
 const FailedSection = ({ account, onTryAgain }: FailedSectionProps) => {
@@ -67,7 +68,7 @@ const FailedSection = ({ account, onTryAgain }: FailedSectionProps) => {
               <AlertTriangle className="w-6 h-6 text-red-400" />
             </div>
             <p className="text-red-400 text-lg mb-2">
-              This test account did not meet the evaluation requirements.
+              This account did not meet the evaluation requirements.
             </p>
             <p className="text-textBtn text-sm">
               The account breached one or more risk management limits. Review

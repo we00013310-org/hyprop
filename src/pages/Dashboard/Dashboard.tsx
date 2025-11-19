@@ -6,7 +6,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
 
-import { FundedAccountCard } from "./components/FundedAccountCard";
 import MySpinner from "@/components/ui/MySpinner";
 import { Button } from "@/components/ui/MyButton";
 import { AccountCard } from "@/components/AccountCard/AccountCard";
@@ -95,7 +94,13 @@ export default function Dashboard() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {fundedAccounts.map((account) => (
-                    <FundedAccountCard key={account.id} account={account} />
+                    <AccountCard
+                      key={account.id}
+                      account={account}
+                      onOpenTrading={() =>
+                        setLocation(`/funded-account-trading/${account.id}`)
+                      }
+                    />
                   ))}
                 </div>
               )}
@@ -137,7 +142,6 @@ export default function Dashboard() {
                     <AccountCard
                       key={account.id}
                       account={account}
-                      onUpdate={loadAccounts}
                       onOpenTrading={() =>
                         setLocation(`/account-trading/${account.id}`)
                       }

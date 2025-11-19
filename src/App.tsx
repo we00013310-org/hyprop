@@ -41,7 +41,12 @@ function AppContent() {
         <Route path="/trading/:accountId" component={TradingPage} />
         <Route
           path="/account-trading/:accountId"
-          component={AccountTradingPage}
+          component={() => <AccountTradingPage isFundedAccount={false} />}
+        />
+
+        <Route
+          path="/funded-account-trading/:accountId"
+          component={() => <AccountTradingPage isFundedAccount />}
         />
 
         <Route path="/portfolio" component={PortfolioPage} />

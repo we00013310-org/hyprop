@@ -9,10 +9,12 @@ export const useCreateOrder = ({
   accountId,
   onSuccess,
   onError,
+  isFundedAccount = false,
 }: {
   accountId: string;
   onSuccess?: () => void;
   onError?: () => void;
+  isFundedAccount?: boolean;
 }) => {
   const { walletAddress } = useAuth();
   const queryClient = useQueryClient();
@@ -38,7 +40,8 @@ export const useCreateOrder = ({
     }) => {
       const trading = new HyperliquidTrading(
         accountId,
-        walletAddress as string
+        walletAddress as string,
+        isFundedAccount
       );
 
       const isBuy = side === "long";
@@ -79,11 +82,12 @@ export const useCreateOrder = ({
       }
     },
     onSuccess: (_, input) => {
+      const base = isFundedAccount ? "funded" : "test";
       queryClient.invalidateQueries({
-        queryKey: ["test-positions"],
+        queryKey: [`${base}-positions`],
       });
       queryClient.invalidateQueries({
-        queryKey: ["test-account"],
+        queryKey: [`${base}-account`],
       });
       toast.success(`${input.token} Position created!`);
       onSuccess?.();
@@ -99,11 +103,13 @@ export const useCreateOrder = ({
 export const useClosePosition = ({
   accountId,
   isDisabled = false,
+  isFundedAccount = false,
   onSuccess,
   onError,
 }: {
   accountId: string;
   isDisabled?: boolean;
+  isFundedAccount?: boolean;
   onSuccess?: () => void;
   onError?: () => void;
 }) => {
@@ -122,7 +128,8 @@ export const useClosePosition = ({
 
       const trading = new HyperliquidTrading(
         accountId,
-        walletAddress as string
+        walletAddress as string,
+        isFundedAccount
       );
 
       await trading.closePosition(coin, size);
@@ -137,11 +144,12 @@ export const useClosePosition = ({
       setClosingPositions((prev) => new Set(prev).add(positionKey));
     },
     onSuccess: (data) => {
+      const base = isFundedAccount ? "funded" : "test";
       queryClient.invalidateQueries({
-        queryKey: ["test-positions"],
+        queryKey: [`${base}-positions`],
       });
       queryClient.invalidateQueries({
-        queryKey: ["test-account"],
+        queryKey: [`${base}-account`],
       });
       toast.success(`Successfully closed ${data.coin} position`);
       onSuccess?.();
@@ -177,22 +185,34 @@ export const useCheckAndClosePosition = ({
   accountId,
   positionsLength,
   isDisabled = false,
+  isFundedAccount = false,
 }: {
   accountId: string;
   positionsLength: number;
   isDisabled?: boolean;
+  isFundedAccount?: boolean;
 }) => {
   const { walletAddress } = useAuth();
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ["check_close_positions", accountId],
+    queryKey: [
+      isFundedAccount
+        ? "check_close_funded_positions"
+        : "check_close_positions",
+      accountId,
+    ],
     queryFn: async () => {
       try {
-        const trading = new HyperliquidTrading(accountId, walletAddress!);
+        const trading = new HyperliquidTrading(
+          accountId,
+          walletAddress!,
+          isFundedAccount
+        );
         await trading.updatePositionPnL();
-        queryClient.invalidateQueries({ queryKey: ["test-positions"] });
-        queryClient.invalidateQueries({ queryKey: ["test-account"] });
+        const base = isFundedAccount ? "funded" : "test";
+        queryClient.invalidateQueries({ queryKey: [`${base}-positions`] });
+        queryClient.invalidateQueries({ queryKey: [`${base}-account`] });
         console.log("Updated position PnL");
 
         return true;

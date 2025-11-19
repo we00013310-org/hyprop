@@ -3,13 +3,14 @@ import { ArrowLeftRight, TrendingDown, TrendingUp } from "lucide-react";
 import List from "@/components/ui/List";
 import { Button } from "@/components/ui/MyButton";
 import SectionWrapper from "@/components/ui/SectionWrapper";
-import { TestAccount } from "@/types";
+import { FundedAccount, TestAccount } from "@/types";
 
 interface AccountFormProps {
-  account: TestAccount;
+  account: TestAccount | FundedAccount;
 }
 
 const AccountForm = ({ account }: AccountFormProps) => {
+  const isFundedAccount = !!(account as FundedAccount).test_account_id;
   const profitLoss = account.virtual_balance - account.account_size;
   const profitLossPercent = (profitLoss / account.account_size) * 100;
   const isProfit = profitLoss >= 0;
@@ -42,7 +43,9 @@ const AccountForm = ({ account }: AccountFormProps) => {
             },
             {
               label: "Type",
-              value: account.account_mode,
+              value: `${isFundedAccount ? "[FUNDED]" : ""} ${
+                account.account_mode
+              }`,
             },
             {
               label: "Size",

@@ -4,10 +4,16 @@ const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz";
 export class HyperliquidTrading {
   private accountId: string;
   private walletAddress: string;
+  private isFundedAccount: boolean;
 
-  constructor(accountId: string, walletAddress: string) {
+  constructor(
+    accountId: string,
+    walletAddress: string,
+    isFundedAccount = false
+  ) {
     this.accountId = accountId;
     this.walletAddress = walletAddress;
+    this.isFundedAccount = isFundedAccount;
   }
 
   private async callEdgeFunction(action: any) {
@@ -57,7 +63,7 @@ export class HyperliquidTrading {
   ) {
     try {
       return await this.callEdgeFunction({
-        type: "placeOrder",
+        type: this.isFundedAccount ? "placeFundedOrder" : "placeOrder",
         coin,
         isBuy,
         size,
@@ -114,7 +120,7 @@ export class HyperliquidTrading {
       const absSize = Math.abs(size);
 
       return await this.callEdgeFunction({
-        type: "placeOrder",
+        type: this.isFundedAccount ? "placeFundedOrder" : "placeOrder",
         coin,
         isBuy,
         size: absSize,
@@ -131,7 +137,9 @@ export class HyperliquidTrading {
   async updatePositionPnL(): Promise<any> {
     try {
       return await this.callEdgeFunction({
-        type: "updatePositionPnL",
+        type: this.isFundedAccount
+          ? "updateFundedPositionPnL"
+          : "updatePositionPnL",
       });
     } catch (error: any) {
       console.error("Update position PnL error:", error);
@@ -146,6 +154,28 @@ export class HyperliquidTrading {
       });
     } catch (error: any) {
       console.error("Check test status error:", error);
+      throw error;
+    }
+  }
+
+  async checkFundedStatus(): Promise<any> {
+    try {
+      return await this.callEdgeFunction({
+        type: "checkFundedStatus",
+      });
+    } catch (error: any) {
+      console.error("Check funded status error:", error);
+      throw error;
+    }
+  }
+
+  async getFundedPositions(): Promise<any> {
+    try {
+      return await this.callEdgeFunction({
+        type: "getFundedPositions",
+      });
+    } catch (error: any) {
+      console.error("Get funded positions error:", error);
       throw error;
     }
   }
@@ -195,8 +225,9 @@ export async function getUserFills(address: string): Promise<any[]> {
 
 export async function getUserPositions(
   accountId?: string,
-  walletAddress?: string
-): Promise<any[]> {
+  walletAddress?: string,
+  isFundedAccount = false
+) {
   // PHASE 1: For test accounts, get positions from database
   if (accountId && walletAddress) {
     try {
@@ -211,7 +242,9 @@ export async function getUserPositions(
             "x-wallet-address": walletAddress,
           },
           body: JSON.stringify({
-            action: { type: "getTestPositions" },
+            action: {
+              type: isFundedAccount ? "getFundedPositions" : "getTestPositions",
+            },
             accountId,
           }),
         }
@@ -225,33 +258,15 @@ export async function getUserPositions(
 
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.error || "Failed to fetch test positions");
+        throw new Error(result.error || "Failed to fetch positions");
       }
 
       return result.data || [];
     } catch (error) {
-      console.error("Failed to fetch test positions:", error);
+      console.error("Failed to fetch positions:", error);
       return [];
     }
   }
 
-  // Fallback to Hyperliquid API for funded accounts
-  try {
-    const response = await fetch(`${TESTNET_API_URL}/info`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: "clearinghouseState",
-        user: walletAddress,
-      }),
-    });
-
-    const data = await response.json();
-    return data?.assetPositions || [];
-  } catch (error) {
-    console.error("Failed to fetch positions:", error);
-    return [];
-  }
+  return [];
 }
