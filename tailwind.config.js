@@ -43,6 +43,8 @@ export default {
         tradingSlider: "#2AD0AA",
         tradingText: "#9CA3AF",
         tradingTextLight: "#D1D5DB",
+        // Dropdown:
+        dropdownBg: "#28373D",
       },
       borderRadius: {
         sm: "6px",

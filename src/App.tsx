@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 import { ToastProvider } from "./contexts/ToastContext";
 import { AuthForm } from "./components/Auth/AuthForm";
-import TradingPage from "./components/Trading/TradingPage";
 
 import { Navbar } from "./components/Navbar";
 import { Button } from "./components/ui";
@@ -15,6 +14,7 @@ import LeaderboardPage from "./pages/LeaderboardPage/LeaderboardPage";
 import ReferralsPage from "./pages/ReferralsPage/ReferralsPage";
 import PortfolioPage from "./pages/PortfolioPage/PortfolioPage";
 import DashboardPage from "./pages/Dashboard/Dashboard";
+import TradingDashboardPage from "./pages/TradingDashboardPage/TradingDashboardPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -38,7 +38,7 @@ function AppContent() {
       <Switch>
         <Route path="/" component={DashboardPage} />
         <Route path="/new-account" component={NewAccountPage} />
-        <Route path="/trading/:accountId" component={TradingPage} />
+        <Route path="/trade" component={TradingDashboardPage} />
         <Route
           path="/account-trading/:accountId"
           component={() => <AccountTradingPage isFundedAccount={false} />}
