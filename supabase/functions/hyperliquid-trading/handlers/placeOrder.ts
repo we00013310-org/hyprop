@@ -1,0 +1,57 @@
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import type { PlaceOrderAction } from "../types.ts";
+import { validateOrderParams } from "../utils/validation.ts";
+import { getRealOraclePrice } from "../utils/priceOracle.ts";
+import { simulatePosition } from "../services/positionSimulator.ts";
+
+export async function handlePlaceOrder(
+  supabase: SupabaseClient,
+  action: PlaceOrderAction,
+  accountId: string
+): Promise<any> {
+  const { coin, isBuy, size, price, orderType, reduceOnly } = action;
+
+  console.log("=== ORDER DETAILS ===");
+  console.log("Coin:", coin);
+  console.log("Side:", isBuy ? "BUY" : "SELL");
+  console.log("Size:", size, typeof size);
+  console.log("Price:", price, typeof price);
+  console.log("Order Type:", orderType);
+  console.log("Reduce Only:", reduceOnly);
+
+  validateOrderParams(coin, size, price);
+
+  console.log("=== PHASE 1: SIMULATING POSITION FOR TEST ACCOUNT ===");
+
+  let entryPrice: number;
+
+  if (orderType === "market" || !price) {
+    entryPrice = await getRealOraclePrice(coin, supabase);
+    console.log("Market order: Using oracle price:", entryPrice);
+  } else {
+    entryPrice = parseFloat(price);
+    console.log("Limit order: Using specified price:", entryPrice);
+  }
+
+  const simulationResult = await simulatePosition(
+    supabase,
+    accountId,
+    coin,
+    isBuy,
+    parseFloat(size),
+    entryPrice,
+    reduceOnly || false
+  );
+
+  console.log("=== SIMULATED ORDER SUCCESS ===");
+  console.log("Result:", JSON.stringify(simulationResult));
+
+  return {
+    status: "ok",
+    response: {
+      type: "order",
+      data: simulationResult,
+    },
+    message: "Order simulated successfully (Phase 1)",
+  };
+}
