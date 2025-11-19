@@ -2,11 +2,14 @@
 import type { Database } from "../_shared/database.types.ts";
 
 // Re-export table types for convenience
-export type TestAccount = Database['public']['Tables']['test_accounts']['Row'];
-export type TestPosition = Database['public']['Tables']['test_positions']['Row'];
-export type Checkpoint = Database['public']['Tables']['test_account_checkpoints']['Row'];
-export type User = Database['public']['Tables']['users']['Row'];
-export type FundedAccount = Database['public']['Tables']['funded_accounts']['Row'];
+export type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
+export type TestPosition =
+  Database["public"]["Tables"]["test_positions"]["Row"];
+export type Checkpoint =
+  Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
+export type User = Database["public"]["Tables"]["users"]["Row"];
+export type FundedAccount =
+  Database["public"]["Tables"]["funded_accounts"]["Row"];
 
 export interface PlaceOrderAction {
   type: "placeOrder";

@@ -3,6 +3,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { Wallet } from "npm:ethers@6";
 import { HttpTransport } from "npm:@nktkas/hyperliquid@0.25.7";
+
 import { CORS_HEADERS } from "./constants.ts";
 import type { Action, TestAccount } from "./types.ts";
 import {

@@ -17,3 +17,8 @@ export const CORS_HEADERS = {
     "content-type, authorization, x-client-info, apikey, x-wallet-address",
   "Access-Control-Max-Age": "86400",
 };
+
+// For Funded Account
+export const NUM_CHECKPOINTS = 99999;
+export const CHECKPOINT_INTERVAL_HOURS = 24;
+export const CHECKPOINT_PROFIT_TARGET = 8.0; // percent
