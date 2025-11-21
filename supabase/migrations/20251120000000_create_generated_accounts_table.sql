@@ -10,3 +10,5 @@ CREATE TABLE public.fake_wallets (
 
 -- Create index for quick filtering by status
 CREATE INDEX idx_fake_wallets_status ON public.fake_wallets(status);
+
+ALTER TABLE funded_accounts ADD COLUMN IF NOT EXISTS hl_subaccount_id text;

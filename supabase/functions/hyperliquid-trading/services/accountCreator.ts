@@ -10,25 +10,42 @@ import {
 
 export async function createFundedAccount(
   testAccount: TestAccount,
-  supabase: SupabaseClient
+  supabase: SupabaseClient,
 ): Promise<void> {
   console.log("=== CREATING FUNDED ACCOUNT ===");
   console.log(
     "Test account passed, creating funded account for user:",
-    testAccount.user_id
+    testAccount.user_id,
   );
 
   try {
-    const { data: wallet, error: walletError } = await supabase
+    // First, get one available wallet
+    const { data: availableWallet, error: selectError } = await supabase
       .from("fake_wallets")
-      .update({ status: 1 }) // Mark wallet as in-use
+      .select("*")
       .eq("status", 0)
       .limit(1)
       .single();
-    if (walletError || !wallet) {
-      console.error("Failed to fetch available wallet:", walletError);
+
+    if (selectError || !availableWallet) {
+      console.error("Failed to find available wallet:", selectError);
       throw new Error(
-        `Failed to fetch available wallet: ${walletError?.message}`
+        `Failed to find available wallet: ${selectError?.message}`,
+      );
+    }
+
+    // Then update only that specific wallet
+    const { data: wallet, error: walletError } = await supabase
+      .from("fake_wallets")
+      .update({ status: 1 })
+      .eq("address", availableWallet.address)
+      .select()
+      .single();
+
+    if (walletError || !wallet) {
+      console.error("Failed to update wallet:", walletError);
+      throw new Error(
+        `Failed to update wallet: ${walletError?.message}`,
       );
     }
 
@@ -49,7 +66,7 @@ export async function createFundedAccount(
         checkpoint_profit_target_percent: CHECKPOINT_PROFIT_TARGET,
         test_account_id: testAccount.id,
         status: "active",
-        internal_account_address: wallet.address,
+        hl_subaccount_id: wallet.address,
       })
       .select()
       .single();
@@ -57,7 +74,7 @@ export async function createFundedAccount(
     if (fundedError) {
       console.error("Failed to create funded account:", fundedError);
       throw new Error(
-        `Failed to create funded account: ${fundedError.message}`
+        `Failed to create funded account: ${fundedError.message}`,
       );
     }
 
@@ -89,14 +106,14 @@ export async function createFundedAccount(
     });
 
     console.warn(
-      "Test passed but funded account creation failed. User can contact support."
+      "Test passed but funded account creation failed. User can contact support.",
     );
   }
 }
 
 export async function getTestAccount(
   supabase: SupabaseClient,
-  accountId: string
+  accountId: string,
 ): Promise<TestAccount> {
   const { data: testAccount } = await supabase
     .from("test_accounts")
