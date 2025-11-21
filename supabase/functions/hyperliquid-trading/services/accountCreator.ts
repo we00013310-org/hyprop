@@ -24,7 +24,6 @@ export async function createFundedAccount(
       .update({ status: 1 }) // Mark wallet as in-use
       .eq("status", 0)
       .limit(1)
-      .select("address")
       .single();
     if (walletError || !wallet) {
       console.error("Failed to fetch available wallet:", walletError);
