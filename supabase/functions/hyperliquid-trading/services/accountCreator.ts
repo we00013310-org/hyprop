@@ -7,21 +7,22 @@ import {
   CHECKPOINT_PROFIT_TARGET,
   NUM_CHECKPOINTS,
 } from "../constants.ts";
+import { decrypt } from "../../_shared/crypto.ts";
 
 export async function createFundedAccount(
   testAccount: TestAccount,
-  supabase: SupabaseClient,
+  supabase: SupabaseClient
 ): Promise<void> {
   console.log("=== CREATING FUNDED ACCOUNT ===");
   console.log(
     "Test account passed, creating funded account for user:",
-    testAccount.user_id,
+    testAccount.user_id
   );
 
   try {
     // First, get one available wallet
     const { data: availableWallet, error: selectError } = await supabase
-      .from("fake_wallets")
+      .from("wallets")
       .select("*")
       .eq("status", 0)
       .limit(1)
@@ -30,24 +31,30 @@ export async function createFundedAccount(
     if (selectError || !availableWallet) {
       console.error("Failed to find available wallet:", selectError);
       throw new Error(
-        `Failed to find available wallet: ${selectError?.message}`,
+        `Failed to find available wallet: ${selectError?.message}`
       );
     }
 
     // Then update only that specific wallet
     const { data: wallet, error: walletError } = await supabase
-      .from("fake_wallets")
+      .from("wallets")
       .update({ status: 1 })
-      .eq("address", availableWallet.address)
+      .eq("account_address", availableWallet.account_address)
       .select()
       .single();
 
     if (walletError || !wallet) {
       console.error("Failed to update wallet:", walletError);
-      throw new Error(
-        `Failed to update wallet: ${walletError?.message}`,
-      );
+      throw new Error(`Failed to update wallet: ${walletError?.message}`);
     }
+
+    // Decrypt the private key for use
+    console.log("Decrypting wallet private key...");
+    const decryptedPrivateKey = await decrypt(wallet.key_pk);
+    console.log("Private key decrypted successfully");
+
+    // TODO: In Phase 2, use decryptedPrivateKey to initialize Hyperliquid trading client
+    // For now, we just store the wallet address reference
 
     const { data: fundedAccount, error: fundedError } = await supabase
       .from("funded_accounts")
@@ -66,7 +73,7 @@ export async function createFundedAccount(
         checkpoint_profit_target_percent: CHECKPOINT_PROFIT_TARGET,
         test_account_id: testAccount.id,
         status: "active",
-        hl_subaccount_id: wallet.address,
+        wallet_id: wallet.id,
       })
       .select()
       .single();
@@ -74,7 +81,7 @@ export async function createFundedAccount(
     if (fundedError) {
       console.error("Failed to create funded account:", fundedError);
       throw new Error(
-        `Failed to create funded account: ${fundedError.message}`,
+        `Failed to create funded account: ${fundedError.message}`
       );
     }
 
@@ -106,14 +113,14 @@ export async function createFundedAccount(
     });
 
     console.warn(
-      "Test passed but funded account creation failed. User can contact support.",
+      "Test passed but funded account creation failed. User can contact support."
     );
   }
 }
 
 export async function getTestAccount(
   supabase: SupabaseClient,
-  accountId: string,
+  accountId: string
 ): Promise<TestAccount> {
   const { data: testAccount } = await supabase
     .from("test_accounts")

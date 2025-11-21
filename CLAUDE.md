@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 HyProp is a prop trading platform for cryptocurrency futures, built with React/TypeScript frontend and Supabase backend. The platform allows traders to:
+
 1. Take test accounts (simulated trading evaluations)
 2. Pass evaluation criteria to get funded accounts
 3. Trade with HyProp capital on Hyperliquid DEX
@@ -31,6 +32,7 @@ npx supabase functions deploy hyperliquid-trading  # Deploy edge function
 ## Architecture
 
 ### Authentication Flow
+
 - Web3 wallet-based authentication (MetaMask)
 - No traditional Supabase Auth - wallet addresses are the primary identifier
 - `AuthContext` manages wallet connection and user state
@@ -39,9 +41,11 @@ npx supabase functions deploy hyperliquid-trading  # Deploy edge function
 ### Database Structure (PostgreSQL via Supabase)
 
 **Core Tables:**
+
 - `users` - User accounts indexed by wallet_address
 - `test_accounts` - Simulated trading accounts for evaluation (Phase 1)
 - `funded_accounts` - Live trading accounts with HyProp capital (Phase 2)
+- `wallets` - Pre-generated wallet accounts with encrypted private keys
 - `positions` - Current open positions (funded accounts)
 - `test_positions` - Simulated positions (test accounts, Phase 1)
 - `equity_snapshots` - Historical equity for drawdown tracking
@@ -57,6 +61,7 @@ All tables have RLS enabled. Users can only access their own data via policies c
 ### Trading System
 
 **Phase 1 (Current - Test Accounts):**
+
 - Simulated trading using real-world oracle prices (CoinGecko/Binance)
 - Positions stored in `test_positions` table
 - No real orders placed on Hyperliquid
@@ -65,12 +70,14 @@ All tables have RLS enabled. Users can only access their own data via policies c
 - Test passes if: 24h elapsed + 8% profit + no loss limit breach
 
 **Phase 2 (Future - Funded Accounts):**
+
 - Real trading via Hyperliquid API
 - Positions tracked in `positions` table
 - Uses Hyperliquid subaccounts and builder codes
 - Real-time risk monitoring via `RiskEngine`
 
 **Risk Management (`src/lib/riskEngine.ts`):**
+
 - Daily drawdown checks (based on `e_day_start`)
 - Max drawdown checks (based on `high_water_mark` for 2-step, `balance_actual` for 1-step)
 - Equity calculation: `balance + upnl - feesAccrued - fundingAccrued`
@@ -81,6 +88,7 @@ All tables have RLS enabled. Users can only access their own data via policies c
 ### Hyperliquid Integration
 
 **Edge Function (`supabase/functions/hyperliquid-trading/index.ts`):**
+
 - Serverless Deno function handling all trading operations
 - Authentication via `x-wallet-address` header
 - Actions: `placeOrder`, `cancelOrder`, `approveBuilderFee`, `getTestPositions`, `updatePositionPnL`, `checkTestStatus`
@@ -88,12 +96,14 @@ All tables have RLS enabled. Users can only access their own data via policies c
 - Phase 2: Uses `@nktkas/hyperliquid` SDK with wallet private keys
 
 **Price Oracles:**
+
 - Primary: CoinGecko API (real BTC price)
 - Fallback: Binance API
 - Last resort: Hyperliquid testnet price
 - Used for calculating PnL on simulated positions
 
 **Trading Client (`src/lib/hyperliquidTrading.ts`):**
+
 - `HyperliquidTrading` class wraps edge function calls
 - Methods: `placeOrder()`, `cancelOrder()`, `closePosition()`, `updatePositionPnL()`, `checkTestStatus()`
 - Helper functions: `getOpenOrders()`, `getUserFills()`, `getUserPositions()`
@@ -101,6 +111,7 @@ All tables have RLS enabled. Users can only access their own data via policies c
 ### Frontend Structure
 
 **Component Hierarchy:**
+
 ```
 App (AuthProvider)
 ├── AuthForm (wallet connection)
@@ -122,12 +133,14 @@ App (AuthProvider)
 ```
 
 **State Management:**
+
 - React Context for auth (`AuthContext`)
 - Local component state for UI
 - Real-time Supabase queries for data
 - No Redux/Zustand currently
 
 **Styling:**
+
 - TailwindCSS with custom config
 - Dark theme (slate-900 background)
 - Lucide React icons
@@ -135,48 +148,65 @@ App (AuthProvider)
 ## Environment Variables
 
 Required in `.env`:
+
 ```
 VITE_SUPABASE_URL=<supabase-project-url>
 VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
+ENCRYPTION_KEY=<base64-encoded-256-bit-key>  # For wallet private key encryption
 ```
 
-For Supabase Edge Function:
+For Supabase Edge Function (set via `npx supabase secrets set`):
+
 ```
 SUPABASE_URL=<supabase-project-url>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+ENCRYPTION_KEY=<base64-encoded-256-bit-key>  # Must match local .env
 ```
+
+For wallet generation script:
+
+```
+VITE_SUPABASE_URL=<supabase-project-url>
+VITE_SUPABASE_ANON_KEY=<service-anon-key>
+ENCRYPTION_KEY=<base64-encoded-256-bit-key>
+```
+
+**Setting up encryption:** See `ENCRYPTION_SETUP.md` for detailed instructions on generating and configuring the encryption key.
 
 ## Key Technical Decisions
 
 1. **Wallet-based auth instead of Supabase Auth** - Crypto-native UX, users connect Web3 wallet
 2. **Two-phase rollout** - Phase 1 simulates trading, Phase 2 adds real Hyperliquid integration
 3. **Edge function for trading** - Keeps private keys server-side, never exposed to frontend
-4. **Real-world oracle prices for simulation** - More accurate evaluation than testnet prices
-5. **Numeric type for all money values** - Prevents floating point precision issues
-6. **RLS policies** - Database-level security, users can't access others' data
+4. **AES-256-GCM encryption for private keys** - All wallet private keys encrypted at rest in database
+5. **Real-world oracle prices for simulation** - More accurate evaluation than testnet prices
+6. **Numeric type for all money values** - Prevents floating point precision issues
+7. **RLS policies** - Database-level security, users can't access others' data
 
 ## Common Patterns
 
 **Database Queries:**
+
 ```typescript
 const { data, error } = await supabase
-  .from('table_name')
-  .select('*')
-  .eq('user_id', userId)
-  .maybeSingle();  // or .single() if expecting exactly one
+  .from("table_name")
+  .select("*")
+  .eq("user_id", userId)
+  .maybeSingle(); // or .single() if expecting exactly one
 ```
 
 **Edge Function Calls:**
+
 ```typescript
 const response = await fetch(
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyperliquid-trading`,
   {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-      'x-wallet-address': walletAddress,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      "x-wallet-address": walletAddress,
     },
     body: JSON.stringify({ action, accountId }),
   }
@@ -184,6 +214,7 @@ const response = await fetch(
 ```
 
 **Error Handling:**
+
 - Frontend: Try/catch with user-friendly error messages
 - Edge function: Detailed console.log for debugging, generic errors to client
 - Database: Check for error field in Supabase response
@@ -198,6 +229,7 @@ const response = await fetch(
 ## Migration Strategy
 
 When adding new database tables/columns:
+
 1. Create migration: `npx supabase migration new description`
 2. Write SQL with proper indexes and RLS policies
 3. Test locally with `npx supabase db reset`

@@ -209,6 +209,7 @@ export type Database = {
           updated_at: string
           user_id: string
           virtual_balance: number
+          wallet_id: string | null
         }
         Insert: {
           account_mode: string
@@ -230,6 +231,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           virtual_balance: number
+          wallet_id?: string | null
         }
         Update: {
           account_mode?: string
@@ -251,6 +253,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           virtual_balance?: number
+          wallet_id?: string | null
         }
         Relationships: [
           {
@@ -659,6 +662,39 @@ export type Database = {
           kyc_status?: string
           updated_at?: string
           wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          account_address: string
+          created_at: string
+          id: string
+          invalid_at: string
+          key_address: string
+          key_pk: string
+          status: number
+          updated_at: string
+        }
+        Insert: {
+          account_address: string
+          created_at?: string
+          id?: string
+          invalid_at: string
+          key_address: string
+          key_pk: string
+          status?: number
+          updated_at?: string
+        }
+        Update: {
+          account_address?: string
+          created_at?: string
+          id?: string
+          invalid_at?: string
+          key_address?: string
+          key_pk?: string
+          status?: number
+          updated_at?: string
         }
         Relationships: []
       }
