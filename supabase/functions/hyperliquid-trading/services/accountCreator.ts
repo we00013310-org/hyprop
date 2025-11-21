@@ -19,6 +19,20 @@ export async function createFundedAccount(
   );
 
   try {
+    const { data: wallet, error: walletError } = await supabase
+      .from("fake_wallets")
+      .update({ status: 2 }) // Mark wallet as in-use
+      .eq("status", 1)
+      .limit(1)
+      .select("address")
+      .single();
+    if (walletError || !wallet) {
+      console.error("Failed to fetch available wallet:", walletError);
+      throw new Error(
+        `Failed to fetch available wallet: ${walletError?.message}`
+      );
+    }
+
     const { data: fundedAccount, error: fundedError } = await supabase
       .from("funded_accounts")
       .insert({
@@ -36,6 +50,7 @@ export async function createFundedAccount(
         checkpoint_profit_target_percent: CHECKPOINT_PROFIT_TARGET,
         test_account_id: testAccount.id,
         status: "active",
+        internal_account_address: wallet.address,
       })
       .select()
       .single();
