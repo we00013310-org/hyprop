@@ -21,8 +21,8 @@ export async function createFundedAccount(
   try {
     const { data: wallet, error: walletError } = await supabase
       .from("fake_wallets")
-      .update({ status: 2 }) // Mark wallet as in-use
-      .eq("status", 1)
+      .update({ status: 1 }) // Mark wallet as in-use
+      .eq("status", 0)
       .limit(1)
       .select("address")
       .single();
