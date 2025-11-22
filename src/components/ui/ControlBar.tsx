@@ -3,7 +3,13 @@ import { useState } from "react";
 
 const timeRanges = ["Today", "Last Week", "Last Month", "All History"];
 
-const ControlBar = ({ tabName }: { tabName: string }) => {
+const ControlBar = ({
+  tabName,
+  showTags = false,
+}: {
+  tabName: string;
+  showTags?: boolean;
+}) => {
   const [timeRange, setTimeRange] = useState("Today");
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
   const [showAssetDropdown, setShowAssetDropdown] = useState(false);
@@ -68,6 +74,27 @@ const ControlBar = ({ tabName }: { tabName: string }) => {
             </div>
           )}
         </div>
+
+        {!!showTags && (
+          <div className="flex items-center ml-4 gap-2">
+            <span className="text-xs text-slate-400">Tag</span>
+            <button className="px-2 bg-blue-500/20 text-blue-400 rounded-full text-xs border border-blue-500/30">
+              News
+            </button>
+            <button className="px-2 bg-purple-500/20 text-purple-400 rounded-full text-xs border border-purple-500/30">
+              Impulse
+            </button>
+            <button className="px-2 bg-teal-500/20 text-teal-400 rounded-full text-xs border border-teal-500/30">
+              Strategy
+            </button>
+            <button className="px-2 bg-orange-500/20 text-orange-400 rounded-full text-xs border border-orange-500/30">
+              Market Event
+            </button>
+            <button className="px-2 bg-red-500/20 text-red-400 rounded-full text-xs border border-red-500/30">
+              Error
+            </button>
+          </div>
+        )}
 
         {/* Refresh Metrics */}
         <button className="text-highlight flex gap-1 cursor-pointer hover:opacity-60 items-center transition-all ml-4">
