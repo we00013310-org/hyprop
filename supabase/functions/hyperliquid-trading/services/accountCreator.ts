@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { Wallet } from "npm:ethers@6";
 
 import type { TestAccount } from "../types.ts";
 import {
@@ -8,6 +9,7 @@ import {
   NUM_CHECKPOINTS,
 } from "../constants.ts";
 import { decrypt } from "../../_shared/crypto.ts";
+import { updateLeverage } from "./hyperliquidApi.ts";
 
 export async function createFundedAccount(
   testAccount: TestAccount,
@@ -35,6 +37,12 @@ export async function createFundedAccount(
       );
     }
 
+    // Decrypt the private key for use
+    console.log("Decrypting wallet private key...");
+    const decryptedPrivateKey = await decrypt(availableWallet.key_pk);
+    console.log("Private key decrypted successfully");
+    const checkingWallet = new Wallet(decryptedPrivateKey);
+    await updateLeverage(checkingWallet, "BTC", 10, true);
     // Then update only that specific wallet
     const { data: wallet, error: walletError } = await supabase
       .from("wallets")
@@ -47,11 +55,6 @@ export async function createFundedAccount(
       console.error("Failed to update wallet:", walletError);
       throw new Error(`Failed to update wallet: ${walletError?.message}`);
     }
-
-    // Decrypt the private key for use
-    console.log("Decrypting wallet private key...");
-    const decryptedPrivateKey = await decrypt(wallet.key_pk);
-    console.log("Private key decrypted successfully");
 
     // TODO: In Phase 2, use decryptedPrivateKey to initialize Hyperliquid trading client
     // For now, we just store the wallet address reference

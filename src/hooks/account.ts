@@ -2,7 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { getUserPositions, HyperliquidTrading } from "@/lib/hyperliquidTrading";
+import {
+  getAccountInfo,
+  getUserPositions,
+  HyperliquidTrading,
+} from "@/lib/hyperliquidTrading";
 
 export const useAccount = (accountId: string, isFundedAccount = false) => {
   const { walletAddress } = useAuth();
@@ -18,14 +22,13 @@ export const useAccount = (accountId: string, isFundedAccount = false) => {
         await trading.checkTestStatus();
       }
 
-      const table = isFundedAccount ? "funded_accounts" : "test_accounts";
-      const { data } = await supabase
-        .from(table)
-        .select("*")
-        .eq("id", accountId as string)
-        .single();
+      const res = await getAccountInfo(
+        accountId,
+        walletAddress!,
+        isFundedAccount
+      );
 
-      return data;
+      return res.data;
     },
     enabled: !!walletAddress,
     refetchInterval: 10000,

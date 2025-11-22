@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Import generated database types
 import type { Database } from "../_shared/database.types.ts";
 
@@ -11,7 +12,12 @@ export type FundedCheckpoint =
   Database["public"]["Tables"]["funded_account_checkpoints"]["Row"];
 export type User = Database["public"]["Tables"]["users"]["Row"];
 export type FundedAccount =
-  Database["public"]["Tables"]["funded_accounts"]["Row"];
+  Database["public"]["Tables"]["funded_accounts"]["Row"] & {
+    used: number;
+    available: number;
+    oldVirtualBalance: number;
+    currentDD: number;
+  };
 
 export interface PlaceOrderAction {
   type: "placeOrder" | "placeFundedOrder";
@@ -23,6 +29,14 @@ export interface PlaceOrderAction {
   reduceOnly?: boolean;
 }
 
+export interface GetTestAccountAction {
+  type: "getTestAccount";
+}
+
+export interface GetFundedAccountAction {
+  type: "getFundedAccount";
+}
+
 export interface CancelOrderAction {
   type: "cancelOrder";
   orderId?: string;
@@ -30,14 +44,6 @@ export interface CancelOrderAction {
 
 export interface CancelAllOrdersAction {
   type: "cancelAllOrders";
-}
-
-export interface ApproveBuilderFeeAction {
-  type: "approveBuilderFee";
-}
-
-export interface GetBuilderFeesAction {
-  type: "getBuilderFees";
 }
 
 export interface GetTestPositionsAction {
@@ -68,14 +74,14 @@ export type Action =
   | PlaceOrderAction
   | CancelOrderAction
   | CancelAllOrdersAction
-  | ApproveBuilderFeeAction
-  | GetBuilderFeesAction
   | GetTestPositionsAction
   | GetFundedPositionsAction
   | UpdatePositionPnLAction
   | UpdateFundedPositionPnLAction
   | CheckTestStatusAction
-  | CheckFundedStatusAction;
+  | CheckFundedStatusAction
+  | GetFundedAccountAction
+  | GetTestAccountAction;
 
 export interface CheckpointEvaluationResult {
   status: string;
@@ -90,4 +96,51 @@ export interface CheckpointEvaluationResult {
   };
   currentCheckpoint: number;
   checkpoints: Checkpoint[];
+}
+
+interface CumFunding {
+  allTime: string;
+  sinceChange: string;
+  sinceOpen: string;
+}
+
+interface LeverageInfo {
+  rawUsd: string;
+  type: string; // e.g. "cross" or "isolated"
+  value: number; // leverage value (e.g. “20” for 20×)
+}
+
+export interface Position {
+  coin: string;
+  szi: string; // size of position (positive = long, negative = short)
+  entryPx: string;
+  positionValue: string;
+  unrealizedPnl: string;
+  returnOnEquity: string;
+  marginUsed: string;
+  liquidationPx: string;
+  maxLeverage: number;
+  leverage: LeverageInfo;
+  cumFunding: CumFunding;
+}
+
+interface AssetPosition {
+  position: Position;
+  type: string; // e.g. "oneWay"
+}
+
+interface MarginSummary {
+  accountValue: string;
+  totalNtlPos: string;
+  totalRawUsd: string;
+  totalMarginUsed: string;
+}
+
+export interface ClearinghouseStateResponse {
+  assetPositions: AssetPosition[];
+  crossMaintenanceMarginUsed: string;
+  crossMarginSummary: MarginSummary;
+  marginSummary: MarginSummary;
+  withdrawable: string;
+  time: number;
 }

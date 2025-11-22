@@ -9,7 +9,8 @@ interface TargetInfoProps {
 }
 const TargetInfo = ({ account }: TargetInfoProps) => {
   const isFundedAccount = !!(account as FundedAccount).test_account_id;
-  const maxDDPercent = (account.dd_max / account.account_size) * 100;
+  const maxDDPercent = 0.1 * 100;
+  const ddValue = account.high_water_mark * 0.1;
   const { data: checkpoints } = useCheckpoints(account.id, isFundedAccount);
 
   // Get evaluation configuration
@@ -60,14 +61,26 @@ const TargetInfo = ({ account }: TargetInfoProps) => {
           <p className="text-xs text-textBtn">{progress}% completed</p>
         </div>
       </div>
-      <div className="relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-tradingGreen/10 to-transparent" />
-        <div className="relative z-10">
+      <div className="relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex items-end justify-between">
+        <div className="absolute inset-0 bg-linear-to-br from-tradingGreen/10 to-transparent " />
+        <div className="flex flex-col gap-1 h-full">
           <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
           <div className="text-white text-xl">
-            ${account.dd_max.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
+            ${ddValue.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
           </div>
           <div className="text-tradingTextLight text-sm mt-1">Max Drawdown</div>
+        </div>
+        <div className="flex flex-col gap-1 justify-end h-full">
+          {isFundedAccount && (
+            <>
+              <div className="text-white text-xl text-right">
+                {((account as FundedAccount).currentDD * 100.0).toFixed(1)}%
+              </div>
+              <div className="text-tradingTextLight text-sm mt-1 text-right">
+                Current Drawdown
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

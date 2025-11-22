@@ -28,43 +28,62 @@ export async function handlePlaceOrder(
 
   let entryPrice: number;
 
-  if (orderType === "market" || !price) {
-    entryPrice = await getRealOraclePrice(coin, supabase);
-    console.log("Market order: Using oracle price:", entryPrice);
-  } else {
-    entryPrice = parseFloat(price);
-    console.log("Limit order: Using specified price:", entryPrice);
+  if (!isFundedAccount) {
+    if (orderType === "market" || !price) {
+      entryPrice = await getRealOraclePrice(coin, supabase);
+      console.log("Market order: Using oracle price:", entryPrice);
+    } else {
+      entryPrice = parseFloat(price);
+      console.log("Limit order: Using specified price:", entryPrice);
+    }
+    const simulationResult = await simulatePosition(
+      supabase,
+      accountId,
+      coin,
+      isBuy,
+      parseFloat(size),
+      entryPrice,
+      reduceOnly || false
+    );
+
+    return {
+      status: "ok",
+      response: {
+        type: "order",
+        data: simulationResult,
+      },
+      message: "Order simulated successfully (Phase 1)",
+    };
   }
 
-  const simulationResult = await (isFundedAccount
-    ? simulateFundedPosition(
-        supabase,
-        accountId,
-        coin,
-        isBuy,
-        parseFloat(size),
-        entryPrice,
-        reduceOnly || false
-      )
-    : simulatePosition(
-        supabase,
-        accountId,
-        coin,
-        isBuy,
-        parseFloat(size),
-        entryPrice,
-        reduceOnly || false
-      ));
+  // FUNDED ACCOUNT
+  const res = await simulateFundedPosition(
+    supabase,
+    accountId,
+    coin,
+    isBuy,
+    parseFloat(size),
+    reduceOnly || false,
+    orderType,
+    price as string
+  );
 
   console.log("=== SIMULATED ORDER SUCCESS ===");
-  console.log("Result:", JSON.stringify(simulationResult));
+  // console.log("Result:", JSON.stringify(simulationResult));
+  if (res.success) {
+    return {
+      status: "ok",
+      response: {
+        type: "order",
+      },
+      message: "Order created successfully (Phase 1)",
+    };
+  }
 
   return {
-    status: "ok",
+    status: "failed",
     response: {
       type: "order",
-      data: simulationResult,
     },
-    message: "Order simulated successfully (Phase 1)",
   };
 }

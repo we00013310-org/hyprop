@@ -48,6 +48,9 @@ const OrderForm = ({
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Buy);
 
   const balance = useMemo(() => {
+    if (isFundedAccount) {
+      return (account as FundedAccount).available;
+    }
     const usedBalance = positionsData?.reduce(
       (res: number, cur: { position: { szi: number; entryPx: number } }) => {
         return res + cur.position.szi * cur.position.entryPx;
@@ -56,7 +59,7 @@ const OrderForm = ({
     );
 
     return Math.max(0, account.virtual_balance - usedBalance);
-  }, [account.virtual_balance, positionsData]);
+  }, [account, isFundedAccount, positionsData]);
 
   const tokens = [token, "USD"];
   const [selectedToken, setSelectedToken] = useState(tokens[0]);

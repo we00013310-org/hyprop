@@ -62,13 +62,13 @@ export const useCreateOrder = ({
       console.log("Order type:", orderType);
       console.log("Current price:", currentPrice);
       console.log("Limit price input:", limitPrice);
-      console.log("Price to send:", orderType === "limit" ? priceNum : null);
+      console.log("Price to send:", priceNum);
 
       const result = await trading.placeOrder(
         token,
         isBuy,
         sizeNum,
-        orderType === "limit" ? priceNum : null,
+        priceNum,
         orderType as "limit" | "market",
         reduceOnly
       );
@@ -121,7 +121,15 @@ export const useClosePosition = ({
   );
 
   const mutation = useMutation({
-    mutationFn: async ({ coin, size }: { coin: string; size: number }) => {
+    mutationFn: async ({
+      coin,
+      size,
+      price,
+    }: {
+      coin: string;
+      size: number;
+      price: number;
+    }) => {
       if (isDisabled) {
         throw new Error("Cannot close positions on a disabled account");
       }
@@ -132,7 +140,7 @@ export const useClosePosition = ({
         isFundedAccount
       );
 
-      await trading.closePosition(coin, size);
+      await trading.closePosition(coin, size, price);
 
       // Wait a moment for the order to process
       await new Promise((resolve) => setTimeout(resolve, 2000));

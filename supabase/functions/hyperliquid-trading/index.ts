@@ -16,14 +16,12 @@ import {
   handleCancelOrder,
   handleCancelAllOrders,
 } from "./handlers/cancelOrder.ts";
-import { handleApproveBuilderFee } from "./handlers/approveBuilderFee.ts";
-import { handleGetBuilderFees } from "./handlers/getBuilderFees.ts";
 import { handleGetTestPositions } from "./handlers/getTestPositions.ts";
 import { handleGetFundedPositions } from "./handlers/getFundedPositions.ts";
 import { handleUpdatePositionPnL } from "./handlers/updatePositionPnL.ts";
-import { handleUpdateFundedPositionPnL } from "./handlers/updateFundedPositionPnL.ts";
 import { handleCheckTestStatus } from "./handlers/checkTestStatus.ts";
 import { handleCheckFundedStatus } from "./handlers/checkFundedStatus.ts";
+import { getFundedAccountInfo } from "./services/fundedAccount.ts";
 
 interface RequestContext {
   supabase: ReturnType<typeof createClient>;
@@ -62,7 +60,7 @@ async function loadAccount(
   supabase: ReturnType<typeof createClient>,
   accountId: string,
   userId: string
-): Promise<TestAccount> {
+) {
   const [res1, res2] = await Promise.all([
     supabase
       .from("test_accounts")
@@ -84,6 +82,15 @@ async function loadAccount(
 
   if (!res1.data && !res2.data) {
     throw new Error("Account not found or unauthorized");
+  }
+
+  if (res2.data) {
+    const data = await getFundedAccountInfo(supabase, res2.data.id);
+    return {
+      ...data,
+      wallet: undefined,
+      assetPositions: undefined,
+    };
   }
 
   return res1.data || res2.data;
@@ -116,16 +123,12 @@ async function routeAction(
   accountId: string,
   context: RequestContext
 ): Promise<any> {
-  const { supabase, account, wallet, transport, derivedAddress } = context;
+  const { supabase, account } = context;
 
   switch (action.type) {
-    case "approveBuilderFee":
-      if (!wallet || !transport || !derivedAddress) {
-        throw new Error(
-          "Hyperliquid API key required for builder fee approval. This is only needed for funded accounts."
-        );
-      }
-      return await handleApproveBuilderFee(wallet, transport, derivedAddress);
+    case "getTestAccount":
+    case "getFundedAccount":
+      return account;
 
     case "placeOrder":
       validateAccountForTrading(account);
@@ -141,9 +144,6 @@ async function routeAction(
     case "cancelAllOrders":
       return await handleCancelAllOrders();
 
-    case "getBuilderFees":
-      return await handleGetBuilderFees();
-
     case "getTestPositions":
       return await handleGetTestPositions(supabase, accountId);
 
@@ -154,7 +154,7 @@ async function routeAction(
       return await handleUpdatePositionPnL(supabase, accountId);
 
     case "updateFundedPositionPnL":
-      return await handleUpdateFundedPositionPnL(supabase, accountId);
+      return await handleCheckFundedStatus(supabase, accountId);
 
     case "checkTestStatus":
       return await handleCheckTestStatus(supabase, accountId);

@@ -22,3 +22,7 @@ export const CORS_HEADERS = {
 export const NUM_CHECKPOINTS = 99999;
 export const CHECKPOINT_INTERVAL_HOURS = 24;
 export const CHECKPOINT_PROFIT_TARGET = 8.0; // percent
+
+export const MAX_TRADE = 2000; // in usd
+export const LEVERAGE = 10;
+export const DD_PCT = 0.1;

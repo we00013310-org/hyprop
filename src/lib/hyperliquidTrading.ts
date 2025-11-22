@@ -102,18 +102,7 @@ export class HyperliquidTrading {
     }
   }
 
-  async approveBuilderFee(): Promise<any> {
-    try {
-      return await this.callEdgeFunction({
-        type: "approveBuilderFee",
-      });
-    } catch (error: any) {
-      console.error("Approve builder fee error:", error);
-      throw error;
-    }
-  }
-
-  async closePosition(coin: string, size: number): Promise<any> {
+  async closePosition(coin: string, size: number, price: number): Promise<any> {
     try {
       // Determine if we need to buy (close short) or sell (close long)
       const isBuy = size < 0; // If size is negative (short), we buy to close
@@ -124,7 +113,7 @@ export class HyperliquidTrading {
         coin,
         isBuy,
         size: absSize,
-        price: null, // Market order to close
+        price, // Market order to close
         orderType: "market",
         reduceOnly: true, // Important: reduceOnly ensures we're closing, not opening
       });
@@ -270,3 +259,46 @@ export async function getUserPositions(
 
   return [];
 }
+
+export const getAccountInfo = async (
+  accountId: string,
+  walletAddress?: string,
+  isFundedAccount = false
+) => {
+  try {
+    if (walletAddress) {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyperliquid-trading`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            "x-wallet-address": walletAddress,
+          },
+          body: JSON.stringify({
+            action: {
+              type: isFundedAccount ? "getFundedAccount" : "getTestAccount",
+            },
+            accountId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch account info: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch info");
+      }
+
+      return result;
+    }
+  } catch (error) {
+    console.error("Failed to fetch account info:", error);
+    return [];
+  }
+};

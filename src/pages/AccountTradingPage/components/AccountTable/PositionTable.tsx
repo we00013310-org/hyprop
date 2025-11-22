@@ -83,7 +83,7 @@ const PositionTable = ({
           markPrice: currentPrice,
           pnl: unrealizedPnl,
           roe: marginUsed > 0 ? (unrealizedPnl / marginUsed) * 100 : 0,
-          liqPrice: "--",
+          liqPrice: pos.position.liquidationPx || "--",
           margin: marginUsed,
           marginType: pos.position.marginType ?? "Isolated",
           funding: parseFloat(pos.position.funding ?? "0"),
@@ -92,7 +92,7 @@ const PositionTable = ({
         };
       }) || []
     );
-  }, [data]);
+  }, [currentPrice, data]);
 
   useCheckAndClosePosition({
     accountId,
@@ -251,6 +251,7 @@ const PositionTable = ({
                 closePosition({
                   coin: row.original.coin,
                   size: +row.original.size,
+                  price: currentPrice,
                 })
               }
               className="text-highlight hover:underline transition-all cursor-pointer text-xs"

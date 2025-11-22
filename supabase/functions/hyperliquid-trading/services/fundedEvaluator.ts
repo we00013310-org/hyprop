@@ -4,6 +4,8 @@ import type {
   FundedCheckpoint,
   CheckpointEvaluationResult,
 } from "../types.ts";
+import { getFundedAccountInfo } from "./fundedAccount.ts";
+import { DD_PCT, LEVERAGE, MAX_TRADE } from "../constants.ts";
 
 function getEvaluationConfig(fundedAccount: FundedAccount) {
   return {
@@ -26,9 +28,7 @@ function calculateTimeMetrics(
 }
 
 function checkLossLimit(fundedAccount: FundedAccount): boolean {
-  const lossLimit =
-    fundedAccount.account_size * (1 - fundedAccount.dd_max / 100);
-  return fundedAccount.virtual_balance < lossLimit;
+  return fundedAccount.currentDD > DD_PCT;
 }
 
 async function loadCheckpoints(
@@ -178,16 +178,7 @@ export async function checkFundedStatus(
 ): Promise<CheckpointEvaluationResult> {
   console.log("=== CHECKING FUNDED STATUS (DYNAMIC EVALUATION) ===");
 
-  const { data: fundedAccount } = await supabase
-    .from("funded_accounts")
-    .select("*")
-    .eq("id", accountId)
-    .single();
-
-  if (!fundedAccount) {
-    throw new Error("Funded account not found");
-  }
-
+  const fundedAccount = await getFundedAccountInfo(supabase, accountId);
   const config = getEvaluationConfig(fundedAccount);
   console.log(
     `Evaluation config: ${config.numCheckpoints} checkpoints, ${config.checkpointIntervalHours}h intervals, ${config.profitTargetPercent}% profit target`
@@ -223,6 +214,13 @@ export async function checkFundedStatus(
       );
       newStatus = result.newStatus;
       shouldPass = result.shouldPass;
+    }
+
+    if (fundedAccount.virtual_balance > fundedAccount.high_water_mark) {
+      await supabase
+        .from("funded_accounts")
+        .update({ high_water_mark: fundedAccount.virtual_balance })
+        .eq("id", accountId);
     }
   }
 

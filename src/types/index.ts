@@ -2,7 +2,12 @@ import { Database } from "../lib/database.types";
 
 export type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
 export type FundedAccount =
-  Database["public"]["Tables"]["funded_accounts"]["Row"];
+  Database["public"]["Tables"]["funded_accounts"]["Row"] & {
+    used: number;
+    available: number;
+    oldVirtualBalance: number;
+    currentDD: number;
+  };
 
 export type User = Database["public"]["Tables"]["users"]["Row"];
 

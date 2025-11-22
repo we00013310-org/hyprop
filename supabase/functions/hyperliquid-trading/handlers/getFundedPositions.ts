@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { getRealOraclePrice, calculatePnL } from "../utils/priceOracle.ts";
+
+import { getFundedAccountInfo } from "../services/fundedAccount.ts";
+import { LEVERAGE } from "./../constants.ts";
 
 export async function handleGetFundedPositions(
   supabase: SupabaseClient,
@@ -7,42 +9,24 @@ export async function handleGetFundedPositions(
 ) {
   console.log("=== GETTING FUNDED POSITIONS ===");
 
-  const { data: positions, error: positionsError } = await supabase
-    .from("positions")
-    .select("*")
-    .eq("account_id", accountId)
-    .order("created_at", { ascending: false });
+  const { assetPositions } = await getFundedAccountInfo(supabase, accountId);
 
-  if (positionsError) {
-    throw new Error(`Failed to fetch positions: ${positionsError.message}`);
-  }
+  const parsedPositions = assetPositions.map((o, index) => {
+    const pos = o.position;
+    return {
+      position: {
+        coin: pos.coin,
+        entryPx: pos.entryPx,
+        unrealizedPnl: pos.unrealizedPnl,
+        marginUsed: 0,
+        szi: pos.szi,
+        marginType: "cross",
+        liquidationPx: pos.liquidationPx,
+        funding: +(pos.marginUsed || 0) * LEVERAGE,
+        id: index,
+      },
+    };
+  });
 
-  const updatedPositions = await Promise.all(
-    (positions || []).map(async (pos: any) => {
-      const currentPrice = await getRealOraclePrice(pos.symbol, supabase);
-      const size = parseFloat(pos.size.toString());
-      const entryPrice = parseFloat(pos.avg_entry.toString());
-      const upnl = calculatePnL(entryPrice, currentPrice, size);
-
-      await supabase
-        .from("positions")
-        .update({
-          upnl,
-          last_update_ts: new Date().toISOString(),
-        })
-        .eq("id", pos.id);
-
-      return {
-        position: {
-          coin: pos.symbol,
-          szi: pos.size.toString(),
-          entryPx: pos.avg_entry.toString(),
-          marginUsed: pos.margin_used.toString(),
-          unrealizedPnl: upnl.toString(),
-        },
-      };
-    })
-  );
-
-  return updatedPositions;
+  return parsedPositions;
 }

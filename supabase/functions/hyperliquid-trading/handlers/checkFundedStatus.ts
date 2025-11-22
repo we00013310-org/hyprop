@@ -4,6 +4,6 @@ import { checkFundedStatus as checkFundedStatusService } from "../services/funde
 export async function handleCheckFundedStatus(
   supabase: SupabaseClient,
   accountId: string
-): Promise<any> {
+) {
   return await checkFundedStatusService(supabase, accountId);
 }

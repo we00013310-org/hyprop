@@ -85,6 +85,14 @@ const AccountForm = ({ account }: AccountFormProps) => {
               ),
             },
             {
+              label: "High Water Mark",
+              value: (
+                <span className="text-highlight">
+                  ${account.high_water_mark.toFixed(3)}
+                </span>
+              ),
+            },
+            {
               label: "Cross Margin Ratio",
               value: <span className="text-highlight">$0.00</span>,
             },

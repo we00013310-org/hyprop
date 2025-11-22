@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { Inbox, Plus } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
 
 import MySpinner from "@/components/ui/MySpinner";
@@ -16,27 +15,14 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { walletAddress } = useAuth();
   const { loadAccounts, testAccounts, fundedAccounts, loading } = useAccounts();
-  const [builderFees, setBuilderFees] = useState<number>(0);
-  const [loadingFees, setLoadingFees] = useState(true);
+  const [builderFees, setBuilderFees] = useState<number>(10000);
+  const [loadingFees, setLoadingFees] = useState(false);
 
   useEffect(() => {
     if (walletAddress) {
       loadAccounts();
-      loadBuilderFees();
     }
   }, [loadAccounts, walletAddress]);
-
-  const loadBuilderFees = async () => {
-    try {
-      const BUILDER_ADDRESS = "0x7c4E42B6cDDcEfa029D230137908aB178D52d324";
-      const fees = await getBuilderFees(BUILDER_ADDRESS);
-      setBuilderFees(fees);
-    } catch (error) {
-      console.error("Error loading builder fees:", error);
-    } finally {
-      setLoadingFees(false);
-    }
-  };
 
   return (
     <div>
@@ -64,7 +50,7 @@ export default function Dashboard() {
                     </div>
                   ) : (
                     <div className="text-3xl font-medium text-white">
-                      ${builderFees.toFixed(4)}{" "}
+                      ${builderFees.toFixed(1)}{" "}
                       <span className="text-sm text-textBtn">USDC</span>
                     </div>
                   )}
