@@ -199,7 +199,7 @@ const PositionTable = ({
       header: "Liq. Price",
       cell: ({ row }) => (
         <span className="text-white">
-          {row.original.liqPrice.toLocaleString()}
+          {Math.round(+row.original.liqPrice).toLocaleString()}
         </span>
       ),
     },

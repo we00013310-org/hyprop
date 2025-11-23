@@ -222,6 +222,13 @@ export async function checkFundedStatus(
         .update({ high_water_mark: fundedAccount.virtual_balance })
         .eq("id", accountId);
     }
+    await supabase
+      .from("funded_accounts")
+      .update({
+        virtual_balance: fundedAccount.virtual_balance,
+        dd_max: DD_PCT * fundedAccount.high_water_mark,
+      })
+      .eq("id", accountId);
   }
 
   const { data: finalCheckpoints } = await supabase
