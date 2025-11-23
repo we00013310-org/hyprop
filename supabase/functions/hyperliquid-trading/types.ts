@@ -70,6 +70,10 @@ export interface CheckFundedStatusAction {
   type: "checkFundedStatus";
 }
 
+export interface FailFundedAccountAction {
+  type: "failFundedAccount";
+}
+
 export type Action =
   | PlaceOrderAction
   | CancelOrderAction
@@ -81,7 +85,8 @@ export type Action =
   | CheckTestStatusAction
   | CheckFundedStatusAction
   | GetFundedAccountAction
-  | GetTestAccountAction;
+  | GetTestAccountAction
+  | FailFundedAccountAction;
 
 export interface CheckpointEvaluationResult {
   status: string;

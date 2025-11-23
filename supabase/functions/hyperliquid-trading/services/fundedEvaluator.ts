@@ -5,7 +5,8 @@ import type {
   CheckpointEvaluationResult,
 } from "../types.ts";
 import { getFundedAccountInfo } from "./fundedAccount.ts";
-import { DD_PCT, LEVERAGE, MAX_TRADE } from "../constants.ts";
+import { DD_PCT } from "../constants.ts";
+import { failAccount } from "./fundedAccount.ts";
 
 function getEvaluationConfig(fundedAccount: FundedAccount) {
   return {
@@ -47,44 +48,6 @@ async function loadCheckpoints(
       cp,
     ])
   );
-}
-
-async function failAccount(
-  supabase: SupabaseClient,
-  accountId: string
-): Promise<void> {
-  await supabase
-    .from("funded_accounts")
-    .update({
-      status: "failed",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", accountId);
-}
-
-async function passAccount(
-  supabase: SupabaseClient,
-  fundedAccount: FundedAccount,
-  accountId: string
-): Promise<void> {
-  await supabase
-    .from("funded_accounts")
-    .update({
-      status: "passed",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", accountId);
-
-  // Log event for funded account passing all checkpoints
-  await supabase.from("events").insert({
-    user_id: fundedAccount.user_id,
-    account_id: accountId,
-    type: "funded_account_passed",
-    payload: {
-      funded_account_id: accountId,
-      completion_timestamp: new Date().toISOString(),
-    },
-  });
 }
 
 async function evaluateCheckpoint(
@@ -143,7 +106,8 @@ async function evaluateCheckpoint(
       console.log(
         `Checkpoint ${currentCheckpoint} passed - EVALUATION COMPLETE!`
       );
-      await passAccount(supabase, fundedAccount, accountId);
+
+      // await passAccount(supabase, fundedAccount, accountId); Funded account never end
       return { newStatus: "passed", shouldPass: true };
     } else {
       console.log(

@@ -134,6 +134,8 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
 
         <Progress
           account={account as TestAccount}
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          //  @ts-expect-error
           checkpoints={checkpoints || []}
           isDisabled={isDisabled}
           isFundedAccount={isFundedAccount}

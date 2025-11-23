@@ -3,7 +3,7 @@ import { Wallet } from "npm:ethers@6";
 
 import { FundedAccount } from "../types.ts";
 import { decrypt } from "../../_shared/crypto.ts";
-import { getAccountInfo } from "./hyperliquidApi.ts";
+import { getAccountInfo, closePosition } from "./hyperliquidApi.ts";
 import { LEVERAGE, MAX_TRADE } from "../constants.ts";
 
 /**
@@ -101,4 +101,75 @@ export async function getFundedAccountInfo(
     oldVirtualBalance: account.virtual_balance,
     currentDD,
   };
+}
+
+export async function failAccount(
+  supabase: SupabaseClient,
+  accountId: string
+): Promise<void> {
+  try {
+    console.log(`Failing account ${accountId} - closing all positions first`);
+
+    // Get account wallet and address
+    const { wallet, accountAddress } = await getFundedAccountWallet(
+      supabase,
+      accountId
+    );
+
+    // Get current positions from Hyperliquid
+    const accountInfo = await getAccountInfo(accountAddress);
+
+    // Close all open positions
+    if (accountInfo.assetPositions && accountInfo.assetPositions.length > 0) {
+      console.log(
+        `Found ${accountInfo.assetPositions.length} positions to close`
+      );
+
+      for (const assetPosition of accountInfo.assetPositions) {
+        const position = assetPosition.position;
+
+        // Skip if position size is 0
+        const size = Math.abs(parseFloat(position.szi));
+        if (size === 0) {
+          console.log(`Skipping ${position.coin} - no position`);
+          continue;
+        }
+
+        const isLong = parseFloat(position.szi) > 0;
+
+        console.log(
+          `Closing ${position.coin} position: ${isLong ? "LONG" : "SHORT"} ${size}`
+        );
+
+        try {
+          await closePosition(
+            wallet,
+            position.coin,
+            size.toString(),
+            isLong
+          );
+          console.log(`Successfully closed ${position.coin} position`);
+        } catch (error) {
+          console.error(`Failed to close ${position.coin} position:`, error);
+          // Continue closing other positions even if one fails
+        }
+      }
+    } else {
+      console.log("No open positions to close");
+    }
+  } catch (error) {
+    console.error("Error closing positions during account failure:", error);
+    // Continue with failing the account even if position closure fails
+  }
+
+  // Update account status to failed
+  await supabase
+    .from("funded_accounts")
+    .update({
+      status: "failed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", accountId);
+
+  console.log(`Account ${accountId} marked as failed`);
 }

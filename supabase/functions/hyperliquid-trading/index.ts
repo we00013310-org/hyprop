@@ -21,6 +21,7 @@ import { handleGetFundedPositions } from "./handlers/getFundedPositions.ts";
 import { handleUpdatePositionPnL } from "./handlers/updatePositionPnL.ts";
 import { handleCheckTestStatus } from "./handlers/checkTestStatus.ts";
 import { handleCheckFundedStatus } from "./handlers/checkFundedStatus.ts";
+import { handleFailFundedAccount } from "./handlers/failFundedAccount.ts";
 import { getFundedAccountInfo } from "./services/fundedAccount.ts";
 
 interface RequestContext {
@@ -161,6 +162,9 @@ async function routeAction(
 
     case "checkFundedStatus":
       return await handleCheckFundedStatus(supabase, accountId);
+
+    case "failFundedAccount":
+      return await handleFailFundedAccount(supabase, accountId);
 
     default:
       throw new Error("Invalid action type");

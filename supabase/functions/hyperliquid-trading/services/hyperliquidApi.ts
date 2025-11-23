@@ -6,6 +6,35 @@ import { getAssetIndex } from "../utils/assetMapping.ts";
 import { TESTNET_API_URL } from "../constants.ts";
 import { ClearinghouseStateResponse } from "../types.ts";
 
+/**
+ * Fetch current price from Hyperliquid for a specific coin
+ */
+async function fetchHyperliquidPrice(coin: string): Promise<number> {
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "allMids" }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch current prices: ${response.statusText}`);
+  }
+
+  const mids = await response.json();
+  const priceStr = mids[coin];
+
+  if (!priceStr) {
+    throw new Error(`No price found for ${coin}`);
+  }
+
+  const price = parseFloat(priceStr);
+  if (isNaN(price)) {
+    throw new Error(`Invalid price for ${coin}: ${priceStr}`);
+  }
+
+  return price;
+}
+
 export interface OrderParams {
   coin: string;
   isBuy: boolean;
@@ -379,7 +408,27 @@ export async function closePosition(
   size: string,
   isBuy: boolean // Original position side (we'll close opposite)
 ): Promise<any> {
+  console.log("Closing position:", {
+    coin,
+    size,
+    originalSide: isBuy ? "long" : "short",
+  });
+
+  // Fetch current price from Hyperliquid
+  const currentPrice = await fetchHyperliquidPrice(coin);
+  console.log(`Current ${coin} price: ${currentPrice}`);
+
+  // For closing, we sell if it was a long, buy if it was a short
+  const isClosingBuy = !isBuy;
+
+  // Apply slippage for market order (5% to ensure fill)
+  const slippagePrice = isClosingBuy
+    ? currentPrice * 1.05  // Buy higher
+    : currentPrice * 0.95; // Sell lower
+
   const assetIndex = getAssetIndex(coin);
+  const formattedPrice = formatPrice(slippagePrice.toString(), coin);
+  const formattedSize = formatSize(size, coin);
 
   const transport = new HttpTransport({ isTestnet: true });
   const exchangeClient = new ExchangeClient({
@@ -388,27 +437,23 @@ export async function closePosition(
     isTestnet: true,
   });
 
-  console.log("Closing position:", {
-    assetIndex,
-    coin,
-    size,
-    originalSide: isBuy ? "long" : "short",
-  });
-
-  // Close with opposite side
-  const result = await exchangeClient.order({
+  const payload = {
     orders: [
       {
         a: assetIndex,
-        b: !isBuy, // Opposite side to close
-        p: "0", // Market order
-        s: size,
+        b: isClosingBuy,
+        p: formattedPrice,
+        s: formattedSize,
         r: true, // Reduce only
-        t: { market: {} },
+        t: { limit: { tif: "Ioc" } }, // Immediate or Cancel for market-like execution
       },
     ],
     grouping: "na",
-  });
+  };
+
+  console.log("Closing position with payload:", JSON.stringify(payload, null, 2));
+
+  const result = await exchangeClient.order(payload);
 
   return result;
 }
