@@ -15,6 +15,7 @@ import ReferralsPage from "./pages/ReferralsPage/ReferralsPage";
 import PortfolioPage from "./pages/PortfolioPage/PortfolioPage";
 import DashboardPage from "./pages/Dashboard/Dashboard";
 import TradingDashboardPage from "./pages/TradingDashboardPage/TradingDashboardPage";
+import NFTsPage from "./pages/NFTsPage/NFTsPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -54,6 +55,8 @@ function AppContent() {
         <Route path="/leaderboard" component={LeaderboardPage} />
 
         <Route path="/referrals" component={ReferralsPage} />
+
+        <Route path="/nfts" component={NFTsPage} />
 
         <Route path="/demo" component={DemoSettingsPage} />
 

@@ -6,6 +6,7 @@ import { NavLink } from "./NavLink";
 import { Button, IconButton, HoverMenu, MenuItem } from "../ui";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
+import { formatWalletAddress } from "@/lib/utils";
 
 import Logo from "../Logo";
 
@@ -36,10 +37,6 @@ export function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showMoreDropdown]);
-
-  const formatWalletAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   const copyWalletAddress = () => {
     if (walletAddress) {
@@ -81,6 +78,11 @@ export function Navbar() {
 
             {showMoreDropdown && (
               <div className="absolute top-full mt-2 right-0 w-48 bg-cardBg rounded-lg shadow-xl py-2 z-50">
+                <NavLink href="/nfts">
+                  <span className="block px-4 py-2 text-sm text-slate-400 hover:text-white">
+                    NFTs
+                  </span>
+                </NavLink>
                 <NavLink href="/about">
                   <span className="block px-4 py-2 text-sm text-slate-400 hover:text-white">
                     About
