@@ -27,8 +27,7 @@ function calculateTimeMetrics(
 }
 
 function checkLossLimit(testAccount: TestAccount): boolean {
-  const lossLimit =
-    testAccount.account_size * (1 - testAccount.dd_max / 100);
+  const lossLimit = testAccount.account_size * (1 - testAccount.dd_max / 100);
   return testAccount.virtual_balance < lossLimit;
 }
 
@@ -97,11 +96,11 @@ async function evaluateCheckpoint(
     return { newStatus: testAccount.status, shouldPass: false };
   }
 
-  console.log(
-    `Checking checkpoint ${currentCheckpoint}/${numCheckpoints} (${
-      (testAccount.checkpoint_interval_hours || 24) * currentCheckpoint
-    }h mark)`
-  );
+  // console.log(
+  //   `Checking checkpoint ${currentCheckpoint}/${numCheckpoints} (${
+  //     (testAccount.checkpoint_interval_hours || 24) * currentCheckpoint
+  //   }h mark)`
+  // );
 
   let previousBalance = testAccount.account_size;
   if (currentCheckpoint > 1) {
