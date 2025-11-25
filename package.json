@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "server": "npx supabase functions serve",
     "db:types": "npx supabase gen types typescript --local > src/lib/database.types.ts && cp src/lib/database.types.ts supabase/functions/_shared/database.types.ts",
-    "db:types:remote": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/lib/database.types.ts && cp src/lib/database.types.ts supabase/functions/_shared/database.types.ts"
+    "db:types:remote": "npx supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/lib/database.types.ts && cp src/lib/database.types.ts supabase/functions/_shared/database.types.ts",
+    "import-wallets:stg": "node -r dotenv/config scripts/import-wallets-from-csv.cjs dotenv_config_path=.env.stg"
   },
   "dependencies": {
     "@nktkas/hyperliquid": "^0.25.7",
