@@ -17,7 +17,7 @@ async function getDemoPriceOffset(supabase: SupabaseClient): Promise<number> {
     if (data?.value) {
       const offset = parseFloat(data.value as string);
       if (!isNaN(offset)) {
-        console.log("Applying demo price offset:", offset);
+        // console.log("Applying demo price offset:", offset);
         return offset;
       }
     }
@@ -126,9 +126,9 @@ export async function getRealOraclePrice(
   const offset = await getDemoPriceOffset(supabase);
   const adjustedPrice = basePrice + offset;
 
-  console.log(
-    `Price for ${coin}: base=${basePrice}, offset=${offset}, adjusted=${adjustedPrice}`
-  );
+  // console.log(
+  //   `Price for ${coin}: base=${basePrice}, offset=${offset}, adjusted=${adjustedPrice}`
+  // );
 
   return adjustedPrice;
 }

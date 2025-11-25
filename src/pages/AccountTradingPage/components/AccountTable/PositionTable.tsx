@@ -83,7 +83,7 @@ const PositionTable = ({
           markPrice: currentPrice,
           pnl: unrealizedPnl,
           roe: marginUsed > 0 ? (unrealizedPnl / marginUsed) * 100 : 0,
-          liqPrice: pos.position.liquidationPx || "--",
+          liqPrice: pos.position.liquidationPx,
           margin: marginUsed,
           marginType: pos.position.marginType ?? "Isolated",
           funding: parseFloat(pos.position.funding ?? "0"),
@@ -197,11 +197,15 @@ const PositionTable = ({
     {
       accessorKey: "liqPrice",
       header: "Liq. Price",
-      cell: ({ row }) => (
-        <span className="text-white">
-          {Math.round(+row.original.liqPrice).toLocaleString()}
-        </span>
-      ),
+      cell: ({ row }) => {
+        return (
+          <span className="text-white">
+            {row.original.liqPrice
+              ? Math.round(+row.original.liqPrice).toLocaleString()
+              : "--"}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "margin",

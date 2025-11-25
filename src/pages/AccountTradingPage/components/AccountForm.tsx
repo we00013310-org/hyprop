@@ -102,7 +102,7 @@ const AccountForm = ({ account }: AccountFormProps) => {
             },
             {
               label: "Cross Account Leverage",
-              value: "0.00x",
+              value: "1.00x",
             },
           ]}
         />

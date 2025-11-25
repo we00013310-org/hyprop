@@ -103,7 +103,7 @@ function initializeWallet(account: TestAccount): {
   derivedAddress: string | null;
 } {
   if (!account.hl_key) {
-    console.log("No hl_key configured - using Phase 1 simulated trading");
+    // console.log("No hl_key configured - using Phase 1 simulated trading");
     return { wallet: null, transport: null, derivedAddress: null };
   }
 
@@ -114,7 +114,7 @@ function initializeWallet(account: TestAccount): {
   const derivedAddress = wallet.address;
   const transport = new HttpTransport({ isTestnet: true });
 
-  console.log("Wallet address:", derivedAddress);
+  // console.log("Wallet address:", derivedAddress);
 
   return { wallet, transport, derivedAddress };
 }
