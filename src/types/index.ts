@@ -7,6 +7,7 @@ export type FundedAccount =
     available: number;
     oldVirtualBalance: number;
     currentDD: number;
+    account_address: string;
   };
 
 export type User = Database["public"]["Tables"]["users"]["Row"];

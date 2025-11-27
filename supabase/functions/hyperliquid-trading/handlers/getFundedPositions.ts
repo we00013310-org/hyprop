@@ -22,7 +22,7 @@ export async function handleGetFundedPositions(
         szi: pos.szi,
         marginType: "cross",
         liquidationPx: pos.liquidationPx,
-        funding: +(pos.marginUsed || 0) * LEVERAGE,
+        funding: pos.cumFunding.sinceOpen,
         id: index,
       },
     };

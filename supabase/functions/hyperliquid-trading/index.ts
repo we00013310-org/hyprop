@@ -89,7 +89,7 @@ async function loadAccount(
     const data = await getFundedAccountInfo(supabase, res2.data.id);
     return {
       ...data,
-      wallet: undefined,
+      account_address: data.accountAddress,
       assetPositions: undefined,
     };
   }

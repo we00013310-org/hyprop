@@ -1,9 +1,11 @@
-import { ArrowLeftRight, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, Copy, TrendingDown, TrendingUp } from "lucide-react";
 
 import List from "@/components/ui/List";
 import { Button } from "@/components/ui/MyButton";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { FundedAccount, TestAccount } from "@/types";
+import { formatWalletAddress } from "@/lib/utils";
+import { useToast } from "@/contexts/ToastContext";
 
 interface AccountFormProps {
   account: TestAccount | FundedAccount;
@@ -14,6 +16,8 @@ const AccountForm = ({ account }: AccountFormProps) => {
   const profitLoss = account.virtual_balance - account.account_size;
   const profitLossPercent = (profitLoss / account.account_size) * 100;
   const isProfit = profitLoss >= 0;
+  const accAddress = (account as FundedAccount)?.account_address;
+  const { success } = useToast();
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,6 +55,37 @@ const AccountForm = ({ account }: AccountFormProps) => {
               label: "Size",
               value: `$${account.account_size.toLocaleString()}`,
             },
+            ...(isFundedAccount
+              ? [
+                  {
+                    label: "AccAddr.",
+                    value: (
+                      <span className="flex gap-2">
+                        <a
+                          href={`https://hypurrscan.io/address/${accAddress}`}
+                          target="_blank"
+                          className="underline hover:opacity-65"
+                        >
+                          {formatWalletAddress(accAddress)}
+                        </a>
+                        {!!accAddress && (
+                          <button
+                            type="button"
+                            className="cursor-pointer text-highlight hover:text-white"
+                            onClick={() => {
+                              navigator.clipboard.writeText(accAddress);
+                              success("Copied");
+                            }}
+                            title="Copy address"
+                          >
+                            <Copy className="w-4" />
+                          </button>
+                        )}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
             {
               label: (
                 <span className="text-white font-medium">Perps Overview</span>

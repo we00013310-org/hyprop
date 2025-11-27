@@ -97,6 +97,7 @@ export async function getFundedAccountInfo(
     used,
     available,
     wallet,
+    accountAddress,
     assetPositions: data.assetPositions,
     oldVirtualBalance: account.virtual_balance,
     currentDD,
@@ -138,16 +139,13 @@ export async function failAccount(
         const isLong = parseFloat(position.szi) > 0;
 
         console.log(
-          `Closing ${position.coin} position: ${isLong ? "LONG" : "SHORT"} ${size}`
+          `Closing ${position.coin} position: ${
+            isLong ? "LONG" : "SHORT"
+          } ${size}`
         );
 
         try {
-          await closePosition(
-            wallet,
-            position.coin,
-            size.toString(),
-            isLong
-          );
+          await closePosition(wallet, position.coin, size.toString(), isLong);
           console.log(`Successfully closed ${position.coin} position`);
         } catch (error) {
           console.error(`Failed to close ${position.coin} position:`, error);
