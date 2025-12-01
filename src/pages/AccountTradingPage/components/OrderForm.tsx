@@ -19,6 +19,7 @@ import SectionWrapper from "@/components/ui/SectionWrapper";
 import { FundedAccount, TestAccount } from "@/types";
 import { useCreateOrder } from "@/hooks/order";
 import { usePositions } from "@/hooks/account";
+import { useCreateTestOrder } from "@/hooks/useTestOrders";
 
 enum TradeType {
   Market = "Market",
@@ -46,6 +47,7 @@ const OrderForm = ({
   const { data: positionsData } = usePositions(account.id, isFundedAccount);
   const [tradeType, setTradeType] = useState<TradeType>(TradeType.Market);
   const [orderType, setOrderType] = useState<OrderType>(OrderType.Buy);
+  const [limitPrice, setLimitPrice] = useState<number>(0);
 
   const balance = useMemo(() => {
     if (isFundedAccount) {
@@ -95,26 +97,67 @@ const OrderForm = ({
     }
   }, [currentPrice, selectedToken, size]);
 
+  // Calculate effective limit price (use entered limit price for limit orders, current price for market)
+  const effectiveLimitPrice = useMemo(() => {
+    if (tradeType === TradeType.Limit && limitPrice > 0) {
+      return limitPrice;
+    }
+    return currentPrice;
+  }, [tradeType, limitPrice, currentPrice]);
+
   const { mutate, isPending } = useCreateOrder({
     accountId: account.id,
     onSuccess: () => {
       handleChangePct(0);
+      setLimitPrice(0);
     },
     isFundedAccount,
+  });
+
+  // Hook for creating limit orders for test accounts
+  const { mutate: createTestOrder, isPending: isCreatingTestOrder } = useCreateTestOrder({
+    testAccountId: account.id,
+    onSuccess: () => {
+      handleChangePct(0);
+      setLimitPrice(0);
+    },
   });
 
   const handleSubmitOrder = () => {
     const tSize = orderValue / currentPrice;
 
+    // For test accounts with limit orders, insert into test_orders table
+    if (!isFundedAccount && tradeType === TradeType.Limit) {
+      if (!limitPrice || limitPrice <= 0) {
+        return;
+      }
+      
+      createTestOrder({
+        symbol: token,
+        side: orderType === OrderType.Buy ? "buy" : "sell",
+        size: tSize,
+        price: limitPrice,
+        order_type: "limit",
+        reduce_only: reduceOnly,
+      });
+      return;
+    }
+
+    // For market orders or funded accounts, use existing flow
     mutate({
       side: orderType === OrderType.Buy ? "long" : "short",
       size: tSize,
       orderType: tradeType.toLowerCase(),
       currentPrice,
+      limitPrice: tradeType === TradeType.Limit ? limitPrice : undefined,
       reduceOnly,
       token,
     });
   };
+
+  const isLimitOrder = tradeType === TradeType.Limit;
+  const isSubmitDisabled = !size || (isLimitOrder && (!limitPrice || limitPrice <= 0));
+  const isLoading = isPending || isCreatingTestOrder;
 
   return (
     <>
@@ -191,6 +234,24 @@ const OrderForm = ({
           tokens={tokens}
         />
 
+        {/* Limit Price Input - Only show for Limit orders */}
+        {isLimitOrder && (
+          <div className="my-2">
+            <label className="text-sm text-gray-400 mb-1 block">Limit Price</label>
+            <InputGroup>
+              <InputGroupInput
+                type="number"
+                placeholder="Enter limit price"
+                value={limitPrice || ""}
+                onChange={(e) => setLimitPrice(parseFloat(e.target.value) || 0)}
+                min={0}
+                step={0.01}
+              />
+              <InputGroupAddon align="inline-end">USD</InputGroupAddon>
+            </InputGroup>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 my-2">
           <Slider
             onValueChange={(o) => handleChangePct(o[0])}
@@ -235,12 +296,12 @@ const OrderForm = ({
 
         <div className="mt-8 w-full">
           <Button
-            disabled={!size}
+            disabled={isSubmitDisabled}
             fullWidth
-            loading={isPending}
+            loading={isLoading}
             onClick={handleSubmitOrder}
           >
-            Place Order
+            {isLimitOrder ? "Place Limit Order" : "Place Order"}
           </Button>
         </div>
 
@@ -251,6 +312,14 @@ const OrderForm = ({
                 label: "Current Price",
                 value: `$${currentPrice.toLocaleString()}`,
               },
+              ...(isLimitOrder && limitPrice > 0
+                ? [
+                    {
+                      label: "Limit Price",
+                      value: `$${limitPrice.toLocaleString()}`,
+                    },
+                  ]
+                : []),
               {
                 label: "Order Value",
                 value: `$${orderValue}`,

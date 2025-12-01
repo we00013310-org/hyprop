@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { useCallback, useMemo, useState } from "react";
 
 import PositionTable from "./PositionTable";
+import OpenOrdersTable from "./OpenOrdersTable";
 import ComingSoon from "./ComingSoon";
 import { FundedAccount, TestAccount } from "@/types";
 
@@ -35,6 +36,21 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
             accountId={account.id as string}
             currentPrice={currentPrice}
             isFundedAccount={isFundedAccount}
+          />
+        );
+      case Tab.OpenOrders:
+        // Only show open orders for test accounts (not funded accounts)
+        if (isFundedAccount) {
+          return (
+            <span className="flex flex-col justify-center items-center gap-1 h-58">
+              <ComingSoon />
+            </span>
+          );
+        }
+        return (
+          <OpenOrdersTable
+            testAccountId={account.id as string}
+            currentPrice={currentPrice}
           />
         );
       default:
