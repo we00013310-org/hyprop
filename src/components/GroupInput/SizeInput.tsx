@@ -17,8 +17,9 @@ interface SizeInputProps {
   value: number;
   tokens: string[];
   onChangeToken: (val: string) => void;
+  onChange: (val: number) => void;
 }
-const SizeInput = ({ tokens, value, onChangeToken }: SizeInputProps) => {
+const SizeInput = ({ tokens, value, onChangeToken, onChange }: SizeInputProps) => {
   const [selectedOpt, setSelected] = useState<string>(tokens[0]);
   const handleChange = (val: string) => {
     setSelected(val);
@@ -27,7 +28,12 @@ const SizeInput = ({ tokens, value, onChangeToken }: SizeInputProps) => {
 
   return (
     <InputGroup>
-      <InputGroupInput value={value} type="number" placeholder="Size" />
+      <InputGroupInput
+        value={value}
+        type="number"
+        placeholder="Size"
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      />
       <InputGroupAddon align="inline-end">
         <DropdownMenu>
           <DropdownMenuTrigger>
