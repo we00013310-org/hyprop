@@ -3,7 +3,12 @@ import { Wallet } from "npm:ethers@6";
 
 import { FundedAccount } from "../types.ts";
 import { decrypt } from "../../_shared/crypto.ts";
-import { getAccountInfo, closePosition } from "./hyperliquidApi.ts";
+import {
+  getAccountInfo,
+  closePosition,
+  getOpenOrders,
+  cancelAllOrders,
+} from "./hyperliquidApi.ts";
 import { LEVERAGE, MAX_TRADE } from "../constants.ts";
 
 /**
@@ -155,6 +160,8 @@ export async function failAccount(
     } else {
       console.log("No open positions to close");
     }
+    // Close all open orders
+    await cancelAllOrders(accountAddress, wallet);
   } catch (error) {
     console.error("Error closing positions during account failure:", error);
     // Continue with failing the account even if position closure fails
@@ -170,4 +177,15 @@ export async function failAccount(
     .eq("id", accountId);
 
   console.log(`Account ${accountId} marked as failed`);
+}
+
+export async function getFundedOrders(
+  supabase: SupabaseClient,
+  accountId: string
+) {
+  const { accountAddress } = await getFundedAccountWallet(supabase, accountId);
+
+  const data = await getOpenOrders(accountAddress);
+
+  return data;
 }

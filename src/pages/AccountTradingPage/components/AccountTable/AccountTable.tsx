@@ -6,6 +6,7 @@ import PositionTable from "./PositionTable";
 import OpenOrdersTable from "./OpenOrdersTable";
 import ComingSoon from "./ComingSoon";
 import { FundedAccount, TestAccount } from "@/types";
+import FundedOrdersTable from "./OrdersTable";
 
 enum Tab {
   Balances = "Balances",
@@ -42,9 +43,10 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
         // Only show open orders for test accounts (not funded accounts)
         if (isFundedAccount) {
           return (
-            <span className="flex flex-col justify-center items-center gap-1 h-58">
-              <ComingSoon />
-            </span>
+            <FundedOrdersTable
+              accountId={account.id as string}
+              currentPrice={currentPrice}
+            />
           );
         }
         return (

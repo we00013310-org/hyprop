@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 import { getFundedAccountInfo } from "../services/fundedAccount.ts";
-import { LEVERAGE } from "./../constants.ts";
 
 export async function handleGetFundedPositions(
   supabase: SupabaseClient,

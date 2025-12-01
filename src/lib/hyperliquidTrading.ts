@@ -302,3 +302,49 @@ export const getAccountInfo = async (
     return [];
   }
 };
+
+export async function getUserFundedOrders(
+  accountId?: string,
+  walletAddress?: string
+) {
+  if (accountId && walletAddress) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hyperliquid-trading`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+            "x-wallet-address": walletAddress,
+          },
+          body: JSON.stringify({
+            action: {
+              type: "getFundedOrders",
+            },
+            accountId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch funded orders: ${response.statusText}`
+        );
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch funded orders");
+      }
+
+      return result.data;
+    } catch (error) {
+      console.error("Failed to fetch funded orders:", error);
+      return [];
+    }
+  }
+
+  return [];
+}

@@ -2,8 +2,7 @@ import { Database } from "../lib/database.types";
 
 export type TestAccount = Database["public"]["Tables"]["test_accounts"]["Row"];
 export type FundedAccount =
-  & Database["public"]["Tables"]["funded_accounts"]["Row"]
-  & {
+  Database["public"]["Tables"]["funded_accounts"]["Row"] & {
     used: number;
     available: number;
     oldVirtualBalance: number;
@@ -27,3 +26,13 @@ export type Exam = {
 };
 export type Checkpoint =
   Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
+
+export type FundedOrder = {
+  coin: string;
+  limitPx: string;
+  oid: number;
+  origSz: string;
+  side: string;
+  sz: string;
+  timestamp: number;
+};
