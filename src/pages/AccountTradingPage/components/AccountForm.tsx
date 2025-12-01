@@ -1,7 +1,6 @@
-import { ArrowLeftRight, Copy, TrendingDown, TrendingUp } from "lucide-react";
+import { Copy, TrendingDown, TrendingUp } from "lucide-react";
 
 import List from "@/components/ui/List";
-import { Button } from "@/components/ui/MyButton";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { FundedAccount, TestAccount } from "@/types";
 import { formatWalletAddress } from "@/lib/utils";
@@ -21,21 +20,6 @@ const AccountForm = ({ account }: AccountFormProps) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <Button className="bg-highlight! text-outlineBg!" fullWidth>
-        Deposit
-      </Button>
-
-      <div className="flex w-full gap-2">
-        <Button variant="outline" className="flex-1">
-          Perps
-          <ArrowLeftRight className="w-4" />
-          Spot
-        </Button>
-        <Button variant="outline" className="flex-1">
-          Withdraw
-        </Button>
-      </div>
-
       <SectionWrapper className="mt-2 bg-cardBgDarker!">
         <List
           data={[
