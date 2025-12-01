@@ -76,6 +76,16 @@ const OrderForm = ({
   const [tpsl, setTpsl] = useState(false);
   const [pct, setPct] = useState(0);
 
+  // Calculate max size based on selected token
+  const maxSize = useMemo(() => {
+    if (selectedToken === "USD") {
+      return balance;
+    } else {
+      // For token, max is balance / currentPrice (with 99.92% factor like slider at 100%)
+      return +((0.9992 * balance) / currentPrice).toFixed(6);
+    }
+  }, [selectedToken, balance, currentPrice]);
+
   const handleChangePct = (newVal: number) => {
     if (selectedToken === "USD") {
       setSize(Math.floor((newVal * balance) / 100.0));
@@ -87,6 +97,24 @@ const OrderForm = ({
       setSize(+((tmpVal / 100.0) * (balance / currentPrice)).toFixed(6));
     }
     setPct(newVal);
+  };
+
+  // Handle size input change - calculate percentage from size
+  const handleSizeChange = (newSize: number) => {
+    setSize(newSize);
+
+    // Calculate percentage based on the new size
+    if (balance > 0) {
+      let newPct: number;
+      if (selectedToken === "USD") {
+        newPct = (newSize / balance) * 100;
+      } else {
+        const sizeInUsd = newSize * currentPrice;
+        newPct = (sizeInUsd / balance) * 100;
+      }
+      // Clamp percentage between 0 and 100
+      setPct(Math.min(100, Math.max(0, Math.round(newPct))));
+    }
   };
 
   const orderValue = useMemo(() => {
@@ -131,7 +159,7 @@ const OrderForm = ({
       if (!limitPrice || limitPrice <= 0) {
         return;
       }
-      
+
       createTestOrder({
         symbol: token,
         side: orderType === OrderType.Buy ? "buy" : "sell",
@@ -230,7 +258,8 @@ const OrderForm = ({
 
         <SizeInput
           value={size}
-          onChange={setSize}
+          max={maxSize}
+          onChange={handleSizeChange}
           onChangeToken={handleChangeSelectedToken}
           tokens={tokens}
         />
@@ -315,11 +344,11 @@ const OrderForm = ({
               },
               ...(isLimitOrder && limitPrice > 0
                 ? [
-                    {
-                      label: "Limit Price",
-                      value: `$${limitPrice.toLocaleString()}`,
-                    },
-                  ]
+                  {
+                    label: "Limit Price",
+                    value: `$${limitPrice.toLocaleString()}`,
+                  },
+                ]
                 : []),
               {
                 label: "Order Value",
