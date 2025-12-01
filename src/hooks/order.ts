@@ -89,6 +89,9 @@ export const useCreateOrder = ({
       queryClient.invalidateQueries({
         queryKey: [`${base}-account`],
       });
+      queryClient.invalidateQueries({
+        queryKey: [`${base}-orders`],
+      });
       toast.success(`${input.token} Position created!`);
       onSuccess?.();
     },
@@ -230,5 +233,53 @@ export const useCheckAndClosePosition = ({
     },
     enabled: !!(positionsLength && accountId && walletAddress && !isDisabled),
     refetchInterval: 3000,
+  });
+};
+
+export const useCancelFundedOrder = ({ accountId }: { accountId: string }) => {
+  const { walletAddress } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ coin, oid }: { coin: string; oid: number }) => {
+      const trading = new HyperliquidTrading(accountId, walletAddress!, true);
+      await trading.cancelOrder(coin, oid);
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`funded-orders`] });
+      toast.success("Canceled!");
+    },
+    onError: (error) => {
+      console.error("Failed to cancel order:", error);
+      toast.error(error.message || "Failed to cancel order");
+    },
+  });
+};
+
+export const useCancelAllFundedOrders = ({
+  accountId,
+}: {
+  accountId: string;
+}) => {
+  const { walletAddress } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const trading = new HyperliquidTrading(accountId, walletAddress!, true);
+      await trading.cancelAllOrders();
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`funded-orders`] });
+      toast.success("Canceled all orders!");
+    },
+    onError: (error) => {
+      console.error("Failed to cancel all orders:", error);
+      toast.error(error.message || "Failed to cancel all orders");
+    },
   });
 };

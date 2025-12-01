@@ -3,8 +3,10 @@ import clsx from "clsx";
 import { useCallback, useMemo, useState } from "react";
 
 import PositionTable from "./PositionTable";
+import OpenOrdersTable from "./OpenOrdersTable";
 import ComingSoon from "./ComingSoon";
 import { FundedAccount, TestAccount } from "@/types";
+import FundedOrdersTable from "./OrdersTable";
 
 enum Tab {
   Balances = "Balances",
@@ -35,6 +37,22 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
             accountId={account.id as string}
             currentPrice={currentPrice}
             isFundedAccount={isFundedAccount}
+          />
+        );
+      case Tab.OpenOrders:
+        // Only show open orders for test accounts (not funded accounts)
+        if (isFundedAccount) {
+          return (
+            <FundedOrdersTable
+              accountId={account.id as string}
+              currentPrice={currentPrice}
+            />
+          );
+        }
+        return (
+          <OpenOrdersTable
+            testAccountId={account.id as string}
+            currentPrice={currentPrice}
           />
         );
       default:

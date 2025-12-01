@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Wallet } from "npm:ethers@6";
-import { ExchangeClient, HttpTransport } from "npm:@nktkas/hyperliquid@0.25.7";
+import {
+  ExchangeClient,
+  HttpTransport,
+  InfoClient,
+} from "npm:@nktkas/hyperliquid@0.25.7";
 
 import { getAssetIndex } from "../utils/assetMapping.ts";
 import { TESTNET_API_URL } from "../constants.ts";
@@ -54,9 +58,9 @@ function formatSize(size: string, coin: string): string {
 
   // Size precision by coin
   const sizePrecision: Record<string, number> = {
-    BTC: 4,   // 0.0001
-    ETH: 3,   // 0.001
-    SOL: 1,   // 0.1
+    BTC: 4, // 0.0001
+    ETH: 3, // 0.001
+    SOL: 1, // 0.1
   };
 
   const precision = sizePrecision[coin.toUpperCase()] || 4;
@@ -72,9 +76,9 @@ function formatPrice(price: string, coin: string): string {
 
   // Tick size by coin (minimum price increment)
   const tickSize: Record<string, number> = {
-    BTC: 1,       // $1 increments
-    ETH: 0.1,     // $0.1 increments
-    SOL: 0.001,   // $0.001 increments
+    BTC: 1, // $1 increments
+    ETH: 0.1, // $0.1 increments
+    SOL: 0.001, // $0.001 increments
   };
 
   const tick = tickSize[coin.toUpperCase()] || 0.1;
@@ -83,7 +87,7 @@ function formatPrice(price: string, coin: string): string {
   const rounded = Math.round(num / tick) * tick;
 
   // Get decimal places from tick size
-  const decimals = tick.toString().split('.')[1]?.length || 0;
+  const decimals = tick.toString().split(".")[1]?.length || 0;
 
   return rounded.toFixed(decimals);
 }
@@ -373,30 +377,33 @@ export async function cancelOrder(
  * Cancel all orders for a specific coin
  */
 export async function cancelAllOrders(
-  wallet: Wallet,
-  coin: string
+  accountAddress: string,
+  wallet: Wallet
 ): Promise<any> {
-  const assetIndex = getAssetIndex(coin);
-
   const transport = new HttpTransport({ isTestnet: true });
   const exchangeClient = new ExchangeClient({
     wallet,
     transport,
     isTestnet: true,
   });
-
-  console.log("Canceling all orders for:", { assetIndex, coin });
-
-  const result = await exchangeClient.cancelByCloid({
-    cancels: [
-      {
-        asset: assetIndex,
-        cloid: undefined, // Cancel all
-      },
-    ],
+  const infoClient = new InfoClient({
+    transport,
+    isTestnet: true,
   });
+  const openOrders = await infoClient.openOrders({ user: accountAddress });
 
-  return result;
+  if (openOrders.length) {
+    const result = await exchangeClient.cancel({
+      cancels: openOrders.map((o) => ({
+        a: getAssetIndex(o.coin),
+        o: o.oid,
+      })),
+    });
+
+    return result;
+  }
+
+  return [];
 }
 
 /**
@@ -423,7 +430,7 @@ export async function closePosition(
 
   // Apply slippage for market order (5% to ensure fill)
   const slippagePrice = isClosingBuy
-    ? currentPrice * 1.05  // Buy higher
+    ? currentPrice * 1.05 // Buy higher
     : currentPrice * 0.95; // Sell lower
 
   const assetIndex = getAssetIndex(coin);
@@ -451,7 +458,10 @@ export async function closePosition(
     grouping: "na",
   };
 
-  console.log("Closing position with payload:", JSON.stringify(payload, null, 2));
+  console.log(
+    "Closing position with payload:",
+    JSON.stringify(payload, null, 2)
+  );
 
   const result = await exchangeClient.order(payload);
 
@@ -505,4 +515,22 @@ export async function getAccountInfo(
 
   const state = await response.json();
   return state as ClearinghouseStateResponse;
+}
+
+export async function getOpenOrders(address: string): Promise<any> {
+  const response = await fetch(`${TESTNET_API_URL}/info`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "openOrders",
+      user: address,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch open orders: ${response.statusText}`);
+  }
+
+  const state = await response.json();
+  return state as any;
 }

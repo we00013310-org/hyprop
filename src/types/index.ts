@@ -12,6 +12,10 @@ export type FundedAccount =
 
 export type User = Database["public"]["Tables"]["users"]["Row"];
 
+export type TestOrder = Database["public"]["Tables"]["test_orders"]["Row"];
+export type TestOrderInsert =
+  Database["public"]["Tables"]["test_orders"]["Insert"];
+
 export type Exam = {
   id: number;
   size: number;
@@ -22,3 +26,13 @@ export type Exam = {
 };
 export type Checkpoint =
   Database["public"]["Tables"]["test_account_checkpoints"]["Row"];
+
+export type FundedOrder = {
+  coin: string;
+  limitPx: string;
+  oid: number;
+  origSz: string;
+  side: string;
+  sz: string;
+  timestamp: number;
+};

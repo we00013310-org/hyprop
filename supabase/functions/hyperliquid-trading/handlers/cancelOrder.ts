@@ -1,15 +1,38 @@
-export async function handleCancelOrder(): Promise<any> {
-  console.log("=== CANCEL ORDER: Phase 1 - No real orders to cancel ===");
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
+
+import { getFundedAccountWallet } from "../services/fundedAccount.ts";
+import { cancelAllOrders, cancelOrder } from "../services/hyperliquidApi.ts";
+
+export async function handleCancelOrder(
+  supabase: SupabaseClient,
+  accountId: string,
+  coin: string,
+  orderId: number
+) {
+  const { wallet } = await getFundedAccountWallet(supabase, accountId);
+
+  await cancelOrder(wallet, coin, orderId);
+
   return {
-    status: "ok",
-    message: "No orders to cancel in Phase 1 (simulated trading)",
+    success: true,
+    message: "Order cancelled successfully",
   };
 }
 
-export async function handleCancelAllOrders(): Promise<any> {
-  console.log("=== CANCEL ALL ORDERS: Phase 1 - No real orders to cancel ===");
+export async function handleCancelAllOrders(
+  supabase: SupabaseClient,
+  accountId: string
+) {
+  console.log("START CANCEL ALL ORDERS");
+  const { wallet, accountAddress } = await getFundedAccountWallet(
+    supabase,
+    accountId
+  );
+
+  await cancelAllOrders(accountAddress, wallet);
+
   return {
-    status: "ok",
-    message: "No orders to cancel in Phase 1 (simulated trading)",
+    success: true,
+    message: "All orders cancelled successfully",
   };
 }

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { usePositions } from "@/hooks/account";
 import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
-import { Spinner } from "@/components/ui/spinner";
+import { Spinner } from "@/components/ui/Spinner";
 
 // Position type matching Hyperliquid's position structure
 export type Position = {
@@ -314,9 +314,9 @@ const PositionTable = ({
                   {header.isPlaceholder
                     ? null
                     : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                 </TableHead>
               ))}
             </TableRow>

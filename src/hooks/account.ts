@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import {
   getAccountInfo,
+  getUserFundedOrders,
   getUserPositions,
   HyperliquidTrading,
 } from "@/lib/hyperliquidTrading";
+import { FundedOrder } from "@/types";
 
 export const useAccount = (accountId: string, isFundedAccount = false) => {
   const { walletAddress } = useAuth();
@@ -72,11 +75,27 @@ export const usePositions = (accountId: string, isFundedAccount = false) => {
         isFundedAccount
       );
 
-      return data.filter((pos) => {
+      return data.filter((pos: any) => {
         const size = parseFloat(pos.position?.szi || "0");
         return size !== 0;
       });
     },
     enabled: !!walletAddress,
+  });
+};
+
+// for HL Orders
+export const useFundedOrders = (accountId: string) => {
+  const { walletAddress } = useAuth();
+
+  return useQuery({
+    queryKey: ["funded-orders", accountId],
+    queryFn: async () => {
+      const data = await getUserFundedOrders(accountId, walletAddress!);
+
+      return (data as FundedOrder[]) || [];
+    },
+    enabled: !!walletAddress,
+    refetchInterval: !!walletAddress && 30000,
   });
 };

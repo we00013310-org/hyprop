@@ -39,7 +39,8 @@ export interface GetFundedAccountAction {
 
 export interface CancelOrderAction {
   type: "cancelOrder";
-  orderId?: string;
+  oid?: number;
+  coin?: string;
 }
 
 export interface CancelAllOrdersAction {
@@ -74,6 +75,10 @@ export interface FailFundedAccountAction {
   type: "failFundedAccount";
 }
 
+export interface GetFundedOrdersAction {
+  type: "getFundedOrders";
+}
+
 export type Action =
   | PlaceOrderAction
   | CancelOrderAction
@@ -86,7 +91,8 @@ export type Action =
   | CheckFundedStatusAction
   | GetFundedAccountAction
   | GetTestAccountAction
-  | FailFundedAccountAction;
+  | FailFundedAccountAction
+  | GetFundedOrdersAction;
 
 export interface CheckpointEvaluationResult {
   status: string;

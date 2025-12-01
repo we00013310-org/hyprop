@@ -58,10 +58,11 @@ const ExamCard = ({ type = "basic", data, onClick }: ExamCardProps) => {
   return (
     <div
       className={clsx(
-        "w-[400px] rounded-2xl p-5 flex flex-col gap-2 text-left transition-all hover:scale-105",
+        "w-[400px] rounded-2xl p-5 flex flex-col gap-2 text-left transition-all hover:scale-105 cursor-pointer",
         bgCn,
         borderCn
       )}
+      onClick={() => onClick(data, isBasic)}
     >
       <CardTag
         text={tagText}
@@ -111,9 +112,7 @@ const ExamCard = ({ type = "basic", data, onClick }: ExamCardProps) => {
         noBorder
       />
       <div className="mt-2 flex w-full justify-center items-center">
-        <Button fullWidth onClick={() => onClick(data, isBasic)}>
-          Buy
-        </Button>
+        <Button fullWidth>Buy</Button>
       </div>
     </div>
   );

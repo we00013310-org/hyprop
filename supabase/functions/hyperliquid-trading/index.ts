@@ -23,6 +23,7 @@ import { handleCheckTestStatus } from "./handlers/checkTestStatus.ts";
 import { handleCheckFundedStatus } from "./handlers/checkFundedStatus.ts";
 import { handleFailFundedAccount } from "./handlers/failFundedAccount.ts";
 import { getFundedAccountInfo } from "./services/fundedAccount.ts";
+import { handleGetFundedOrders } from "./handlers/getFundedOrders.ts";
 
 interface RequestContext {
   supabase: ReturnType<typeof createClient>;
@@ -140,10 +141,17 @@ async function routeAction(
       return await handlePlaceOrder(supabase, action, accountId, true);
 
     case "cancelOrder":
-      return await handleCancelOrder();
+      validateAccountForTrading(account);
+      return await handleCancelOrder(
+        supabase,
+        accountId,
+        action.coin!,
+        action.oid!
+      );
 
     case "cancelAllOrders":
-      return await handleCancelAllOrders();
+      validateAccountForTrading(account);
+      return await handleCancelAllOrders(supabase, accountId);
 
     case "getTestPositions":
       return await handleGetTestPositions(supabase, accountId);
@@ -165,6 +173,9 @@ async function routeAction(
 
     case "failFundedAccount":
       return await handleFailFundedAccount(supabase, accountId);
+
+    case "getFundedOrders":
+      return await handleGetFundedOrders(supabase, accountId);
 
     default:
       throw new Error("Invalid action type");
