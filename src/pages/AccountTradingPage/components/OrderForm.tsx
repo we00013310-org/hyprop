@@ -230,6 +230,7 @@ const OrderForm = ({
 
         <SizeInput
           value={size}
+          onChange={setSize}
           onChangeToken={handleChangeSelectedToken}
           tokens={tokens}
         />
