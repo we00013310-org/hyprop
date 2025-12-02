@@ -75,27 +75,31 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
       }
     };
 
+    // Track last known offset to detect changes
+    let lastKnownOffset = getDemoPriceOffset();
+
     // Also poll for changes in the same tab (storage event only fires for other tabs)
     const pollInterval = setInterval(() => {
       if (basePriceRef.current > 0) {
         const currentOffset = getDemoPriceOffset();
-        const expectedPrice = basePriceRef.current + currentOffset;
-        // Only update if there's a significant difference (offset changed)
-        if (Math.abs(price - expectedPrice) > 0.01) {
+        // Check if offset actually changed (not just price drift)
+        if (currentOffset !== lastKnownOffset) {
+          const expectedPrice = basePriceRef.current + currentOffset;
           console.log(
-            `Demo price offset detected: adjusting price from ${price} to ${expectedPrice}`,
+            `Demo price offset changed from ${lastKnownOffset} to ${currentOffset}, adjusting price to ${expectedPrice}`,
           );
+          lastKnownOffset = currentOffset;
           setPrice(expectedPrice);
         }
       }
-    }, 1000); // Check every second
+    }, 500); // Check every 500ms for faster response
 
     window.addEventListener("storage", handleStorageChange);
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       clearInterval(pollInterval);
     };
-  }, [price]);
+  }, []); // Empty dependency array - use refs instead of state in the closure
 
   useEffect(() => {
     fetchInitialPrice();

@@ -101,10 +101,10 @@ export function useLimitOrderMatcher({
                         queryKey: ["test-orders", testAccountId],
                     });
                     queryClient.invalidateQueries({
-                        queryKey: ["test-positions"],
+                        queryKey: ["test-positions", testAccountId],
                     });
                     queryClient.invalidateQueries({
-                        queryKey: ["test-account"],
+                        queryKey: ["test-account", testAccountId],
                     });
 
                     return true;
@@ -127,15 +127,23 @@ export function useLimitOrderMatcher({
             return;
         }
 
-        // Skip if price hasn't changed significantly (within 0.01%)
-        if (
-            lastPriceRef.current > 0 &&
-            Math.abs(currentPrice - lastPriceRef.current) /
-                        lastPriceRef.current <
-                0.0001
-        ) {
+        // Skip if price hasn't changed significantly (within 0.5%)
+        // Use a larger threshold to account for small fluctuations but still
+        // trigger on meaningful price changes (including demo offset changes)
+        const priceChangePercent = lastPriceRef.current > 0
+            ? Math.abs(currentPrice - lastPriceRef.current) /
+                lastPriceRef.current
+            : 1; // Force check on first run
+
+        if (priceChangePercent < 0.005) {
             return;
         }
+
+        console.log(
+            `Price changed from ${lastPriceRef.current} to ${currentPrice} (${
+                (priceChangePercent * 100).toFixed(2)
+            }%), checking orders...`,
+        );
         lastPriceRef.current = currentPrice;
 
         try {
@@ -156,6 +164,10 @@ export function useLimitOrderMatcher({
                 return;
             }
 
+            console.log(
+                `Checking ${openOrders.length} open orders against current price: $${currentPrice}`,
+            );
+
             // Check each order against the current price
             for (const order of openOrders) {
                 const orderPrice = parseFloat(order.price.toString());
@@ -163,6 +175,10 @@ export function useLimitOrderMatcher({
                     order.side,
                     orderPrice,
                     currentPrice,
+                );
+
+                console.log(
+                    `Order ${order.id}: ${order.side} @ $${orderPrice}, current: $${currentPrice}, shouldFill: ${shouldFill}`,
                 );
 
                 if (shouldFill) {

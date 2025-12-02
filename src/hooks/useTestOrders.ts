@@ -289,10 +289,10 @@ export const useFillTestOrder = ({
                 queryKey: ["test-orders", testAccountId],
             });
             queryClient.invalidateQueries({
-                queryKey: ["test-positions"],
+                queryKey: ["test-positions", testAccountId],
             });
             queryClient.invalidateQueries({
-                queryKey: ["test-account"],
+                queryKey: ["test-account", testAccountId],
             });
             toast.success(
                 `Order filled: ${data.side.toUpperCase()} ${data.size} ${data.symbol} @ $${data.price}`,
