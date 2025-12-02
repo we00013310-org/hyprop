@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/contexts/ToastContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { HyperliquidTrading } from "@/lib/hyperliquidTrading";
 import { TestOrder, TestOrderInsert } from "@/types";
 
 const PAGE_SIZE = 10;
@@ -199,6 +201,106 @@ export const useCancelAllTestOrders = ({
         },
         onError: (error: Error) => {
             toast.error(error.message || "Failed to cancel orders");
+            onError?.(error);
+        },
+    });
+};
+
+/**
+ * Hook to manually fill a limit order by creating a simulated position.
+ * This is useful for testing or when automatic matching is not desired.
+ */
+export const useFillTestOrder = ({
+    testAccountId,
+    onSuccess,
+    onError,
+}: {
+    testAccountId: string;
+    onSuccess?: () => void;
+    onError?: (error: Error) => void;
+}) => {
+    const queryClient = useQueryClient();
+    const toast = useToast();
+    const { walletAddress } = useAuth();
+
+    return useMutation({
+        mutationFn: async (orderId: string) => {
+            if (!walletAddress) {
+                throw new Error("Wallet not connected");
+            }
+
+            // Get the order details
+            const { data: order, error: fetchError } = await supabase
+                .from("test_orders")
+                .select("*")
+                .eq("id", orderId)
+                .eq("test_account_id", testAccountId)
+                .eq("status", "open")
+                .single();
+
+            if (fetchError || !order) {
+                throw new Error(fetchError?.message || "Order not found");
+            }
+
+            // Create position using the trading infrastructure
+            const trading = new HyperliquidTrading(
+                testAccountId,
+                walletAddress,
+                false,
+            );
+
+            const isBuy = order.side === "buy";
+            const result = await trading.placeOrder(
+                order.symbol,
+                isBuy,
+                order.size,
+                order.price,
+                "limit",
+                order.reduce_only,
+            );
+
+            if (!result || result.status !== "ok") {
+                throw new Error("Failed to create position");
+            }
+
+            // Mark the order as filled
+            const { data: updatedOrder, error: updateError } = await supabase
+                .from("test_orders")
+                .update({
+                    status: "filled",
+                    filled_size: order.size,
+                    filled_price: order.price,
+                    filled_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", orderId)
+                .eq("status", "open")
+                .select()
+                .single();
+
+            if (updateError) {
+                throw new Error(updateError.message);
+            }
+
+            return updatedOrder;
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({
+                queryKey: ["test-orders", testAccountId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["test-positions", testAccountId],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["test-account", testAccountId],
+            });
+            toast.success(
+                `Order filled: ${data.side.toUpperCase()} ${data.size} ${data.symbol} @ $${data.price}`,
+            );
+            onSuccess?.();
+        },
+        onError: (error: Error) => {
+            toast.error(error.message || "Failed to fill order");
             onError?.(error);
         },
     });

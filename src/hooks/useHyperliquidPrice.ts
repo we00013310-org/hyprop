@@ -1,5 +1,5 @@
 import { getDemoPriceOffset } from "@/lib/priceOracle";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // interface TradeData {
 //   coin: string;
@@ -28,6 +28,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const previousPriceRef = useRef<number>(0);
+  const basePriceRef = useRef<number>(0); // Store raw price without offset
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef<number>(0);
 
@@ -49,6 +50,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
         const initialPrice = parseFloat(data[coin]);
         if (initialPrice && !isNaN(initialPrice)) {
           const demoOffset = getDemoPriceOffset();
+          basePriceRef.current = initialPrice;
           setPrice(initialPrice + demoOffset);
           previousPriceRef.current = initialPrice;
           console.log(`Initial ${coin} price from REST API:`, initialPrice);
@@ -58,6 +60,46 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
       console.error("Failed to fetch initial price:", error);
     }
   }, [coin]);
+
+  // Listen for localStorage changes (demo price offset)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "demo_btc_price_offset" && basePriceRef.current > 0) {
+        const newOffset = e.newValue ? parseFloat(e.newValue) : 0;
+        const adjustedPrice = basePriceRef.current +
+          (isNaN(newOffset) ? 0 : newOffset);
+        console.log(
+          `Demo price offset changed to ${newOffset}, adjusting price to ${adjustedPrice}`,
+        );
+        setPrice(adjustedPrice);
+      }
+    };
+
+    // Track last known offset to detect changes
+    let lastKnownOffset = getDemoPriceOffset();
+
+    // Also poll for changes in the same tab (storage event only fires for other tabs)
+    const pollInterval = setInterval(() => {
+      if (basePriceRef.current > 0) {
+        const currentOffset = getDemoPriceOffset();
+        // Check if offset actually changed (not just price drift)
+        if (currentOffset !== lastKnownOffset) {
+          const expectedPrice = basePriceRef.current + currentOffset;
+          console.log(
+            `Demo price offset changed from ${lastKnownOffset} to ${currentOffset}, adjusting price to ${expectedPrice}`,
+          );
+          lastKnownOffset = currentOffset;
+          setPrice(expectedPrice);
+        }
+      }
+    }, 500); // Check every 500ms for faster response
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(pollInterval);
+    };
+  }, []); // Empty dependency array - use refs instead of state in the closure
 
   useEffect(() => {
     fetchInitialPrice();
@@ -69,7 +111,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
         }
 
         console.log(
-          `Connecting to Hyperliquid testnet WebSocket for ${coin}...`
+          `Connecting to Hyperliquid testnet WebSocket for ${coin}...`,
         );
         const ws = new WebSocket(TESTNET_WS_URL);
         wsRef.current = ws;
@@ -86,7 +128,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
                 type: "trades",
                 coin: coin,
               },
-            })
+            }),
           );
           console.log(`Subscribed to ${coin} trades`);
 
@@ -96,7 +138,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
               subscription: {
                 type: "allMids",
               },
-            })
+            }),
           );
           console.log("Subscribed to allMids");
         };
@@ -114,14 +156,16 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
 
               for (const trade of trades) {
                 if (trade.coin === coin) {
+                  const rawPrice = parseFloat(trade.px);
                   const demoOffset = getDemoPriceOffset();
-                  const newPrice = parseFloat(trade.px) + demoOffset;
+                  const newPrice = rawPrice + demoOffset;
 
-                  if (newPrice && !isNaN(newPrice)) {
+                  if (rawPrice && !isNaN(rawPrice)) {
                     const change = previousPriceRef.current
                       ? newPrice - previousPriceRef.current
                       : 0;
 
+                    basePriceRef.current = rawPrice;
                     setPrice(newPrice);
                     setPriceChange(change);
                     previousPriceRef.current = newPrice;
@@ -136,6 +180,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
                 const midPrice = parseFloat(midsData.mids[coin]);
 
                 if (midPrice && !isNaN(midPrice)) {
+                  basePriceRef.current = midPrice;
                   if (price === 0) {
                     const demoOffset = getDemoPriceOffset();
                     setPrice(midPrice + demoOffset);
@@ -148,7 +193,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
             console.error(
               "Error parsing WebSocket message:",
               error,
-              event.data
+              event.data,
             );
           }
         };
@@ -167,9 +212,9 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
           const delay = Math.min(5000 * reconnectAttemptsRef.current, 30000);
 
           console.log(
-            `Reconnecting in ${delay / 1000}s... (attempt ${
-              reconnectAttemptsRef.current
-            })`
+            `Reconnecting in ${
+              delay / 1000
+            }s... (attempt ${reconnectAttemptsRef.current})`,
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {
