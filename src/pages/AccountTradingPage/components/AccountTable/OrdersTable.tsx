@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Spinner } from "@/components/ui/Spinner";
+import { Spinner } from "@/components/ui/spinner";
 import { FundedOrder } from "@/types";
 import { useFundedOrders } from "@/hooks/account";
 import { useCancelAllFundedOrders, useCancelFundedOrder } from "@/hooks/order";
@@ -59,19 +59,22 @@ const FundedOrdersTable = ({
       {
         accessorKey: "symbol",
         header: "Symbol",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-white">{row.original.coin}</span>
-            <span
-              className={clsx("text-xs px-1.5 py-0.5 rounded", {
-                "bg-green-500/20 text-green-400": row.original.side === "B",
-                "bg-red-500/20 text-red-400": row.original.side !== "B",
-              })}
-            >
-              {row.original.side.toUpperCase()}
-            </span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const direction = row.original.reduceOnly ? (row.original.side === 'B' ? 'Close Short' : 'Close Long') : (row.original.side === 'B' ? 'Buy' : 'Sell')
+          return (
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-white">{row.original.coin}</span>
+              <span
+                className={clsx("text-xs px-1.5 py-0.5 rounded", {
+                  "bg-green-500/20 text-green-400": row.original.side === "B",
+                  "bg-red-500/20 text-red-400": row.original.side !== "B",
+                })}
+              >
+                {direction}
+              </span>
+            </div>
+          )
+        },
       },
       {
         accessorKey: "size",
@@ -100,6 +103,11 @@ const FundedOrdersTable = ({
         accessorKey: "orderValue",
         header: "Order Value",
         cell: ({ row }) => {
+          if (row.original.reduceOnly) {
+            return (
+              <span className="text-white">Market</span>
+            )
+          }
           const value = +row.original.sz * +row.original.limitPx;
           return (
             <span className="text-white">
@@ -120,7 +128,7 @@ const FundedOrdersTable = ({
       {
         accessorKey: "reduce_only",
         header: "Reduce Only",
-        cell: () => <span className="text-textBtn">-</span>,
+        cell: ({ row }) => <span className="text-textBtn">{row.original.reduceOnly ? "Yes" : "-"}</span>,
       },
       {
         accessorKey: "created_at",
@@ -205,9 +213,9 @@ const FundedOrdersTable = ({
                   {header.isPlaceholder
                     ? null
                     : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                 </TableHead>
               ))}
             </TableRow>

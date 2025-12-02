@@ -8,7 +8,7 @@ import ComingSoon from "./ComingSoon";
 import { FundedAccount, TestAccount } from "@/types";
 import FundedOrdersTable from "./OrdersTable";
 
-enum Tab {
+export enum Tab {
   Balances = "Balances",
   Positions = "Positions",
   OpenOrders = "Open Orders",
@@ -37,6 +37,7 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
             accountId={account.id as string}
             currentPrice={currentPrice}
             isFundedAccount={isFundedAccount}
+            onChangeTab={setTab}
           />
         );
       case Tab.OpenOrders:

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 import { getFundedAccountInfo } from "./fundedAccount.ts";
-import { createOrder } from "./hyperliquidApi.ts";
+import { createOrder, createOrderWithTpSl } from "./hyperliquidApi.ts";
 
 export async function simulateFundedPosition(
   supabase: SupabaseClient,
@@ -11,7 +11,9 @@ export async function simulateFundedPosition(
   size: number,
   reduceOnly: boolean,
   orderType: "market" | "limit",
-  entryPrice: string
+  entryPrice: string,
+  tpPrice?: string,
+  slPrice?: string
 ) {
   try {
     console.log("=== SIMULATING POSITION FOR FUNDED ACCOUNT ===");
@@ -21,6 +23,8 @@ export async function simulateFundedPosition(
     console.log("Size:", size);
     console.log("Entry Price:", entryPrice);
     console.log("Reduce Only:", reduceOnly);
+    console.log("TP Price:", tpPrice);
+    console.log("SL Price:", slPrice);
 
     const { wallet, available } = await getFundedAccountInfo(
       supabase,
@@ -33,13 +37,15 @@ export async function simulateFundedPosition(
       };
     }
 
-    await createOrder(wallet, {
+    await createOrderWithTpSl(wallet, {
       coin,
       isBuy,
       size: size.toString(),
       price: entryPrice,
       orderType,
       reduceOnly,
+      tpPrice,
+      slPrice,
     });
 
     return {

@@ -41,4 +41,5 @@ export type FundedOrder = {
   side: string;
   sz: string;
   timestamp: number;
+  reduceOnly?: boolean;
 };

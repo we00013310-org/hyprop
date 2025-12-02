@@ -74,7 +74,9 @@ export async function handlePlaceOrder(
     parseFloat(size),
     reduceOnly || false,
     orderType,
-    price as string
+    price as string,
+    tpPrice ? tpPrice.toString() : undefined,
+    slPrice ? slPrice.toString() : undefined
   );
 
   console.log("=== SIMULATED ORDER SUCCESS ===");

@@ -343,6 +343,128 @@ export async function createBracketOrder(
 }
 
 /**
+ * Create an order with optional TP/SL
+ */
+export async function createOrderWithTpSl(
+  wallet: Wallet,
+  params: OrderParams & {
+    tpPrice?: string;
+    slPrice?: string;
+  }
+): Promise<any> {
+  const {
+    coin,
+    isBuy,
+    size,
+    price,
+    orderType,
+    reduceOnly = false,
+    tpPrice,
+    slPrice,
+  } = params;
+
+  // If no TP/SL, use standard createOrder
+  if (!tpPrice && !slPrice) {
+    return createOrder(wallet, params);
+  }
+
+  // Get asset index
+  const assetIndex = getAssetIndex(coin);
+
+  // Initialize exchange client
+  const transport = new HttpTransport({ isTestnet: true });
+  const exchangeClient = new ExchangeClient({
+    wallet,
+    transport,
+    isTestnet: true,
+  });
+
+  const orders: any[] = [];
+
+  // 1. Entry Order
+  let orderPrice: string;
+  let orderTypeSpec: any;
+
+  if (!price) {
+    throw new Error("Price is required");
+  }
+
+  if (orderType === "market") {
+    const slippagePrice = isBuy ? +(price || 0) * 1.05 : +(price || 0) * 0.95;
+    orderPrice = formatPrice(slippagePrice.toString(), coin);
+    orderTypeSpec = { limit: { tif: "Ioc" } };
+  } else {
+    orderPrice = formatPrice(price, coin);
+    orderTypeSpec = { limit: { tif: "Gtc" } };
+  }
+
+  const formattedSize = formatSize(size, coin);
+
+  orders.push({
+    a: assetIndex,
+    b: isBuy,
+    p: orderPrice,
+    s: formattedSize,
+    r: reduceOnly,
+    t: orderTypeSpec,
+  });
+
+  // 2. Take Profit (if provided)
+  if (tpPrice) {
+    orders.push({
+      a: assetIndex,
+      b: !isBuy, // Opposite side
+      p: formatPrice(tpPrice, coin),
+      s: formattedSize,
+      r: true, // Reduce Only
+      t: {
+        trigger: {
+          isMarket: true,
+          triggerPx: formatPrice(tpPrice, coin),
+          tpsl: "tp",
+        },
+      },
+    });
+  }
+
+  // 3. Stop Loss (if provided)
+  if (slPrice) {
+    orders.push({
+      a: assetIndex,
+      b: !isBuy, // Opposite side
+      p: formatPrice(slPrice, coin),
+      s: formattedSize,
+      r: true, // Reduce Only
+      t: {
+        trigger: {
+          isMarket: true,
+          triggerPx: formatPrice(slPrice, coin),
+          tpsl: "sl",
+        },
+      },
+    });
+  }
+
+  console.log("Creating Order with TP/SL:", {
+    assetIndex,
+    coin,
+    isBuy,
+    orderPrice,
+    size: formattedSize,
+    tpPrice,
+    slPrice,
+  });
+
+  // Place all orders together
+  const result = await exchangeClient.order({
+    orders,
+    grouping: "normalTpsl",
+  });
+
+  return result;
+}
+
+/**
  * Cancel an order
  */
 export async function cancelOrder(

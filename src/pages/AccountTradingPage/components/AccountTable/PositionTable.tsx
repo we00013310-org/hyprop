@@ -22,6 +22,7 @@ import {
 import { usePositions } from "@/hooks/account";
 import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
 import { Spinner } from "@/components/ui/spinner";
+import { Tab } from "./AccountTable";
 
 // Position type matching Hyperliquid's position structure
 export type Position = {
@@ -47,11 +48,13 @@ interface PositionTableProps {
   currentPrice: number;
   isDisabled?: boolean;
   isFundedAccount?: boolean;
+  onChangeTab?: (newTab: Tab) => void
 }
 
 const PositionTable = ({
   accountId,
   currentPrice,
+  onChangeTab,
   isDisabled = false,
   isFundedAccount = false,
 }: PositionTableProps) => {
@@ -278,16 +281,21 @@ const PositionTable = ({
     {
       id: "tpsl",
       header: "TP/SL",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span className="text-tradingText text-xs">
-            {row.original.tpPrice} / {row.original.slPrice}
-          </span>
-          <button className="text-tradingText hover:text-white transition-colors">
-            <Pencil className="h-3 w-3" />
-          </button>
-        </div>
-      ),
+      cell: ({ row }) => {
+        if (isFundedAccount) {
+          return <span onClick={() => onChangeTab?.(Tab.OpenOrders)} className="text-highlight text-xs hover:underline transition-all cursor-pointer">View Orders</span>
+        }
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-tradingText text-xs">
+              {row.original.tpPrice} / {row.original.slPrice}
+            </span>
+            <button className="text-tradingText hover:text-white transition-colors">
+              <Pencil className="h-3 w-3" />
+            </button>
+          </div>
+        )
+      },
     },
   ];
 
