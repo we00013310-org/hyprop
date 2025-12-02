@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import clsx from "clsx";
 
 import { Button } from "../../../components/ui";
@@ -74,7 +74,61 @@ const OrderForm = ({
 
   const [reduceOnly, setReduceOnly] = useState(false);
   const [tpsl, setTpsl] = useState(false);
+  const [tpPrice, setTpPrice] = useState<number>(0);
+  const [slPrice, setSlPrice] = useState<number>(0);
   const [pct, setPct] = useState(0);
+
+  // TP/SL Enhanced State
+  const [tpGain, setTpGain] = useState<string>("");
+  const [slLoss, setSlLoss] = useState<string>("");
+  const [tpUnit, setTpUnit] = useState<"$" | "%">("$");
+  const [slUnit, setSlUnit] = useState<"$" | "%">("$");
+
+  const leverage = 20; // Default leverage
+  const entryPrice = tradeType === TradeType.Limit ? limitPrice : currentPrice;
+  const isBuy = orderType === OrderType.Buy;
+
+  // Helper to calculate PnL given exit price
+  const calculatePnL = (exitPrice: number) => {
+    if (!size) return 0;
+    return isBuy
+      ? (exitPrice - entryPrice) * size
+      : (entryPrice - exitPrice) * size;
+  };
+
+  // Helper to calculate ROE % given exit price
+  const calculateRoe = (exitPrice: number) => {
+    if (!size || !entryPrice) return 0;
+    const margin = (size * entryPrice) / leverage;
+    const pnl = calculatePnL(exitPrice);
+    return (pnl / margin) * 100;
+  };
+
+  // Sync Gain/Loss when Price/Size/Unit changes
+  useEffect(() => {
+    if (tpPrice && entryPrice && size) {
+      if (tpUnit === "$") {
+        setTpGain(calculatePnL(tpPrice).toFixed(2));
+      } else {
+        setTpGain(calculateRoe(tpPrice).toFixed(2));
+      }
+    } else if (!tpPrice) {
+      setTpGain("");
+    }
+  }, [tpPrice, tpUnit, size, entryPrice, isBuy]);
+
+  useEffect(() => {
+    if (slPrice && entryPrice && size) {
+      if (slUnit === "$") {
+        setSlLoss(calculatePnL(slPrice).toFixed(2));
+      } else {
+        setSlLoss(calculateRoe(slPrice).toFixed(2));
+      }
+    } else if (!slPrice) {
+      setSlLoss("");
+    }
+  }, [slPrice, slUnit, size, entryPrice, isBuy]);
+
 
   // Calculate max size based on selected token
   const maxSize = useMemo(() => {
@@ -125,19 +179,15 @@ const OrderForm = ({
     }
   }, [currentPrice, selectedToken, size]);
 
-  // Calculate effective limit price (use entered limit price for limit orders, current price for market)
-  const effectiveLimitPrice = useMemo(() => {
-    if (tradeType === TradeType.Limit && limitPrice > 0) {
-      return limitPrice;
-    }
-    return currentPrice;
-  }, [tradeType, limitPrice, currentPrice]);
-
   const { mutate, isPending } = useCreateOrder({
     accountId: account.id,
     onSuccess: () => {
       handleChangePct(0);
       setLimitPrice(0);
+      setTpPrice(0);
+      setSlPrice(0);
+      setTpGain("");
+      setSlLoss("");
     },
     isFundedAccount,
   });
@@ -148,6 +198,10 @@ const OrderForm = ({
     onSuccess: () => {
       handleChangePct(0);
       setLimitPrice(0);
+      setTpPrice(0);
+      setSlPrice(0);
+      setTpGain("");
+      setSlLoss("");
     },
   });
 
@@ -167,6 +221,8 @@ const OrderForm = ({
         price: limitPrice,
         order_type: "limit",
         reduce_only: reduceOnly,
+        tp_price: tpPrice,
+        sl_price: slPrice,
       });
       return;
     }
@@ -180,12 +236,114 @@ const OrderForm = ({
       limitPrice: tradeType === TradeType.Limit ? limitPrice : undefined,
       reduceOnly,
       token,
+      tpPrice: tpsl && tpPrice > 0 ? tpPrice : undefined,
+      slPrice: tpsl && slPrice > 0 ? slPrice : undefined,
     });
   };
 
   const isLimitOrder = tradeType === TradeType.Limit;
   const isSubmitDisabled = !size || (isLimitOrder && (!limitPrice || limitPrice <= 0));
   const isLoading = isPending || isCreatingTestOrder;
+
+  const handleChangeTpPriceInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setTpPrice(val);
+    // Update Gain immediately
+    if (val && size && entryPrice) {
+      if (tpUnit === "$") {
+        setTpGain(isBuy ? ((val - entryPrice) * size).toFixed(2) : ((entryPrice - val) * size).toFixed(2));
+      } else {
+        const margin = (size * entryPrice) / leverage;
+        const pnl = isBuy ? (val - entryPrice) * size : (entryPrice - val) * size;
+        setTpGain(((pnl / margin) * 100).toFixed(2));
+      }
+    } else {
+      setTpGain("");
+    }
+  };
+
+  const handleChangeSlPriceInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    setSlPrice(val);
+    // Update Loss immediately
+    if (val && size && entryPrice) {
+      if (slUnit === "$") {
+        setSlLoss(isBuy ? ((val - entryPrice) * size).toFixed(2) : ((entryPrice - val) * size).toFixed(2));
+      } else {
+        const margin = (size * entryPrice) / leverage;
+        const pnl = isBuy ? (val - entryPrice) * size : (entryPrice - val) * size;
+        setSlLoss(((pnl / margin) * 100).toFixed(2));
+      }
+    } else {
+      setSlLoss("");
+    }
+  };
+
+  const handleChangeTpGainInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setTpGain(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && size && entryPrice) {
+      let newPrice = 0;
+      if (tpUnit === "$") {
+        newPrice = isBuy ? entryPrice + numVal / size : entryPrice - numVal / size;
+      } else {
+        const margin = (size * entryPrice) / leverage;
+        const pnl = (numVal * margin) / 100;
+        newPrice = isBuy ? entryPrice + pnl / size : entryPrice - pnl / size;
+      }
+      setTpPrice(parseFloat(newPrice.toFixed(2)));
+    }
+  };
+
+  const handleChangeTpUnitInput = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newUnit = e.target.value as "$" | "%";
+    setTpUnit(newUnit);
+    // Recalculate Gain value based on current Price
+    if (tpPrice && size && entryPrice) {
+      if (newUnit === "$") {
+        const pnl = isBuy ? (tpPrice - entryPrice) * size : (entryPrice - tpPrice) * size;
+        setTpGain(pnl.toFixed(2));
+      } else {
+        const margin = (size * entryPrice) / leverage;
+        const pnl = isBuy ? (tpPrice - entryPrice) * size : (entryPrice - tpPrice) * size;
+        setTpGain(((pnl / margin) * 100).toFixed(2));
+      }
+    }
+  };
+
+  const handleChangeSlGainInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSlLoss(val);
+    const numVal = parseFloat(val);
+    if (!isNaN(numVal) && size && entryPrice) {
+      let newPrice = 0;
+      if (slUnit === "$") {
+        newPrice = isBuy ? entryPrice + numVal / size : entryPrice - numVal / size;
+      } else {
+        const margin = (size * entryPrice) / leverage;
+        const pnl = (numVal * margin) / 100;
+        newPrice = isBuy ? entryPrice + pnl / size : entryPrice - pnl / size;
+      }
+      setSlPrice(parseFloat(newPrice.toFixed(2)));
+    }
+  };
+
+  const handleChangeSlUnitInput = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newUnit = e.target.value as "$" | "%";
+    setSlUnit(newUnit);
+    // Recalculate Loss value based on current Price
+    if (slPrice && size && entryPrice) {
+      if (newUnit === "$") {
+        const pnl = isBuy ? (slPrice - entryPrice) * size : (entryPrice - slPrice) * size;
+        setSlLoss(pnl.toFixed(2));
+      } else {
+        const margin = (size * entryPrice) / leverage;
+        const pnl = isBuy ? (slPrice - entryPrice) * size : (entryPrice - slPrice) * size;
+        setSlLoss(((pnl / margin) * 100).toFixed(2));
+      }
+    }
+  };
 
   return (
     <>
@@ -323,6 +481,84 @@ const OrderForm = ({
             <span className="text-white text-sm">Take Profit / Stop Loss</span>
           </label>
         </div>
+
+
+        {/* TP/SL Inputs - Only show when tpsl checkbox is checked */}
+        {tpsl && (
+          <div className="my-2 space-y-2 fade-in">
+            {/* Take Profit Row */}
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <InputGroup>
+                  <InputGroupInput
+                    type="number"
+                    placeholder="TP Price"
+                    value={tpPrice || ""}
+                    onChange={handleChangeTpPriceInput}
+                    min={0}
+                    step={0.01}
+                  />
+                </InputGroup>
+              </div>
+              <div className="flex-1">
+                <InputGroup>
+                  <InputGroupInput
+                    type="number"
+                    placeholder="Gain"
+                    value={tpGain}
+                    onChange={handleChangeTpGainInput}
+                  />
+                  <div className="pr-2">
+                    <select
+                      className="bg-transparent text-xs h-full px-2 outline-none text-gray-400 cursor-pointer"
+                      value={tpUnit}
+                      onChange={handleChangeTpUnitInput}
+                    >
+                      <option value="$">$</option>
+                      <option value="%">%</option>
+                    </select>
+                  </div>
+                </InputGroup>
+              </div>
+            </div>
+
+            {/* Stop Loss Row */}
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <InputGroup>
+                  <InputGroupInput
+                    type="number"
+                    placeholder="SL Price"
+                    value={slPrice || ""}
+                    onChange={handleChangeSlPriceInput}
+                    min={0}
+                    step={0.01}
+                  />
+                </InputGroup>
+              </div>
+              <div className="flex-1">
+                <InputGroup>
+                  <InputGroupInput
+                    type="number"
+                    placeholder="Loss"
+                    value={slLoss}
+                    onChange={handleChangeSlGainInput}
+                  />
+                  <div className="pr-2">
+                    <select
+                      className="bg-transparent text-xs h-full px-2 outline-none text-gray-400 cursor-pointer"
+                      value={slUnit}
+                      onChange={handleChangeSlUnitInput}
+                    >
+                      <option value="$">$</option>
+                      <option value="%">%</option>
+                    </select>
+                  </div>
+                </InputGroup>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 w-full">
           <Button

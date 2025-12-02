@@ -59,7 +59,9 @@ export class HyperliquidTrading {
     size: number,
     price: number | null,
     orderType: "market" | "limit",
-    reduceOnly: boolean = false
+    reduceOnly: boolean = false,
+    tpPrice?: number,
+    slPrice?: number
   ) {
     try {
       return await this.callEdgeFunction({
@@ -70,6 +72,8 @@ export class HyperliquidTrading {
         price,
         orderType,
         reduceOnly,
+        tpPrice,
+        slPrice,
       });
     } catch (error: any) {
       console.error("Place order error:", error);

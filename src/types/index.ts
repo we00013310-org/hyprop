@@ -12,9 +12,15 @@ export type FundedAccount =
 
 export type User = Database["public"]["Tables"]["users"]["Row"];
 
-export type TestOrder = Database["public"]["Tables"]["test_orders"]["Row"];
+export type TestOrder = Database["public"]["Tables"]["test_orders"]["Row"] & {
+  tp_price?: number | null;
+  sl_price?: number | null;
+};
 export type TestOrderInsert =
-  Database["public"]["Tables"]["test_orders"]["Insert"];
+  Database["public"]["Tables"]["test_orders"]["Insert"] & {
+    tp_price?: number | null;
+    sl_price?: number | null;
+  };
 
 export type Exam = {
   id: number;

@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/MyButton";
-import { Spinner } from "@/components/ui/Spinner";
+import { Spinner } from "@/components/ui/spinner";
 import {
   useOpenOrders,
   useCancelTestOrder,
@@ -72,6 +72,7 @@ const OpenOrdersTable = ({
   const orders = ordersData?.data || [];
   const totalPages = ordersData?.totalPages || 1;
   const totalCount = ordersData?.count || 0;
+  console.log('orders', orders)
 
   const columns: ColumnDef<TestOrder>[] = useMemo(
     () => [
@@ -190,6 +191,15 @@ const OpenOrdersTable = ({
               </button>
             )}
           </div>
+        ),
+      },
+      {
+        accessorKey: "tp_price",
+        header: "TP/SL",
+        cell: ({ row }) => (
+          <span className="text-textBtn text-xs">
+            {row.original.tp_price ? `$${row.original.tp_price.toLocaleString()}` : "-"} / {row.original.sl_price ? `$${row.original.sl_price.toLocaleString()}` : "-"}
+          </span>
         ),
       },
     ],

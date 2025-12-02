@@ -257,6 +257,8 @@ export const useFillTestOrder = ({
                 order.price,
                 "limit",
                 order.reduce_only,
+                order.tp_price || undefined,
+                order.sl_price || undefined,
             );
 
             if (!result || result.status !== "ok") {

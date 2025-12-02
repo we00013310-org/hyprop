@@ -541,6 +541,68 @@ export type Database = {
           },
         ]
       }
+      test_orders: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          filled_at: string | null
+          filled_price: number | null
+          filled_size: number
+          id: string
+          order_type: string
+          price: number
+          reduce_only: boolean
+          side: string
+          size: number
+          status: string
+          symbol: string
+          test_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          filled_at?: string | null
+          filled_price?: number | null
+          filled_size?: number
+          id?: string
+          order_type?: string
+          price: number
+          reduce_only?: boolean
+          side: string
+          size: number
+          status?: string
+          symbol: string
+          test_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          filled_at?: string | null
+          filled_price?: number | null
+          filled_size?: number
+          id?: string
+          order_type?: string
+          price?: number
+          reduce_only?: boolean
+          side?: string
+          size?: number
+          status?: string
+          symbol?: string
+          test_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_orders_test_account_id_fkey"
+            columns: ["test_account_id"]
+            isOneToOne: false
+            referencedRelation: "test_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_positions: {
         Row: {
           avg_entry: number
@@ -552,8 +614,10 @@ export type Database = {
           rpnl: number
           side: string
           size: number
+          sl_price: number | null
           symbol: string
           test_account_id: string
+          tp_price: number | null
           upnl: number
         }
         Insert: {
@@ -566,8 +630,10 @@ export type Database = {
           rpnl?: number
           side: string
           size?: number
+          sl_price?: number | null
           symbol: string
           test_account_id: string
+          tp_price?: number | null
           upnl?: number
         }
         Update: {
@@ -580,8 +646,10 @@ export type Database = {
           rpnl?: number
           side?: string
           size?: number
+          sl_price?: number | null
           symbol?: string
           test_account_id?: string
+          tp_price?: number | null
           upnl?: number
         }
         Relationships: [

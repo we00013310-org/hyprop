@@ -39,6 +39,8 @@ export async function handleGetTestPositions(
           entryPx: pos.avg_entry.toString(),
           marginUsed: pos.margin_used.toString(),
           unrealizedPnl: upnl.toString(),
+          tpPrice: pos.tp_price,
+          slPrice: pos.sl_price,
         },
       };
     })

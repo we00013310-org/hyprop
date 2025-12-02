@@ -27,6 +27,8 @@ export interface PlaceOrderAction {
   price?: string;
   orderType: "market" | "limit";
   reduceOnly?: boolean;
+  tpPrice?: string | number;
+  slPrice?: string | number;
 }
 
 export interface GetTestAccountAction {

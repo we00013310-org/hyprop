@@ -29,6 +29,8 @@ export const useCreateOrder = ({
       currentPrice,
       token = "BTC",
       reduceOnly = false,
+      tpPrice,
+      slPrice,
     }: {
       side: "long" | "short";
       size: number;
@@ -37,6 +39,8 @@ export const useCreateOrder = ({
       currentPrice?: number;
       token?: string;
       reduceOnly?: boolean;
+      tpPrice?: number;
+      slPrice?: number;
     }) => {
       const trading = new HyperliquidTrading(
         accountId,
@@ -63,6 +67,8 @@ export const useCreateOrder = ({
       console.log("Current price:", currentPrice);
       console.log("Limit price input:", limitPrice);
       console.log("Price to send:", priceNum);
+      console.log("TP Price:", tpPrice);
+      console.log("SL Price:", slPrice);
 
       const result = await trading.placeOrder(
         token,
@@ -70,7 +76,9 @@ export const useCreateOrder = ({
         sizeNum,
         priceNum,
         orderType as "limit" | "market",
-        reduceOnly
+        reduceOnly,
+        tpPrice,
+        slPrice
       );
 
       console.log("Order result:", result);

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/table";
 import { usePositions } from "@/hooks/account";
 import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
-import { Spinner } from "@/components/ui/Spinner";
+import { Spinner } from "@/components/ui/spinner";
 
 // Position type matching Hyperliquid's position structure
 export type Position = {
@@ -63,6 +63,7 @@ const PositionTable = ({
   });
 
   const { data } = usePositions(accountId, isFundedAccount);
+  console.log("data", data);
   const parsedData: Position[] = useMemo(() => {
     return (
       data?.map((pos: any) => {
@@ -72,6 +73,14 @@ const PositionTable = ({
         const unrealizedPnl = parseFloat(pos.position.unrealizedPnl ?? "0");
         const isLong = size > 0;
         const coin = pos.position.coin;
+
+        // Get TP/SL from database fields
+        const tpPrice = pos.position.tpPrice
+          ? `$${parseFloat(pos.position.tpPrice).toLocaleString()}`
+          : "--";
+        const slPrice = pos.position.slPrice
+          ? `$${parseFloat(pos.position.slPrice).toLocaleString()}`
+          : "--";
 
         return {
           type: isLong ? "long" : "short",
@@ -87,8 +96,8 @@ const PositionTable = ({
           margin: marginUsed,
           marginType: pos.position.marginType ?? "Isolated",
           funding: parseFloat(pos.position.funding ?? "0"),
-          tpPrice: pos.position.tpPx ?? "--",
-          slPrice: pos.position.slPx ?? "--",
+          tpPrice,
+          slPrice,
         };
       }) || []
     );
@@ -271,12 +280,8 @@ const PositionTable = ({
       header: "TP/SL",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className="text-tradingText text-sm">
-            {row.original.tpPrice}
-          </span>
-          <span className="text-tradingText text-sm">/</span>
-          <span className="text-tradingText text-sm">
-            {row.original.slPrice}
+          <span className="text-tradingText text-xs">
+            {row.original.tpPrice} / {row.original.slPrice}
           </span>
           <button className="text-tradingText hover:text-white transition-colors">
             <Pencil className="h-3 w-3" />

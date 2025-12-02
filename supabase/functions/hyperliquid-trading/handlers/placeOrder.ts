@@ -12,7 +12,7 @@ export async function handlePlaceOrder(
   accountId: string,
   isFundedAccount = false
 ) {
-  const { coin, isBuy, size, price, orderType, reduceOnly } = action;
+  const { coin, isBuy, size, price, orderType, reduceOnly, tpPrice, slPrice } = action;
 
   console.log("=== ORDER DETAILS ===");
   console.log("Coin:", coin);
@@ -21,6 +21,8 @@ export async function handlePlaceOrder(
   console.log("Price:", price, typeof price);
   console.log("Order Type:", orderType);
   console.log("Reduce Only:", reduceOnly);
+  console.log("TP Price:", tpPrice);
+  console.log("SL Price:", slPrice);
 
   validateOrderParams(coin, size, price);
 
@@ -36,6 +38,11 @@ export async function handlePlaceOrder(
       entryPrice = parseFloat(price);
       console.log("Limit order: Using specified price:", entryPrice);
     }
+
+    // Parse TP/SL prices if provided
+    const parsedTpPrice = tpPrice ? parseFloat(tpPrice.toString()) : null;
+    const parsedSlPrice = slPrice ? parseFloat(slPrice.toString()) : null;
+
     const simulationResult = await simulatePosition(
       supabase,
       accountId,
@@ -43,7 +50,9 @@ export async function handlePlaceOrder(
       isBuy,
       parseFloat(size),
       entryPrice,
-      reduceOnly || false
+      reduceOnly || false,
+      parsedTpPrice,
+      parsedSlPrice
     );
 
     return {

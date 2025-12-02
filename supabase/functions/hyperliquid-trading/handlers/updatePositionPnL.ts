@@ -63,9 +63,42 @@ export async function handleUpdatePositionPnL(
     const size = parseFloat(pos.size.toString());
     const entryPrice = parseFloat(pos.avg_entry.toString());
     const marginUsed = parseFloat(pos.margin_used.toString());
+    const tpPrice = pos.tp_price ? parseFloat(pos.tp_price.toString()) : null;
+    const slPrice = pos.sl_price ? parseFloat(pos.sl_price.toString()) : null;
 
     const upnl = calculatePnL(entryPrice, currentPrice, size);
     const pnlPercentage = marginUsed > 0 ? (upnl / marginUsed) * 100 : 0;
+
+    // Check TP/SL triggers
+    let shouldClose = false;
+    let closeReason = "";
+
+    // For long positions (size > 0)
+    if (size > 0) {
+      if (tpPrice && currentPrice >= tpPrice) {
+        shouldClose = true;
+        closeReason = "Take Profit hit";
+      } else if (slPrice && currentPrice <= slPrice) {
+        shouldClose = true;
+        closeReason = "Stop Loss hit";
+      }
+    }
+    // For short positions (size < 0)
+    else if (size < 0) {
+      if (tpPrice && currentPrice <= tpPrice) {
+        shouldClose = true;
+        closeReason = "Take Profit hit";
+      } else if (slPrice && currentPrice >= slPrice) {
+        shouldClose = true;
+        closeReason = "Stop Loss hit";
+      }
+    }
+
+    // Check loss limit (existing logic)
+    if (!shouldClose && pnlPercentage < AUTO_CLOSE_THRESHOLD_PERCENT) {
+      shouldClose = true;
+      closeReason = `Loss limit ${pnlPercentage.toFixed(2)}%`;
+    }
 
     await supabase
       .from("test_positions")
@@ -77,9 +110,9 @@ export async function handleUpdatePositionPnL(
 
     updated++;
 
-    if (pnlPercentage < AUTO_CLOSE_THRESHOLD_PERCENT) {
+    if (shouldClose) {
       console.log(
-        `Auto-closing position ${pos.symbol}: Loss ${pnlPercentage.toFixed(2)}%`
+        `Auto-closing position ${pos.symbol}: ${closeReason}`
       );
 
       await autoClosePosition(

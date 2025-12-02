@@ -137,7 +137,9 @@ async function addToPosition(
   size: number,
   entryPrice: number,
   isBuy: boolean,
-  tradingFee: number
+  tradingFee: number,
+  tpPrice?: number | null,
+  slPrice?: number | null
 ): Promise<TestPosition> {
   const existingSize = parseFloat(existingPosition.size.toString());
   const existingEntry = parseFloat(existingPosition.avg_entry.toString());
@@ -161,18 +163,29 @@ async function addToPosition(
   );
   const newUpnl = calculatePnL(newEntry, currentOraclePrice, newSize);
 
+  // Prepare update object
+  const updateData: any = {
+    size: newSize,
+    avg_entry: newEntry,
+    margin_used: (Math.abs(newSize) * newEntry) / DEFAULT_LEVERAGE,
+    upnl: newUpnl,
+    fees_accrued:
+      (parseFloat(existingPosition.fees_accrued.toString()) || 0) +
+      tradingFee,
+    last_update_ts: new Date().toISOString(),
+  };
+
+  // Update TP/SL if provided (undefined means keep existing)
+  if (tpPrice !== undefined) {
+    updateData.tp_price = tpPrice;
+  }
+  if (slPrice !== undefined) {
+    updateData.sl_price = slPrice;
+  }
+
   await supabase
     .from("test_positions")
-    .update({
-      size: newSize,
-      avg_entry: newEntry,
-      margin_used: (Math.abs(newSize) * newEntry) / DEFAULT_LEVERAGE,
-      upnl: newUpnl,
-      fees_accrued:
-        (parseFloat(existingPosition.fees_accrued.toString()) || 0) +
-        tradingFee,
-      last_update_ts: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", existingPosition.id);
 
   const { data: updated } = await supabase
@@ -191,7 +204,9 @@ async function openNewPosition(
   isBuy: boolean,
   size: number,
   entryPrice: number,
-  tradingFee: number
+  tradingFee: number,
+  tpPrice?: number | null,
+  slPrice?: number | null
 ): Promise<TestPosition> {
   const side = isBuy ? "long" : "short";
   const signedSize = isBuy ? size : -size;
@@ -212,6 +227,8 @@ async function openNewPosition(
       upnl: initialUpnl,
       rpnl: 0,
       fees_accrued: tradingFee,
+      tp_price: tpPrice || null,
+      sl_price: slPrice || null,
     })
     .select()
     .single();
@@ -259,7 +276,9 @@ export async function simulatePosition(
   isBuy: boolean,
   size: number,
   entryPrice: number,
-  reduceOnly: boolean
+  reduceOnly: boolean,
+  tpPrice?: number | null,
+  slPrice?: number | null
 ) {
   console.log("=== SIMULATING POSITION FOR TEST ACCOUNT ===");
   console.log("Test Account ID:", testAccountId);
@@ -268,6 +287,8 @@ export async function simulatePosition(
   console.log("Size:", size);
   console.log("Entry Price:", entryPrice);
   console.log("Reduce Only:", reduceOnly);
+  console.log("TP Price:", tpPrice);
+  console.log("SL Price:", slPrice);
 
   const existingPosition = await getExistingPosition(
     supabase,
@@ -308,7 +329,9 @@ export async function simulatePosition(
         size,
         entryPrice,
         isBuy,
-        tradingFee
+        tradingFee,
+        tpPrice,
+        slPrice
       );
     }
   } else {
@@ -323,7 +346,9 @@ export async function simulatePosition(
       isBuy,
       size,
       entryPrice,
-      tradingFee
+      tradingFee,
+      tpPrice,
+      slPrice
     );
   }
 
