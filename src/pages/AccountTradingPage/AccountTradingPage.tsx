@@ -11,6 +11,7 @@ import FailedSection from "./components/FailedSection";
 
 import { useAccount } from "@/hooks/account";
 import { useHyperliquidPrice } from "@/hooks/useHyperliquidPrice";
+import { useLimitOrderMatcher } from "@/hooks/useLimitOrderMatcher";
 import { TestAccount } from "@/types";
 
 interface AccountTradingPageProps {
@@ -26,6 +27,14 @@ const AccountTradingPage = ({ isFundedAccount }: AccountTradingPageProps) => {
     isFundedAccount
   );
   const { price: currentPrice } = useHyperliquidPrice("BTC");
+  
+  // Enable limit order matching for test accounts only
+  useLimitOrderMatcher({
+    testAccountId: accountId as string,
+    currentPrice,
+    enabled: !isFundedAccount && !!accountId && account?.status === "active",
+  });
+  
   const isPassed = account?.status === "passed";
   const isFailed = account?.status === "failed";
 
