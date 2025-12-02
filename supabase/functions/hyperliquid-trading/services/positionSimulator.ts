@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 import { TAKER_FEE_RATE, DEFAULT_LEVERAGE } from "../constants.ts";
@@ -18,6 +19,54 @@ async function getExistingPosition(
     .maybeSingle();
 
   return existingPosition;
+}
+
+async function createTpSlOrders(
+  supabase: SupabaseClient,
+  testAccountId: string,
+  coin: string,
+  size: number,
+  isBuy: boolean, // Side of the entry order
+  tpPrice?: number | null,
+  slPrice?: number | null
+) {
+  const orders: any[] = [];
+  const side = !isBuy ? "buy" : "sell"; // TP/SL are opposite to entry
+
+  if (tpPrice) {
+    orders.push({
+      test_account_id: testAccountId,
+      symbol: coin,
+      side,
+      size,
+      price: tpPrice,
+      order_type: "limit",
+      reduce_only: true,
+      status: "open",
+    });
+  }
+
+  if (slPrice) {
+    orders.push({
+      test_account_id: testAccountId,
+      symbol: coin,
+      side,
+      size,
+      price: slPrice,
+      order_type: "limit",
+      reduce_only: true,
+      status: "open",
+    });
+  }
+
+  if (orders.length > 0) {
+    const { error } = await supabase.from("test_orders").insert(orders);
+    if (error) {
+      console.error("Failed to create TP/SL orders:", error);
+    } else {
+      console.log(`Created ${orders.length} TP/SL orders`);
+    }
+  }
 }
 
 function calculateNewSize(
@@ -170,18 +219,20 @@ async function addToPosition(
     margin_used: (Math.abs(newSize) * newEntry) / DEFAULT_LEVERAGE,
     upnl: newUpnl,
     fees_accrued:
-      (parseFloat(existingPosition.fees_accrued.toString()) || 0) +
-      tradingFee,
+      (parseFloat(existingPosition.fees_accrued.toString()) || 0) + tradingFee,
     last_update_ts: new Date().toISOString(),
   };
 
-  // Update TP/SL if provided (undefined means keep existing)
-  if (tpPrice !== undefined) {
-    updateData.tp_price = tpPrice;
-  }
-  if (slPrice !== undefined) {
-    updateData.sl_price = slPrice;
-  }
+  // Create TP/SL orders if provided
+  await createTpSlOrders(
+    supabase,
+    existingPosition.test_account_id,
+    existingPosition.symbol,
+    size,
+    isBuy,
+    tpPrice,
+    slPrice
+  );
 
   await supabase
     .from("test_positions")
@@ -227,11 +278,19 @@ async function openNewPosition(
       upnl: initialUpnl,
       rpnl: 0,
       fees_accrued: tradingFee,
-      tp_price: tpPrice || null,
-      sl_price: slPrice || null,
     })
     .select()
     .single();
+
+  await createTpSlOrders(
+    supabase,
+    testAccountId,
+    coin,
+    size,
+    isBuy,
+    tpPrice,
+    slPrice
+  );
 
   return newPos;
 }

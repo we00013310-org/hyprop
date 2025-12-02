@@ -558,8 +558,6 @@ export type Database = {
           symbol: string
           test_account_id: string
           updated_at: string
-          tp_price: number | null
-          sl_price: number | null
         }
         Insert: {
           cancelled_at?: string | null
@@ -577,8 +575,6 @@ export type Database = {
           symbol: string
           test_account_id: string
           updated_at?: string
-          tp_price?: number | null
-          sl_price?: number | null
         }
         Update: {
           cancelled_at?: string | null
@@ -596,8 +592,6 @@ export type Database = {
           symbol?: string
           test_account_id?: string
           updated_at?: string
-          tp_price?: number | null
-          sl_price?: number | null
         }
         Relationships: [
           {
@@ -620,10 +614,8 @@ export type Database = {
           rpnl: number
           side: string
           size: number
-          sl_price: number | null
           symbol: string
           test_account_id: string
-          tp_price: number | null
           upnl: number
         }
         Insert: {
@@ -636,10 +628,8 @@ export type Database = {
           rpnl?: number
           side: string
           size?: number
-          sl_price?: number | null
           symbol: string
           test_account_id: string
-          tp_price?: number | null
           upnl?: number
         }
         Update: {
@@ -652,10 +642,8 @@ export type Database = {
           rpnl?: number
           side?: string
           size?: number
-          sl_price?: number | null
           symbol?: string
           test_account_id?: string
-          tp_price?: number | null
           upnl?: number
         }
         Relationships: [

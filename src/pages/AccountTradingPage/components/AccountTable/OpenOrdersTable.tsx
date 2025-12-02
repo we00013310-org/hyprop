@@ -79,19 +79,22 @@ const OpenOrdersTable = ({
       {
         accessorKey: "symbol",
         header: "Symbol",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-white">{row.original.symbol}</span>
-            <span
-              className={clsx("text-xs px-1.5 py-0.5 rounded", {
-                "bg-green-500/20 text-green-400": row.original.side === "buy",
-                "bg-red-500/20 text-red-400": row.original.side === "sell",
-              })}
-            >
-              {row.original.side.toUpperCase()}
-            </span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const direction = row.original.reduce_only ? (row.original.side === 'buy' ? 'Close Short' : 'Close Long') : (row.original.side === 'buy' ? 'Buy' : 'Sell')
+          return (
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-white">{row.original.symbol}</span>
+              <span
+                className={clsx("text-xs px-1.5 py-0.5 rounded", {
+                  "bg-green-500/20 text-green-400": row.original.side === "buy",
+                  "bg-red-500/20 text-red-400": row.original.side !== "buy",
+                })}
+              >
+                {direction}
+              </span>
+            </div>
+          )
+        },
       },
       {
         accessorKey: "size",
@@ -120,6 +123,11 @@ const OpenOrdersTable = ({
         accessorKey: "orderValue",
         header: "Order Value",
         cell: ({ row }) => {
+          if (row.original.reduce_only) {
+            return (
+              <span className="text-white">Market</span>
+            )
+          }
           const value = row.original.size * row.original.price;
           return <span className="text-white">${value.toFixed(2)}</span>;
         },
@@ -191,15 +199,6 @@ const OpenOrdersTable = ({
               </button>
             )}
           </div>
-        ),
-      },
-      {
-        accessorKey: "tp_price",
-        header: "TP/SL",
-        cell: ({ row }) => (
-          <span className="text-textBtn text-xs">
-            {row.original.tp_price ? `$${row.original.tp_price.toLocaleString()}` : "-"} / {row.original.sl_price ? `$${row.original.sl_price.toLocaleString()}` : "-"}
-          </span>
         ),
       },
     ],

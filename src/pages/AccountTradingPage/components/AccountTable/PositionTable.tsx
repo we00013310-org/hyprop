@@ -66,7 +66,6 @@ const PositionTable = ({
   });
 
   const { data } = usePositions(accountId, isFundedAccount);
-  console.log("data", data);
   const parsedData: Position[] = useMemo(() => {
     return (
       data?.map((pos: any) => {
@@ -281,20 +280,9 @@ const PositionTable = ({
     {
       id: "tpsl",
       header: "TP/SL",
-      cell: ({ row }) => {
-        if (isFundedAccount) {
-          return <span onClick={() => onChangeTab?.(Tab.OpenOrders)} className="text-highlight text-xs hover:underline transition-all cursor-pointer">View Orders</span>
-        }
-        return (
-          <div className="flex items-center gap-2">
-            <span className="text-tradingText text-xs">
-              {row.original.tpPrice} / {row.original.slPrice}
-            </span>
-            <button className="text-tradingText hover:text-white transition-colors">
-              <Pencil className="h-3 w-3" />
-            </button>
-          </div>
-        )
+      cell: () => {
+        return <span onClick={() => onChangeTab?.(Tab.OpenOrders)} className="text-highlight text-xs hover:underline transition-all cursor-pointer">View Orders</span>
+
       },
     },
   ];

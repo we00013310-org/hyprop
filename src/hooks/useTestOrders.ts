@@ -76,12 +76,18 @@ export const useCreateTestOrder = ({
 
     return useMutation({
         mutationFn: async (
-            order: Omit<TestOrderInsert, "test_account_id" | "id">,
+            order: Omit<TestOrderInsert, "test_account_id" | "id"> & {
+                tp_price?: number;
+                sl_price?: number;
+            },
         ) => {
-            const { data, error } = await supabase
+            const { tp_price, sl_price, ...mainOrder } = order;
+
+            // 1. Create Main Order
+            const { data: mainOrderData, error } = await supabase
                 .from("test_orders")
                 .insert({
-                    ...order,
+                    ...mainOrder,
                     test_account_id: testAccountId,
                 })
                 .select()
@@ -91,7 +97,49 @@ export const useCreateTestOrder = ({
                 throw new Error(error.message);
             }
 
-            return data;
+            // 2. Create TP/SL Orders if provided
+            const tpslOrders = [];
+            const side = mainOrder.side === "buy" ? "sell" : "buy"; // TP/SL are opposite to entry
+
+            if (tp_price) {
+                tpslOrders.push({
+                    test_account_id: testAccountId,
+                    symbol: mainOrder.symbol,
+                    side,
+                    size: mainOrder.size,
+                    price: tp_price,
+                    order_type: "limit",
+                    reduce_only: true,
+                    status: "open",
+                });
+            }
+
+            if (sl_price) {
+                tpslOrders.push({
+                    test_account_id: testAccountId,
+                    symbol: mainOrder.symbol,
+                    side,
+                    size: mainOrder.size,
+                    price: sl_price,
+                    order_type: "limit",
+                    reduce_only: true,
+                    status: "open",
+                });
+            }
+
+            if (tpslOrders.length > 0) {
+                const { error: tpslError } = await supabase
+                    .from("test_orders")
+                    .insert(tpslOrders);
+
+                if (tpslError) {
+                    console.error("Failed to create TP/SL orders:", tpslError);
+                    // We don't throw here to avoid failing the main order, but maybe we should warn?
+                    // For now, just log.
+                }
+            }
+
+            return mainOrderData;
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({
@@ -257,8 +305,8 @@ export const useFillTestOrder = ({
                 order.price,
                 "limit",
                 order.reduce_only,
-                order.tp_price || undefined,
-                order.sl_price || undefined,
+                undefined,
+                undefined,
             );
 
             if (!result || result.status !== "ok") {
