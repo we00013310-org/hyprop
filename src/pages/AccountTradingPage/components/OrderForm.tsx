@@ -20,6 +20,7 @@ import { FundedAccount, TestAccount } from "@/types";
 import { useCreateOrder } from "@/hooks/order";
 import { usePositions } from "@/hooks/account";
 import { useCreateTestOrder } from "@/hooks/useTestOrders";
+import { useCreateFundedOrder } from "@/hooks/useFundedOrders";
 
 enum TradeType {
   Market = "Market",
@@ -205,6 +206,19 @@ const OrderForm = ({
     },
   });
 
+  // Hook for creating limit orders for funded accounts
+  const { mutate: createFundedOrder, isPending: isCreatingFundedOrder } = useCreateFundedOrder({
+    fundedAccountId: account.id,
+    onSuccess: () => {
+      handleChangePct(0);
+      setLimitPrice(0);
+      setTpPrice(0);
+      setSlPrice(0);
+      setTpGain("");
+      setSlLoss("");
+    },
+  });
+
   const handleSubmitOrder = () => {
     const tSize = orderValue / currentPrice;
 
@@ -227,7 +241,26 @@ const OrderForm = ({
       return;
     }
 
-    // For market orders or funded accounts, use existing flow
+    // For funded accounts with limit orders, place real order on Hyperliquid
+    if (isFundedAccount && tradeType === TradeType.Limit) {
+      if (!limitPrice || limitPrice <= 0) {
+        return;
+      }
+
+      createFundedOrder({
+        symbol: token,
+        side: orderType === OrderType.Buy ? "buy" : "sell",
+        size: tSize,
+        price: limitPrice,
+        order_type: "limit",
+        reduce_only: reduceOnly,
+        tp_price: tpsl && tpPrice > 0 ? tpPrice : undefined,
+        sl_price: tpsl && slPrice > 0 ? slPrice : undefined,
+      });
+      return;
+    }
+
+    // For market orders (both test and funded accounts), use existing flow
     mutate({
       side: orderType === OrderType.Buy ? "long" : "short",
       size: tSize,
@@ -243,7 +276,7 @@ const OrderForm = ({
 
   const isLimitOrder = tradeType === TradeType.Limit;
   const isSubmitDisabled = !size || (isLimitOrder && (!limitPrice || limitPrice <= 0));
-  const isLoading = isPending || isCreatingTestOrder;
+  const isLoading = isPending || isCreatingTestOrder || isCreatingFundedOrder;
 
   const handleChangeTpPriceInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value);
