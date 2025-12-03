@@ -20,6 +20,7 @@ import { FundedAccount, TestAccount } from "@/types";
 import { useCreateOrder } from "@/hooks/order";
 import { usePositions } from "@/hooks/account";
 import { useCreateTestOrder } from "@/hooks/useTestOrders";
+import MyTooltip from "@/components/Tooltip/MyTooltip";
 
 enum TradeType {
   Market = "Market",
@@ -70,7 +71,7 @@ const OrderForm = ({
     setSelectedToken(newToken);
   };
 
-  const [size, setSize] = useState(0);
+  const [size, setSize] = useState(0); // in token, not in USD
 
   const [reduceOnly, setReduceOnly] = useState(false);
   const [tpsl, setTpsl] = useState(false);
@@ -129,7 +130,6 @@ const OrderForm = ({
     }
   }, [slPrice, slUnit, size, entryPrice, isBuy]);
 
-
   // Calculate max size based on selected token
   const maxSize = useMemo(() => {
     if (selectedToken === "USD") {
@@ -141,21 +141,30 @@ const OrderForm = ({
   }, [selectedToken, balance, currentPrice]);
 
   const handleChangePct = (newVal: number) => {
-    if (selectedToken === "USD") {
-      setSize(Math.floor((newVal * balance) / 100.0));
-    } else {
-      let tmpVal = newVal;
-      if (tmpVal === 100) {
-        tmpVal = 99.92;
-      }
-      setSize(+((tmpVal / 100.0) * (balance / currentPrice)).toFixed(6));
+    let tmpVal = newVal;
+    if (tmpVal === 100) {
+      tmpVal = 99.92;
     }
+    setSize(+((tmpVal / 100.0) * (balance / currentPrice)).toFixed(6));
+
     setPct(newVal);
   };
 
+  const displayedSize = useMemo(() => {
+    if (selectedToken === "USD") {
+      return Math.floor(size * currentPrice);
+    } else {
+      return size;
+    }
+  }, [selectedToken, size, currentPrice]);
+
   // Handle size input change - calculate percentage from size
   const handleSizeChange = (newSize: number) => {
-    setSize(newSize);
+    if (selectedToken === "USD") {
+      setSize(newSize / currentPrice);
+    } else {
+      setSize(newSize);
+    }
 
     // Calculate percentage based on the new size
     if (balance > 0) {
@@ -172,12 +181,8 @@ const OrderForm = ({
   };
 
   const orderValue = useMemo(() => {
-    if (selectedToken === "USD") {
-      return size;
-    } else {
-      return Math.floor(size * currentPrice);
-    }
-  }, [currentPrice, selectedToken, size]);
+    return Math.floor(size * currentPrice);
+  }, [currentPrice, size]);
 
   const { mutate, isPending } = useCreateOrder({
     accountId: account.id,
@@ -193,21 +198,20 @@ const OrderForm = ({
   });
 
   // Hook for creating limit orders for test accounts
-  const { mutate: createTestOrder, isPending: isCreatingTestOrder } = useCreateTestOrder({
-    testAccountId: account.id,
-    onSuccess: () => {
-      handleChangePct(0);
-      setLimitPrice(0);
-      setTpPrice(0);
-      setSlPrice(0);
-      setTpGain("");
-      setSlLoss("");
-    },
-  });
+  const { mutate: createTestOrder, isPending: isCreatingTestOrder } =
+    useCreateTestOrder({
+      testAccountId: account.id,
+      onSuccess: () => {
+        handleChangePct(0);
+        setLimitPrice(0);
+        setTpPrice(0);
+        setSlPrice(0);
+        setTpGain("");
+        setSlLoss("");
+      },
+    });
 
   const handleSubmitOrder = () => {
-    const tSize = orderValue / currentPrice;
-
     // For test accounts with limit orders, insert into test_orders table
     if (!isFundedAccount && tradeType === TradeType.Limit) {
       if (!limitPrice || limitPrice <= 0) {
@@ -217,7 +221,7 @@ const OrderForm = ({
       createTestOrder({
         symbol: token,
         side: orderType === OrderType.Buy ? "buy" : "sell",
-        size: tSize,
+        size,
         price: limitPrice,
         order_type: "limit",
         reduce_only: reduceOnly,
@@ -230,7 +234,7 @@ const OrderForm = ({
     // For market orders or funded accounts, use existing flow
     mutate({
       side: orderType === OrderType.Buy ? "long" : "short",
-      size: tSize,
+      size,
       orderType: tradeType.toLowerCase(),
       currentPrice,
       limitPrice: tradeType === TradeType.Limit ? limitPrice : undefined,
@@ -242,7 +246,8 @@ const OrderForm = ({
   };
 
   const isLimitOrder = tradeType === TradeType.Limit;
-  const isSubmitDisabled = !size || (isLimitOrder && (!limitPrice || limitPrice <= 0));
+  const isSubmitDisabled =
+    !size || (isLimitOrder && (!limitPrice || limitPrice <= 0));
   const isLoading = isPending || isCreatingTestOrder;
 
   const handleChangeTpPriceInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,10 +256,16 @@ const OrderForm = ({
     // Update Gain immediately
     if (val && size && entryPrice) {
       if (tpUnit === "$") {
-        setTpGain(isBuy ? ((val - entryPrice) * size).toFixed(2) : ((entryPrice - val) * size).toFixed(2));
+        setTpGain(
+          isBuy
+            ? ((val - entryPrice) * size).toFixed(2)
+            : ((entryPrice - val) * size).toFixed(2)
+        );
       } else {
         const margin = (size * entryPrice) / leverage;
-        const pnl = isBuy ? (val - entryPrice) * size : (entryPrice - val) * size;
+        const pnl = isBuy
+          ? (val - entryPrice) * size
+          : (entryPrice - val) * size;
         setTpGain(((pnl / margin) * 100).toFixed(2));
       }
     } else {
@@ -268,10 +279,16 @@ const OrderForm = ({
     // Update Loss immediately
     if (val && size && entryPrice) {
       if (slUnit === "$") {
-        setSlLoss(isBuy ? ((val - entryPrice) * size).toFixed(2) : ((entryPrice - val) * size).toFixed(2));
+        setSlLoss(
+          isBuy
+            ? ((val - entryPrice) * size).toFixed(2)
+            : ((entryPrice - val) * size).toFixed(2)
+        );
       } else {
         const margin = (size * entryPrice) / leverage;
-        const pnl = isBuy ? (val - entryPrice) * size : (entryPrice - val) * size;
+        const pnl = isBuy
+          ? (val - entryPrice) * size
+          : (entryPrice - val) * size;
         setSlLoss(((pnl / margin) * 100).toFixed(2));
       }
     } else {
@@ -286,7 +303,9 @@ const OrderForm = ({
     if (!isNaN(numVal) && size && entryPrice) {
       let newPrice = 0;
       if (tpUnit === "$") {
-        newPrice = isBuy ? entryPrice + numVal / size : entryPrice - numVal / size;
+        newPrice = isBuy
+          ? entryPrice + numVal / size
+          : entryPrice - numVal / size;
       } else {
         const margin = (size * entryPrice) / leverage;
         const pnl = (numVal * margin) / 100;
@@ -302,11 +321,15 @@ const OrderForm = ({
     // Recalculate Gain value based on current Price
     if (tpPrice && size && entryPrice) {
       if (newUnit === "$") {
-        const pnl = isBuy ? (tpPrice - entryPrice) * size : (entryPrice - tpPrice) * size;
+        const pnl = isBuy
+          ? (tpPrice - entryPrice) * size
+          : (entryPrice - tpPrice) * size;
         setTpGain(pnl.toFixed(2));
       } else {
         const margin = (size * entryPrice) / leverage;
-        const pnl = isBuy ? (tpPrice - entryPrice) * size : (entryPrice - tpPrice) * size;
+        const pnl = isBuy
+          ? (tpPrice - entryPrice) * size
+          : (entryPrice - tpPrice) * size;
         setTpGain(((pnl / margin) * 100).toFixed(2));
       }
     }
@@ -319,7 +342,9 @@ const OrderForm = ({
     if (!isNaN(numVal) && size && entryPrice) {
       let newPrice = 0;
       if (slUnit === "$") {
-        newPrice = isBuy ? entryPrice + numVal / size : entryPrice - numVal / size;
+        newPrice = isBuy
+          ? entryPrice + numVal / size
+          : entryPrice - numVal / size;
       } else {
         const margin = (size * entryPrice) / leverage;
         const pnl = (numVal * margin) / 100;
@@ -335,11 +360,15 @@ const OrderForm = ({
     // Recalculate Loss value based on current Price
     if (slPrice && size && entryPrice) {
       if (newUnit === "$") {
-        const pnl = isBuy ? (slPrice - entryPrice) * size : (entryPrice - slPrice) * size;
+        const pnl = isBuy
+          ? (slPrice - entryPrice) * size
+          : (entryPrice - slPrice) * size;
         setSlLoss(pnl.toFixed(2));
       } else {
         const margin = (size * entryPrice) / leverage;
-        const pnl = isBuy ? (slPrice - entryPrice) * size : (entryPrice - slPrice) * size;
+        const pnl = isBuy
+          ? (slPrice - entryPrice) * size
+          : (entryPrice - slPrice) * size;
         setSlLoss(((pnl / margin) * 100).toFixed(2));
       }
     }
@@ -349,19 +378,57 @@ const OrderForm = ({
     <>
       <div className="w-full flex justify-between gap-2">
         <div className="flex-1">
-          <Button fullWidth>Isolated</Button>
+          <MyTooltip>
+            <Button className="cursor-default!" fullWidth>
+              Isolated
+            </Button>
+          </MyTooltip>
         </div>
         <div className="flex-1">
-          <Button fullWidth>1x</Button>
+          <MyTooltip>
+            <Button className="cursor-default!" fullWidth>
+              1x
+            </Button>
+          </MyTooltip>
         </div>
         <div className="flex-1">
-          <Button fullWidth>One-Way</Button>
+          <MyTooltip>
+            <Button className="cursor-default!" fullWidth>
+              One-Way
+            </Button>
+          </MyTooltip>
         </div>
       </div>
 
       <div className="w-full flex justify-between my-3">
         {Object.values(TradeType).map((o) => {
           const isActive = tradeType === o;
+
+          if (o === TradeType.Pro) {
+            return (
+              <div
+                className={clsx("flex-1", {
+                  "border-b border-activeBorder": isActive,
+                  "border-b-[0.6px] border-textBtn": !isActive,
+                })}
+                key={o}
+              >
+                <MyTooltip>
+                  <Button
+                    className={clsx({
+                      "text-white": isActive,
+                    })}
+                    onClick={() => setTradeType(o)}
+                    variant="ghost"
+                    fullWidth
+                    disabled
+                  >
+                    {o}
+                  </Button>
+                </MyTooltip>
+              </div>
+            );
+          }
 
           return (
             <div
@@ -415,7 +482,7 @@ const OrderForm = ({
         </TabsList>
 
         <SizeInput
-          value={size}
+          value={displayedSize}
           max={maxSize}
           onChange={handleSizeChange}
           onChangeToken={handleChangeSelectedToken}
@@ -425,7 +492,9 @@ const OrderForm = ({
         {/* Limit Price Input - Only show for Limit orders */}
         {isLimitOrder && (
           <div className="my-2">
-            <label className="text-sm text-gray-400 mb-1 block">Limit Price</label>
+            <label className="text-sm text-gray-400 mb-1 block">
+              Limit Price
+            </label>
             <InputGroup>
               <InputGroupInput
                 type="number"
@@ -481,7 +550,6 @@ const OrderForm = ({
             <span className="text-white text-sm">Take Profit / Stop Loss</span>
           </label>
         </div>
-
 
         {/* TP/SL Inputs - Only show when tpsl checkbox is checked */}
         {tpsl && (
@@ -580,11 +648,11 @@ const OrderForm = ({
               },
               ...(isLimitOrder && limitPrice > 0
                 ? [
-                  {
-                    label: "Limit Price",
-                    value: `$${limitPrice.toLocaleString()}`,
-                  },
-                ]
+                    {
+                      label: "Limit Price",
+                      value: `$${limitPrice.toLocaleString()}`,
+                    },
+                  ]
                 : []),
               {
                 label: "Order Value",
