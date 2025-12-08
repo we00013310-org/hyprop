@@ -22,8 +22,11 @@ dist-ssr
 *.sw?
 .env
 .env.stg
+supabase/functions/.env
 
 .docs/*
 
 # Local Netlify folder
 .netlify
+
+*.csv

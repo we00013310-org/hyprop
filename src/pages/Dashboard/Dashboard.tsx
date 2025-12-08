@@ -3,40 +3,26 @@ import { useLocation } from "wouter";
 import { Inbox, Plus } from "lucide-react";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { FundedAccountCard } from "./FundedAccountCard";
-import { getBuilderFees } from "../../lib/hyperliquidApi";
 import { useAccounts } from "../../hooks/useAccounts";
-import MySpinner from "../ui/MySpinner";
-import { Button } from "../ui";
-import { AccountCard } from "../AccountCard/AccountCard";
+
+import MySpinner from "@/components/ui/MySpinner";
+import { Button } from "@/components/ui/MyButton";
+import { AccountCard } from "@/components/AccountCard/AccountCard";
 
 import feeIcon from "../../assets/icons/ic_fee.svg";
 
-export function Dashboard() {
+export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { walletAddress } = useAuth();
   const { loadAccounts, testAccounts, fundedAccounts, loading } = useAccounts();
-  const [builderFees, setBuilderFees] = useState<number>(0);
-  const [loadingFees, setLoadingFees] = useState(true);
+  const [builderFees, setBuilderFees] = useState<number>(10000);
+  const [loadingFees, setLoadingFees] = useState(false);
 
   useEffect(() => {
     if (walletAddress) {
       loadAccounts();
-      loadBuilderFees();
     }
   }, [loadAccounts, walletAddress]);
-
-  const loadBuilderFees = async () => {
-    try {
-      const BUILDER_ADDRESS = "0x7c4E42B6cDDcEfa029D230137908aB178D52d324";
-      const fees = await getBuilderFees(BUILDER_ADDRESS);
-      setBuilderFees(fees);
-    } catch (error) {
-      console.error("Error loading builder fees:", error);
-    } finally {
-      setLoadingFees(false);
-    }
-  };
 
   return (
     <div>
@@ -64,7 +50,7 @@ export function Dashboard() {
                     </div>
                   ) : (
                     <div className="text-3xl font-medium text-white">
-                      ${builderFees.toFixed(4)}{" "}
+                      ${builderFees.toFixed(1)}{" "}
                       <span className="text-sm text-textBtn">USDC</span>
                     </div>
                   )}
@@ -94,7 +80,13 @@ export function Dashboard() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {fundedAccounts.map((account) => (
-                    <FundedAccountCard key={account.id} account={account} />
+                    <AccountCard
+                      key={account.id}
+                      account={account}
+                      onOpenTrading={() =>
+                        setLocation(`/funded-account-trading/${account.id}`)
+                      }
+                    />
                   ))}
                 </div>
               )}
@@ -136,7 +128,6 @@ export function Dashboard() {
                     <AccountCard
                       key={account.id}
                       account={account}
-                      onUpdate={loadAccounts}
                       onOpenTrading={() =>
                         setLocation(`/account-trading/${account.id}`)
                       }

@@ -118,9 +118,8 @@ export default function ReferralsPage() {
             {/* Traders Referred */}
             <StatCard
               title="Traders Referred"
-              value={"$" + stats.tradersReferred}
+              value={stats.tradersReferred + ""}
               icon={<Users className="w-5 h-5 text-highlight" />}
-              showHelp
             />
 
             {/* Revenues Earned */}
@@ -128,7 +127,6 @@ export default function ReferralsPage() {
               title="Revenues Earned"
               value={"$" + stats.revenuesEarned}
               icon={<DollarSign className="w-5 h-5 text-highlight" />}
-              showHelp
             />
 
             {/* Claimable Rewards */}
@@ -136,7 +134,6 @@ export default function ReferralsPage() {
               title="Claimable Rewards"
               value={"$" + stats.claimableRewards}
               icon={<Gift className="w-5 h-5 text-highlight" />}
-              showHelp
             />
           </div>
           {/* Tabs and Table */}

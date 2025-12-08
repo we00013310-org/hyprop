@@ -59,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const address = accounts[0].toLowerCase();
-      console.log("address", address);
 
       const { data: existingUser } = await supabase
         .from("users")

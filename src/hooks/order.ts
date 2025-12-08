@@ -9,10 +9,12 @@ export const useCreateOrder = ({
   accountId,
   onSuccess,
   onError,
+  isFundedAccount = false,
 }: {
   accountId: string;
   onSuccess?: () => void;
   onError?: () => void;
+  isFundedAccount?: boolean;
 }) => {
   const { walletAddress } = useAuth();
   const queryClient = useQueryClient();
@@ -27,6 +29,8 @@ export const useCreateOrder = ({
       currentPrice,
       token = "BTC",
       reduceOnly = false,
+      tpPrice,
+      slPrice,
     }: {
       side: "long" | "short";
       size: number;
@@ -35,10 +39,13 @@ export const useCreateOrder = ({
       currentPrice?: number;
       token?: string;
       reduceOnly?: boolean;
+      tpPrice?: number;
+      slPrice?: number;
     }) => {
       const trading = new HyperliquidTrading(
         accountId,
-        walletAddress as string
+        walletAddress as string,
+        isFundedAccount
       );
 
       const isBuy = side === "long";
@@ -59,15 +66,19 @@ export const useCreateOrder = ({
       console.log("Order type:", orderType);
       console.log("Current price:", currentPrice);
       console.log("Limit price input:", limitPrice);
-      console.log("Price to send:", orderType === "limit" ? priceNum : null);
+      console.log("Price to send:", priceNum);
+      console.log("TP Price:", tpPrice);
+      console.log("SL Price:", slPrice);
 
       const result = await trading.placeOrder(
         token,
         isBuy,
         sizeNum,
-        orderType === "limit" ? priceNum : null,
+        priceNum,
         orderType as "limit" | "market",
-        reduceOnly
+        reduceOnly,
+        tpPrice,
+        slPrice
       );
 
       console.log("Order result:", result);
@@ -79,11 +90,15 @@ export const useCreateOrder = ({
       }
     },
     onSuccess: (_, input) => {
+      const base = isFundedAccount ? "funded" : "test";
       queryClient.invalidateQueries({
-        queryKey: ["test-positions"],
+        queryKey: [`${base}-positions`],
       });
       queryClient.invalidateQueries({
-        queryKey: ["test-account"],
+        queryKey: [`${base}-account`],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`${base}-orders`],
       });
       toast.success(`${input.token} Position created!`);
       onSuccess?.();
@@ -99,11 +114,13 @@ export const useCreateOrder = ({
 export const useClosePosition = ({
   accountId,
   isDisabled = false,
+  isFundedAccount = false,
   onSuccess,
   onError,
 }: {
   accountId: string;
   isDisabled?: boolean;
+  isFundedAccount?: boolean;
   onSuccess?: () => void;
   onError?: () => void;
 }) => {
@@ -115,17 +132,26 @@ export const useClosePosition = ({
   );
 
   const mutation = useMutation({
-    mutationFn: async ({ coin, size }: { coin: string; size: number }) => {
+    mutationFn: async ({
+      coin,
+      size,
+      price,
+    }: {
+      coin: string;
+      size: number;
+      price: number;
+    }) => {
       if (isDisabled) {
         throw new Error("Cannot close positions on a disabled account");
       }
 
       const trading = new HyperliquidTrading(
         accountId,
-        walletAddress as string
+        walletAddress as string,
+        isFundedAccount
       );
 
-      await trading.closePosition(coin, size);
+      await trading.closePosition(coin, size, price);
 
       // Wait a moment for the order to process
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -137,11 +163,12 @@ export const useClosePosition = ({
       setClosingPositions((prev) => new Set(prev).add(positionKey));
     },
     onSuccess: (data) => {
+      const base = isFundedAccount ? "funded" : "test";
       queryClient.invalidateQueries({
-        queryKey: ["test-positions"],
+        queryKey: [`${base}-positions`],
       });
       queryClient.invalidateQueries({
-        queryKey: ["test-account"],
+        queryKey: [`${base}-account`],
       });
       toast.success(`Successfully closed ${data.coin} position`);
       onSuccess?.();
@@ -177,22 +204,34 @@ export const useCheckAndClosePosition = ({
   accountId,
   positionsLength,
   isDisabled = false,
+  isFundedAccount = false,
 }: {
   accountId: string;
   positionsLength: number;
   isDisabled?: boolean;
+  isFundedAccount?: boolean;
 }) => {
   const { walletAddress } = useAuth();
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ["check_close_positions", accountId],
+    queryKey: [
+      isFundedAccount
+        ? "check_close_funded_positions"
+        : "check_close_positions",
+      accountId,
+    ],
     queryFn: async () => {
       try {
-        const trading = new HyperliquidTrading(accountId, walletAddress!);
+        const trading = new HyperliquidTrading(
+          accountId,
+          walletAddress!,
+          isFundedAccount
+        );
         await trading.updatePositionPnL();
-        queryClient.invalidateQueries({ queryKey: ["test-positions"] });
-        queryClient.invalidateQueries({ queryKey: ["test-account"] });
+        const base = isFundedAccount ? "funded" : "test";
+        queryClient.invalidateQueries({ queryKey: [`${base}-positions`] });
+        queryClient.invalidateQueries({ queryKey: [`${base}-account`] });
         console.log("Updated position PnL");
 
         return true;
@@ -202,5 +241,53 @@ export const useCheckAndClosePosition = ({
     },
     enabled: !!(positionsLength && accountId && walletAddress && !isDisabled),
     refetchInterval: 3000,
+  });
+};
+
+export const useCancelFundedOrder = ({ accountId }: { accountId: string }) => {
+  const { walletAddress } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ coin, oid }: { coin: string; oid: number }) => {
+      const trading = new HyperliquidTrading(accountId, walletAddress!, true);
+      await trading.cancelOrder(coin, oid);
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`funded-orders`] });
+      toast.success("Canceled!");
+    },
+    onError: (error) => {
+      console.error("Failed to cancel order:", error);
+      toast.error(error.message || "Failed to cancel order");
+    },
+  });
+};
+
+export const useCancelAllFundedOrders = ({
+  accountId,
+}: {
+  accountId: string;
+}) => {
+  const { walletAddress } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async () => {
+      const trading = new HyperliquidTrading(accountId, walletAddress!, true);
+      await trading.cancelAllOrders();
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`funded-orders`] });
+      toast.success("Canceled all orders!");
+    },
+    onError: (error) => {
+      console.error("Failed to cancel all orders:", error);
+      toast.error(error.message || "Failed to cancel all orders");
+    },
   });
 };

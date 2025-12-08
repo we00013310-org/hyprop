@@ -1,20 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import clsx from "clsx";
-import { useState } from "react";
-import { useLocation } from "wouter";
 
 import CardTag from "../ui/CardTag";
 import { Button } from "../ui";
-
-import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../contexts/AuthContext";
 import { Exam } from "../../types";
-import { useToast } from "../../contexts/ToastContext";
-import {
-  CHECKPOINT_INTERVAL_HOURS,
-  CHECKPOINT_PROFIT_TARGET,
-  NUM_CHECKPOINTS,
-} from "../../configs";
 
 import "./ExamCard.css";
 
@@ -52,14 +40,10 @@ const ExamDescriptionLine = ({
 interface ExamCardProps {
   type?: "basic" | "pro";
   data: Exam;
+  onClick: (exam: Exam, isBasic: boolean) => void;
 }
 
-const ExamCard = ({ type = "basic", data }: ExamCardProps) => {
-  const { user } = useAuth();
-  const { success, error } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [, setLocation] = useLocation();
-
+const ExamCard = ({ type = "basic", data, onClick }: ExamCardProps) => {
   const isBasic = type === "basic";
   const borderCn = clsx("border-[0.6px]", {
     "border-cardBg": isBasic,
@@ -71,52 +55,18 @@ const ExamCard = ({ type = "basic", data }: ExamCardProps) => {
     "card-pro-bg": !isBasic,
   });
 
-  const handlePurchase = async (data: Exam) => {
-    if (!user) return;
-
-    setLoading(true);
-
-    try {
-      const { error: insertError } = await supabase
-        .from("test_accounts")
-        .insert({
-          user_id: user.id,
-          account_size: data.size,
-          account_mode: !isBasic ? "2-step" : "1-step",
-          fee_paid: data.fee,
-          virtual_balance: data.size,
-          dd_max: data.maxDD,
-          dd_daily: data.size * data.dailyLoss,
-          profit_target: data.target,
-          high_water_mark: data.size,
-          num_checkpoints: NUM_CHECKPOINTS,
-          checkpoint_interval_hours: CHECKPOINT_INTERVAL_HOURS,
-          checkpoint_profit_target_percent: CHECKPOINT_PROFIT_TARGET,
-          status: "active",
-        });
-
-      if (insertError) throw insertError;
-
-      success("Created new Test Account");
-      setLocation("/");
-    } catch (err: any) {
-      error(err.message || "Failed to create test account");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div
       className={clsx(
-        "w-[400px] rounded-2xl p-5 flex flex-col gap-2 text-left transition-all hover:scale-105",
+        "w-[400px] rounded-2xl p-5 flex flex-col gap-2 text-left transition-all hover:scale-105 cursor-pointer",
         bgCn,
         borderCn
       )}
+      onClick={() => onClick(data, isBasic)}
     >
       <CardTag
         text={tagText}
-        className="top-[-1.25rem] left-[-1.25rem]"
+        className="-top-5 -left-5"
         variant={isBasic ? "dark" : "normal"}
       />
 
@@ -162,13 +112,7 @@ const ExamCard = ({ type = "basic", data }: ExamCardProps) => {
         noBorder
       />
       <div className="mt-2 flex w-full justify-center items-center">
-        <Button
-          disabled={loading}
-          fullWidth
-          onClick={() => handlePurchase(data)}
-        >
-          Buy
-        </Button>
+        <Button fullWidth>Buy</Button>
       </div>
     </div>
   );

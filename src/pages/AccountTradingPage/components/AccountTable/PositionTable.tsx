@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo, useState } from "react";
 import {
   ColumnDef,
@@ -18,9 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { usePositions } from "@/hooks/testAccount";
+import { usePositions } from "@/hooks/account";
 import { useCheckAndClosePosition, useClosePosition } from "@/hooks/order";
 import { Spinner } from "@/components/ui/spinner";
+import { Tab } from "./AccountTable";
 
 // Position type matching Hyperliquid's position structure
 export type Position = {
@@ -45,29 +47,42 @@ interface PositionTableProps {
   accountId: string;
   currentPrice: number;
   isDisabled?: boolean;
+  isFundedAccount?: boolean;
+  onChangeTab?: (newTab: Tab) => void
 }
 
 const PositionTable = ({
   accountId,
   currentPrice,
+  onChangeTab,
   isDisabled = false,
+  isFundedAccount = false,
 }: PositionTableProps) => {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { closePosition, isClosing } = useClosePosition({
     accountId,
     isDisabled,
+    isFundedAccount,
   });
 
-  const { data } = usePositions(accountId);
+  const { data } = usePositions(accountId, isFundedAccount);
   const parsedData: Position[] = useMemo(() => {
     return (
-      data?.map((pos) => {
+      data?.map((pos: any) => {
         const size = parseFloat(pos.position.szi);
         const entryPx = parseFloat(pos.position.entryPx ?? "0");
         const marginUsed = parseFloat(pos.position.marginUsed ?? "0");
         const unrealizedPnl = parseFloat(pos.position.unrealizedPnl ?? "0");
         const isLong = size > 0;
         const coin = pos.position.coin;
+
+        // Get TP/SL from database fields
+        const tpPrice = pos.position.tpPrice
+          ? `$${parseFloat(pos.position.tpPrice).toLocaleString()}`
+          : "--";
+        const slPrice = pos.position.slPrice
+          ? `$${parseFloat(pos.position.slPrice).toLocaleString()}`
+          : "--";
 
         return {
           type: isLong ? "long" : "short",
@@ -79,21 +94,22 @@ const PositionTable = ({
           markPrice: currentPrice,
           pnl: unrealizedPnl,
           roe: marginUsed > 0 ? (unrealizedPnl / marginUsed) * 100 : 0,
-          liqPrice: "--",
+          liqPrice: pos.position.liquidationPx,
           margin: marginUsed,
           marginType: pos.position.marginType ?? "Isolated",
           funding: parseFloat(pos.position.funding ?? "0"),
-          tpPrice: pos.position.tpPx ?? "--",
-          slPrice: pos.position.slPx ?? "--",
+          tpPrice,
+          slPrice,
         };
       }) || []
     );
-  }, [data]);
+  }, [currentPrice, data]);
 
   useCheckAndClosePosition({
     accountId,
     positionsLength: parsedData.length,
     isDisabled,
+    isFundedAccount,
   });
 
   const columns: ColumnDef<Position>[] = [
@@ -192,11 +208,15 @@ const PositionTable = ({
     {
       accessorKey: "liqPrice",
       header: "Liq. Price",
-      cell: ({ row }) => (
-        <span className="text-white">
-          {row.original.liqPrice.toLocaleString()}
-        </span>
-      ),
+      cell: ({ row }) => {
+        return (
+          <span className="text-white">
+            {row.original.liqPrice
+              ? Math.round(+row.original.liqPrice).toLocaleString()
+              : "--"}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "margin",
@@ -246,6 +266,7 @@ const PositionTable = ({
                 closePosition({
                   coin: row.original.coin,
                   size: +row.original.size,
+                  price: currentPrice,
                 })
               }
               className="text-highlight hover:underline transition-all cursor-pointer text-xs"
@@ -259,20 +280,10 @@ const PositionTable = ({
     {
       id: "tpsl",
       header: "TP/SL",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span className="text-tradingText text-sm">
-            {row.original.tpPrice}
-          </span>
-          <span className="text-tradingText text-sm">/</span>
-          <span className="text-tradingText text-sm">
-            {row.original.slPrice}
-          </span>
-          <button className="text-tradingText hover:text-white transition-colors">
-            <Pencil className="h-3 w-3" />
-          </button>
-        </div>
-      ),
+      cell: () => {
+        return <span onClick={() => onChangeTab?.(Tab.OpenOrders)} className="text-highlight text-xs hover:underline transition-all cursor-pointer">View Orders</span>
+
+      },
     },
   ];
 
@@ -304,9 +315,9 @@ const PositionTable = ({
                   {header.isPlaceholder
                     ? null
                     : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
                 </TableHead>
               ))}
             </TableRow>

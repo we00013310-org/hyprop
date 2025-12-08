@@ -1,36 +1,25 @@
-import { ArrowLeftRight, TrendingDown, TrendingUp } from "lucide-react";
+import { Copy, TrendingDown, TrendingUp } from "lucide-react";
 
 import List from "@/components/ui/List";
-import { Button } from "@/components/ui/MyButton";
 import SectionWrapper from "@/components/ui/SectionWrapper";
-import { TestAccount } from "@/types";
+import { FundedAccount, TestAccount } from "@/types";
+import { formatWalletAddress } from "@/lib/utils";
+import { useToast } from "@/contexts/ToastContext";
 
 interface AccountFormProps {
-  account: TestAccount;
+  account: TestAccount | FundedAccount;
 }
 
 const AccountForm = ({ account }: AccountFormProps) => {
+  const isFundedAccount = !!(account as FundedAccount).test_account_id;
   const profitLoss = account.virtual_balance - account.account_size;
   const profitLossPercent = (profitLoss / account.account_size) * 100;
   const isProfit = profitLoss >= 0;
+  const accAddress = (account as FundedAccount)?.account_address;
+  const { success } = useToast();
 
   return (
     <div className="flex flex-col gap-4">
-      <Button className="bg-highlight! text-outlineBg!" fullWidth>
-        Deposit
-      </Button>
-
-      <div className="flex w-full gap-2">
-        <Button variant="outline" className="flex-1">
-          Perps
-          <ArrowLeftRight className="w-4" />
-          Spot
-        </Button>
-        <Button variant="outline" className="flex-1">
-          Withdraw
-        </Button>
-      </div>
-
       <SectionWrapper className="mt-2 bg-cardBgDarker!">
         <List
           data={[
@@ -42,12 +31,45 @@ const AccountForm = ({ account }: AccountFormProps) => {
             },
             {
               label: "Type",
-              value: account.account_mode,
+              value: `${isFundedAccount ? "[FUNDED]" : ""} ${
+                account.account_mode
+              }`,
             },
             {
               label: "Size",
               value: `$${account.account_size.toLocaleString()}`,
             },
+            ...(isFundedAccount
+              ? [
+                  {
+                    label: "AccAddr.",
+                    value: (
+                      <span className="flex gap-2">
+                        <a
+                          href={`https://hypurrscan.io/address/${accAddress}`}
+                          target="_blank"
+                          className="underline hover:opacity-65"
+                        >
+                          {formatWalletAddress(accAddress)}
+                        </a>
+                        {!!accAddress && (
+                          <button
+                            type="button"
+                            className="cursor-pointer text-highlight hover:text-white"
+                            onClick={() => {
+                              navigator.clipboard.writeText(accAddress);
+                              success("Copied");
+                            }}
+                            title="Copy address"
+                          >
+                            <Copy className="w-4" />
+                          </button>
+                        )}
+                      </span>
+                    ),
+                  },
+                ]
+              : []),
             {
               label: (
                 <span className="text-white font-medium">Perps Overview</span>
@@ -82,6 +104,14 @@ const AccountForm = ({ account }: AccountFormProps) => {
               ),
             },
             {
+              label: "High Water Mark",
+              value: (
+                <span className="text-highlight">
+                  ${account.high_water_mark.toFixed(3)}
+                </span>
+              ),
+            },
+            {
               label: "Cross Margin Ratio",
               value: <span className="text-highlight">$0.00</span>,
             },
@@ -91,7 +121,7 @@ const AccountForm = ({ account }: AccountFormProps) => {
             },
             {
               label: "Cross Account Leverage",
-              value: "0.00x",
+              value: "1.00x",
             },
           ]}
         />

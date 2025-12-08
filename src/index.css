@@ -134,6 +134,9 @@ body {
 
   /* Button */
   --color-outlineBg: #111C20;
+  
+  /* Dropdown: */
+  --color-dropdownBg: #28373D;
 }
 
 :root {

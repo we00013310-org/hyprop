@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/MyButton";
 import clsx from "clsx";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import PositionTable from "./PositionTable";
+import OpenOrdersTable from "./OpenOrdersTable";
 import ComingSoon from "./ComingSoon";
-import { TestAccount } from "@/types";
+import { FundedAccount, TestAccount } from "@/types";
+import FundedOrdersTable from "./OrdersTable";
 
-enum Tab {
+export enum Tab {
   Balances = "Balances",
   Positions = "Positions",
   OpenOrders = "Open Orders",
@@ -16,12 +18,16 @@ enum Tab {
 }
 
 interface AccountTableProps {
-  account: TestAccount;
+  account: TestAccount | FundedAccount;
   currentPrice: number;
 }
 
 const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
   const [tab, setTab] = useState<Tab>(Tab.Positions);
+  const isFundedAccount = useMemo(
+    () => !!(account as FundedAccount).test_account_id,
+    [account]
+  );
 
   const renderContent = useCallback(() => {
     switch (tab) {
@@ -29,6 +35,24 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
         return (
           <PositionTable
             accountId={account.id as string}
+            currentPrice={currentPrice}
+            isFundedAccount={isFundedAccount}
+            onChangeTab={setTab}
+          />
+        );
+      case Tab.OpenOrders:
+        // Only show open orders for test accounts (not funded accounts)
+        if (isFundedAccount) {
+          return (
+            <FundedOrdersTable
+              accountId={account.id as string}
+              currentPrice={currentPrice}
+            />
+          );
+        }
+        return (
+          <OpenOrdersTable
+            testAccountId={account.id as string}
             currentPrice={currentPrice}
           />
         );
@@ -39,7 +63,7 @@ const AccountTable = ({ account, currentPrice }: AccountTableProps) => {
           </span>
         );
     }
-  }, [account.id, currentPrice, tab]);
+  }, [account.id, currentPrice, isFundedAccount, tab]);
 
   return (
     <div className="w-full flex flex-col gap-1">

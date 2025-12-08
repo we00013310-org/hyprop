@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       config: {
@@ -122,87 +147,115 @@ export type Database = {
           },
         ]
       }
-      funded_accounts: {
+      funded_account_checkpoints: {
         Row: {
-          balance_actual: number
-          created_at: string
-          dd_daily: number
-          dd_max: number
-          e_day_start: number | null
-          e_start: number
-          high_water_mark: number
-          hl_builder_code: string | null
-          hl_subaccount_id: string | null
+          checkpoint_balance: number | null
+          checkpoint_number: number
+          checkpoint_passed: boolean | null
+          checkpoint_ts: string | null
+          created_at: string | null
+          funded_account_id: string
           id: string
-          im_required: number
-          l_effective: number
-          l_user: number
-          last_withdrawal_ts: string | null
-          maintenance_margin: number
-          n_max: number
-          pair_mode: string
-          primary_symbol: string
-          status: string
-          test_account_id: string | null
-          updated_at: string
-          user_id: string
+          required_balance: number | null
         }
         Insert: {
-          balance_actual: number
-          created_at?: string
-          dd_daily: number
-          dd_max: number
-          e_day_start?: number | null
-          e_start: number
-          high_water_mark: number
-          hl_builder_code?: string | null
-          hl_subaccount_id?: string | null
+          checkpoint_balance?: number | null
+          checkpoint_number: number
+          checkpoint_passed?: boolean | null
+          checkpoint_ts?: string | null
+          created_at?: string | null
+          funded_account_id: string
           id?: string
-          im_required: number
-          l_effective: number
-          l_user: number
-          last_withdrawal_ts?: string | null
-          maintenance_margin: number
-          n_max: number
-          pair_mode?: string
-          primary_symbol: string
-          status?: string
-          test_account_id?: string | null
-          updated_at?: string
-          user_id: string
+          required_balance?: number | null
         }
         Update: {
-          balance_actual?: number
-          created_at?: string
-          dd_daily?: number
-          dd_max?: number
-          e_day_start?: number | null
-          e_start?: number
-          high_water_mark?: number
-          hl_builder_code?: string | null
-          hl_subaccount_id?: string | null
+          checkpoint_balance?: number | null
+          checkpoint_number?: number
+          checkpoint_passed?: boolean | null
+          checkpoint_ts?: string | null
+          created_at?: string | null
+          funded_account_id?: string
           id?: string
-          im_required?: number
-          l_effective?: number
-          l_user?: number
-          last_withdrawal_ts?: string | null
-          maintenance_margin?: number
-          n_max?: number
-          pair_mode?: string
-          primary_symbol?: string
-          status?: string
-          test_account_id?: string | null
-          updated_at?: string
-          user_id?: string
+          required_balance?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "funded_accounts_primary_symbol_fkey"
-            columns: ["primary_symbol"]
+            foreignKeyName: "funded_account_checkpoints_funded_account_id_fkey"
+            columns: ["funded_account_id"]
             isOneToOne: false
-            referencedRelation: "pairs"
-            referencedColumns: ["symbol"]
+            referencedRelation: "funded_accounts"
+            referencedColumns: ["id"]
           },
+        ]
+      }
+      funded_accounts: {
+        Row: {
+          account_mode: string
+          account_size: number
+          checkpoint_interval_hours: number | null
+          checkpoint_profit_target_percent: number | null
+          created_at: string
+          current_checkpoint: number | null
+          dd_daily: number
+          dd_max: number
+          fee_paid: number
+          high_water_mark: number
+          id: string
+          last_withdrawal_ts: string | null
+          num_checkpoints: number | null
+          profit_target: number
+          status: string
+          test_account_id: string
+          updated_at: string
+          user_id: string
+          virtual_balance: number
+          wallet_id: string | null
+        }
+        Insert: {
+          account_mode: string
+          account_size: number
+          checkpoint_interval_hours?: number | null
+          checkpoint_profit_target_percent?: number | null
+          created_at?: string
+          current_checkpoint?: number | null
+          dd_daily: number
+          dd_max: number
+          fee_paid?: number
+          high_water_mark: number
+          id?: string
+          last_withdrawal_ts?: string | null
+          num_checkpoints?: number | null
+          profit_target: number
+          status?: string
+          test_account_id: string
+          updated_at?: string
+          user_id: string
+          virtual_balance: number
+          wallet_id?: string | null
+        }
+        Update: {
+          account_mode?: string
+          account_size?: number
+          checkpoint_interval_hours?: number | null
+          checkpoint_profit_target_percent?: number | null
+          created_at?: string
+          current_checkpoint?: number | null
+          dd_daily?: number
+          dd_max?: number
+          fee_paid?: number
+          high_water_mark?: number
+          id?: string
+          last_withdrawal_ts?: string | null
+          num_checkpoints?: number | null
+          profit_target?: number
+          status?: string
+          test_account_id?: string
+          updated_at?: string
+          user_id?: string
+          virtual_balance?: number
+          wallet_id?: string | null
+        }
+        Relationships: [
           {
             foreignKeyName: "funded_accounts_test_account_id_fkey"
             columns: ["test_account_id"]
@@ -318,10 +371,11 @@ export type Database = {
         Row: {
           account_id: string
           avg_entry: number
+          created_at: string
           fees_accrued: number
-          funding_accrued: number
           id: string
           last_update_ts: string
+          margin_used: number
           rpnl: number
           side: string
           size: number
@@ -331,10 +385,11 @@ export type Database = {
         Insert: {
           account_id: string
           avg_entry?: number
+          created_at?: string
           fees_accrued?: number
-          funding_accrued?: number
           id?: string
           last_update_ts?: string
+          margin_used?: number
           rpnl?: number
           side: string
           size?: number
@@ -344,10 +399,11 @@ export type Database = {
         Update: {
           account_id?: string
           avg_entry?: number
+          created_at?: string
           fees_accrued?: number
-          funding_accrued?: number
           id?: string
           last_update_ts?: string
+          margin_used?: number
           rpnl?: number
           side?: string
           size?: number
@@ -485,6 +541,68 @@ export type Database = {
           },
         ]
       }
+      test_orders: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          filled_at: string | null
+          filled_price: number | null
+          filled_size: number
+          id: string
+          order_type: string
+          price: number
+          reduce_only: boolean
+          side: string
+          size: number
+          status: string
+          symbol: string
+          test_account_id: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          filled_at?: string | null
+          filled_price?: number | null
+          filled_size?: number
+          id?: string
+          order_type?: string
+          price: number
+          reduce_only?: boolean
+          side: string
+          size: number
+          status?: string
+          symbol: string
+          test_account_id: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          filled_at?: string | null
+          filled_price?: number | null
+          filled_size?: number
+          id?: string
+          order_type?: string
+          price?: number
+          reduce_only?: boolean
+          side?: string
+          size?: number
+          status?: string
+          symbol?: string
+          test_account_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_orders_test_account_id_fkey"
+            columns: ["test_account_id"]
+            isOneToOne: false
+            referencedRelation: "test_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_positions: {
         Row: {
           avg_entry: number
@@ -609,6 +727,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wallets: {
+        Row: {
+          account_address: string
+          created_at: string
+          id: string
+          invalid_at: string
+          key_address: string
+          key_pk: string
+          status: number
+          updated_at: string
+        }
+        Insert: {
+          account_address: string
+          created_at?: string
+          id?: string
+          invalid_at: string
+          key_address: string
+          key_pk: string
+          status?: number
+          updated_at?: string
+        }
+        Update: {
+          account_address?: string
+          created_at?: string
+          id?: string
+          invalid_at?: string
+          key_address?: string
+          key_pk?: string
+          status?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -631,118 +782,121 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-    ? R
-    : never
+  ? R
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
-    : never
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I
-    }
-    ? I
-    : never
+    Insert: infer I
+  }
+  ? I
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U
-    }
-    ? U
-    : never
+    Update: infer U
+  }
+  ? U
+  : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
-    : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

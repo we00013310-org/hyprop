@@ -1,4 +1,4 @@
-const TESTNET_API_URL = 'https://api.hyperliquid-testnet.xyz/info';
+const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz/info";
 
 interface AccountBalance {
   marginSummary: {
@@ -8,15 +8,17 @@ interface AccountBalance {
   };
 }
 
-export async function getAccountBalance(walletAddress: string): Promise<number> {
+export async function getAccountBalance(
+  walletAddress: string
+): Promise<number> {
   try {
     const response = await fetch(TESTNET_API_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        type: 'clearinghouseState',
+        type: "clearinghouseState",
         user: walletAddress,
       }),
     });
@@ -29,7 +31,7 @@ export async function getAccountBalance(walletAddress: string): Promise<number> 
 
     return 0;
   } catch (error) {
-    console.error('Failed to fetch account balance:', error);
+    console.error("Failed to fetch account balance:", error);
     return 0;
   }
 }
@@ -39,30 +41,4 @@ interface ReferralState {
   builderRewards?: string;
   unclaimedRewards?: string;
   claimedRewards?: string;
-}
-
-export async function getBuilderFees(builderAddress: string): Promise<number> {
-  try {
-    const response = await fetch(TESTNET_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'referral',
-        user: builderAddress,
-      }),
-    });
-
-    const data: ReferralState = await response.json();
-
-    if (data?.builderRewards) {
-      return parseFloat(data.builderRewards);
-    }
-
-    return 0;
-  } catch (error) {
-    console.error('Failed to fetch builder fees:', error);
-    return 0;
-  }
 }

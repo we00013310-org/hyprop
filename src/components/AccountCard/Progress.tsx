@@ -7,9 +7,15 @@ interface ProgressProps {
   account: TestAccount;
   checkpoints: Checkpoint[];
   isDisabled: boolean;
+  isFundedAccount: boolean;
 }
 
-const Progress = ({ account, checkpoints, isDisabled }: ProgressProps) => {
+const Progress = ({
+  account,
+  checkpoints,
+  isDisabled,
+  isFundedAccount = false,
+}: ProgressProps) => {
   // Get evaluation configuration
   const numCheckpoints = account.num_checkpoints || 3;
   const checkpointIntervalHours = account.checkpoint_interval_hours || 24;
@@ -28,18 +34,13 @@ const Progress = ({ account, checkpoints, isDisabled }: ProgressProps) => {
 
   // Calculate required balance for current checkpoint
   let nextRequiredBalance = 0;
-  if (currentCheckpoint === 1) {
-    nextRequiredBalance =
-      account.account_size * (1 + profitTargetPercent / 100);
-  } else {
-    const previousCheckpoint = checkpoints?.find(
-      (cp) => cp.checkpoint_number === currentCheckpoint - 1
-    );
-    const previousBalance = previousCheckpoint
-      ? Number(previousCheckpoint.checkpoint_balance)
-      : account.account_size;
-    nextRequiredBalance = previousBalance * (1 + profitTargetPercent / 100);
-  }
+  const previousCheckpoint = checkpoints?.find(
+    (cp) => cp.checkpoint_number === currentCheckpoint - 1
+  );
+  const previousBalance = previousCheckpoint
+    ? Number(previousCheckpoint.checkpoint_balance)
+    : account.account_size;
+  nextRequiredBalance = previousBalance * (1 + profitTargetPercent / 100);
 
   const meetsCurrentRequirement =
     account.virtual_balance >= nextRequiredBalance;
@@ -48,19 +49,19 @@ const Progress = ({ account, checkpoints, isDisabled }: ProgressProps) => {
     return null;
   }
 
-  if (numCheckpoints === 1) {
-    const profitTargetPercent = account.checkpoint_profit_target_percent || 8;
-    const profitTaget = account.account_size * (profitTargetPercent / 100);
-    const profit = account.virtual_balance - account.account_size;
-
-    const progress = +((Math.max(profit, 0) * 100) / profitTaget).toFixed(0);
+  if (numCheckpoints === 1 || isFundedAccount) {
+    const profit = account.virtual_balance - previousBalance;
+    const profitTarget = nextRequiredBalance - previousBalance;
+    const progress = +((Math.max(profit, 0) * 100) / profitTarget).toFixed(0);
 
     return (
       <div className="">
         <div className="flex justify-between text-sm mb-3">
-          <span className="text-textBtn">Profit Target</span>
+          <span className="text-textBtn">
+            Profit Target {isFundedAccount ? "(Daily)" : ""}
+          </span>
           <span className={` ${isDisabled ? "text-slate-500" : "text-white"}`}>
-            ${profitTaget.toLocaleString()}
+            ${profitTarget.toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between text-sm mb-2">

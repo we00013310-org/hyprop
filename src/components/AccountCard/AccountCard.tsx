@@ -9,18 +9,18 @@ import Tag from "../ui/Tag";
 import { Button } from "../ui";
 import CardTag from "../ui/CardTag";
 
-import { useCheckpoints } from "@/hooks/testAccount";
-import { TestAccount } from "@/types";
+import { useCheckpoints } from "@/hooks/account";
+import { FundedAccount, TestAccount } from "@/types";
 import Progress from "./Progress";
 
 interface AccountCardProps {
-  account: TestAccount;
-  onUpdate: () => void;
+  account: TestAccount | FundedAccount;
   onOpenTrading: () => void;
 }
 
 export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
   const { data: checkpoints } = useCheckpoints(account.id);
+  const isFundedAccount = !!(account as FundedAccount).test_account_id;
 
   const profitLoss = account.virtual_balance - account.account_size;
   const profitLossPercent = (profitLoss / account.account_size) * 100;
@@ -50,7 +50,15 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <CardTag text="Exam Account" className="-top-3 -left-3" />
+          {isFundedAccount ? (
+            <CardTag
+              text="Funded Account"
+              variant="dark"
+              className="-top-3 -left-3"
+            />
+          ) : (
+            <CardTag text="Exam Account" className="-top-3 -left-3" />
+          )}
           <div className="text-xs text-slate-400 mb-1">
             {account.account_mode.toUpperCase()}
           </div>
@@ -125,9 +133,12 @@ export function AccountCard({ account, onOpenTrading }: AccountCardProps) {
         </div>
 
         <Progress
-          account={account}
+          account={account as TestAccount}
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          //  @ts-expect-error
           checkpoints={checkpoints || []}
           isDisabled={isDisabled}
+          isFundedAccount={isFundedAccount}
         />
       </div>
 

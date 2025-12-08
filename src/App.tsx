@@ -3,8 +3,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 import { ToastProvider } from "./contexts/ToastContext";
 import { AuthForm } from "./components/Auth/AuthForm";
-import { Dashboard } from "./components/Dashboard/Dashboard";
-import TradingPage from "./components/Trading/TradingPage";
 
 import { Navbar } from "./components/Navbar";
 import { Button } from "./components/ui";
@@ -15,6 +13,9 @@ import AccountTradingPage from "./pages/AccountTradingPage/AccountTradingPage";
 import LeaderboardPage from "./pages/LeaderboardPage/LeaderboardPage";
 import ReferralsPage from "./pages/ReferralsPage/ReferralsPage";
 import PortfolioPage from "./pages/PortfolioPage/PortfolioPage";
+import DashboardPage from "./pages/Dashboard/Dashboard";
+import TradingDashboardPage from "./pages/TradingDashboardPage/TradingDashboardPage";
+import NFTsPage from "./pages/NFTsPage/NFTsPage";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -36,12 +37,17 @@ function AppContent() {
     <div className="min-h-screen">
       <Navbar />
       <Switch>
-        <Route path="/" component={Dashboard} />
+        <Route path="/" component={DashboardPage} />
         <Route path="/new-account" component={NewAccountPage} />
-        <Route path="/trading/:accountId" component={TradingPage} />
+        <Route path="/trade" component={TradingDashboardPage} />
         <Route
           path="/account-trading/:accountId"
-          component={AccountTradingPage}
+          component={() => <AccountTradingPage isFundedAccount={false} />}
+        />
+
+        <Route
+          path="/funded-account-trading/:accountId"
+          component={() => <AccountTradingPage isFundedAccount />}
         />
 
         <Route path="/portfolio" component={PortfolioPage} />
@@ -49,6 +55,8 @@ function AppContent() {
         <Route path="/leaderboard" component={LeaderboardPage} />
 
         <Route path="/referrals" component={ReferralsPage} />
+
+        <Route path="/nfts" component={NFTsPage} />
 
         <Route path="/demo" component={DemoSettingsPage} />
 
