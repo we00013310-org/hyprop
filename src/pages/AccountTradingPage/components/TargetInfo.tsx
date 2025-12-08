@@ -12,7 +12,7 @@ const TargetInfo = ({ account }: TargetInfoProps) => {
   const maxDDPercent = 0.1 * 100;
   const dailyDDPercent = 0.05 * 100;
   const ddValue = account.high_water_mark * 0.1;
-  const dailyDDValue = dailyDDPercent * 0.05;
+  const dailyDDValue = account.account_size * 0.05;
   const { data: checkpoints } = useCheckpoints(account.id, isFundedAccount);
 
   // Get evaluation configuration
@@ -63,25 +63,19 @@ const TargetInfo = ({ account }: TargetInfoProps) => {
           <p className="text-xs text-textBtn">{progress}% completed</p>
         </div>
       </div>
-      <div className="relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex items-end justify-between">
-        <div className="absolute inset-0 bg-linear-to-br from-tradingGreen/10 to-transparent " />
-        <div className="flex flex-col gap-1 h-full">
-          <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
-          <div className="text-white text-xl">
-            ${ddValue.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
+      <div className="flex gap-2">
+        <div className="relative flex-1 bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex items-end justify-between">
+          <div className="absolute inset-0 bg-linear-to-br from-tradingGreen/10 to-transparent " />
+          <div className="flex flex-col gap-1 h-full">
+            <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
+            <div className="text-white text-xl">
+              ${ddValue.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
+            </div>
+            <div className="text-tradingTextLight text-sm mt-1">
+              Max Drawdown
+            </div>
           </div>
-          <div className="text-tradingTextLight text-sm mt-1">Max Drawdown</div>
-        </div>
-        <div className="flex flex-col gap-1 h-full">
-          <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
-          <div className="text-white text-xl">
-            ${dailyDDValue.toLocaleString()} ({dailyDDPercent.toFixed(1)}%)
-          </div>
-          <div className="text-tradingTextLight text-sm mt-1">
-            Daily Drawdown
-          </div>
-        </div>
-        {/* <div className="flex flex-col gap-1 justify-end h-full">
+          {/* <div className="flex flex-col gap-1 justify-end h-full">
           {isFundedAccount && (
             <>
               <div className="text-white text-xl text-right">
@@ -93,6 +87,18 @@ const TargetInfo = ({ account }: TargetInfoProps) => {
             </>
           )}
         </div> */}
+        </div>
+        <div className="flex-1 relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex items-end justify-between">
+          <div className="flex flex-col gap-1 h-full">
+            <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
+            <div className="text-white text-xl">
+              ${dailyDDValue.toLocaleString()} ({dailyDDPercent.toFixed(1)}%)
+            </div>
+            <div className="text-tradingTextLight text-sm mt-1">
+              Daily Drawdown
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
