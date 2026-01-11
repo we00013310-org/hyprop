@@ -19,8 +19,8 @@ interface PriceData {
   isConnected: boolean;
 }
 
-const TESTNET_WS_URL = "wss://api.hyperliquid-testnet.xyz/ws";
-const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz/info";
+const TESTNET_WS_URL = "wss://api.hyperliquid.xyz/ws";
+const TESTNET_API_URL = "https://api.hyperliquid.xyz/info";
 
 export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
   const [price, setPrice] = useState<number>(0);
@@ -66,10 +66,10 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "demo_btc_price_offset" && basePriceRef.current > 0) {
         const newOffset = e.newValue ? parseFloat(e.newValue) : 0;
-        const adjustedPrice = basePriceRef.current +
-          (isNaN(newOffset) ? 0 : newOffset);
+        const adjustedPrice =
+          basePriceRef.current + (isNaN(newOffset) ? 0 : newOffset);
         console.log(
-          `Demo price offset changed to ${newOffset}, adjusting price to ${adjustedPrice}`,
+          `Demo price offset changed to ${newOffset}, adjusting price to ${adjustedPrice}`
         );
         setPrice(adjustedPrice);
       }
@@ -86,7 +86,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
         if (currentOffset !== lastKnownOffset) {
           const expectedPrice = basePriceRef.current + currentOffset;
           console.log(
-            `Demo price offset changed from ${lastKnownOffset} to ${currentOffset}, adjusting price to ${expectedPrice}`,
+            `Demo price offset changed from ${lastKnownOffset} to ${currentOffset}, adjusting price to ${expectedPrice}`
           );
           lastKnownOffset = currentOffset;
           setPrice(expectedPrice);
@@ -111,7 +111,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
         }
 
         console.log(
-          `Connecting to Hyperliquid testnet WebSocket for ${coin}...`,
+          `Connecting to Hyperliquid testnet WebSocket for ${coin}...`
         );
         const ws = new WebSocket(TESTNET_WS_URL);
         wsRef.current = ws;
@@ -128,7 +128,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
                 type: "trades",
                 coin: coin,
               },
-            }),
+            })
           );
           console.log(`Subscribed to ${coin} trades`);
 
@@ -138,7 +138,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
               subscription: {
                 type: "allMids",
               },
-            }),
+            })
           );
           console.log("Subscribed to allMids");
         };
@@ -193,7 +193,7 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
             console.error(
               "Error parsing WebSocket message:",
               error,
-              event.data,
+              event.data
             );
           }
         };
@@ -212,9 +212,9 @@ export function useHyperliquidPrice(coin: string = "BTC"): PriceData {
           const delay = Math.min(5000 * reconnectAttemptsRef.current, 30000);
 
           console.log(
-            `Reconnecting in ${
-              delay / 1000
-            }s... (attempt ${reconnectAttemptsRef.current})`,
+            `Reconnecting in ${delay / 1000}s... (attempt ${
+              reconnectAttemptsRef.current
+            })`
           );
 
           reconnectTimeoutRef.current = setTimeout(() => {

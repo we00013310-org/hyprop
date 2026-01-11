@@ -1,4 +1,4 @@
-const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz/info";
+const TESTNET_API_URL = "https://api.hyperliquid.xyz/info";
 
 interface AccountBalance {
   marginSummary: {

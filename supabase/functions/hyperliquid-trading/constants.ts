@@ -1,4 +1,4 @@
-export const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz";
+export const TESTNET_API_URL = "https://api.hyperliquid.xyz";
 export const BUILDER_ADDRESS = "0x7c4E42B6cDDcEfa029D230137908aB178D52d324";
 
 export const TAKER_FEE_RATE = 0.0003;

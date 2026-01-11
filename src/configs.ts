@@ -12,3 +12,6 @@ export const ACCOUNT_TIERS = {
 };
 
 export const USD = "USDC";
+
+export const DAILY_DD_PCT = 0.05;
+export const MAX_DD_PCT = 0.1;
