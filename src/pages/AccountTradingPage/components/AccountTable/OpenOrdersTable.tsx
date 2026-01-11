@@ -39,7 +39,11 @@ const OpenOrdersTable = ({
     null
   );
 
-  const { data: ordersData, isLoading, refetch } = useOpenOrders(testAccountId, page);
+  const {
+    data: ordersData,
+    isLoading,
+    refetch,
+  } = useOpenOrders(testAccountId, page);
 
   const { mutate: cancelOrder, isPending: isCancelling } = useCancelTestOrder({
     testAccountId,
@@ -72,7 +76,6 @@ const OpenOrdersTable = ({
   const orders = ordersData?.data || [];
   const totalPages = ordersData?.totalPages || 1;
   const totalCount = ordersData?.count || 0;
-  console.log('orders', orders)
 
   const columns: ColumnDef<TestOrder>[] = useMemo(
     () => [
@@ -80,10 +83,18 @@ const OpenOrdersTable = ({
         accessorKey: "symbol",
         header: "Symbol",
         cell: ({ row }) => {
-          const direction = row.original.reduce_only ? (row.original.side === 'buy' ? 'Close Short' : 'Close Long') : (row.original.side === 'buy' ? 'Buy' : 'Sell')
+          const direction = row.original.reduce_only
+            ? row.original.side === "buy"
+              ? "Close Short"
+              : "Close Long"
+            : row.original.side === "buy"
+            ? "Buy"
+            : "Sell";
           return (
             <div className="flex items-center gap-2">
-              <span className="font-medium text-white">{row.original.symbol}</span>
+              <span className="font-medium text-white">
+                {row.original.symbol}
+              </span>
               <span
                 className={clsx("text-xs px-1.5 py-0.5 rounded", {
                   "bg-green-500/20 text-green-400": row.original.side === "buy",
@@ -93,7 +104,7 @@ const OpenOrdersTable = ({
                 {direction}
               </span>
             </div>
-          )
+          );
         },
       },
       {
@@ -124,9 +135,7 @@ const OpenOrdersTable = ({
         header: "Order Value",
         cell: ({ row }) => {
           if (row.original.reduce_only) {
-            return (
-              <span className="text-white">Market</span>
-            )
+            return <span className="text-white">Market</span>;
           }
           const value = row.original.size * row.original.price;
           return <span className="text-white">${value.toFixed(2)}</span>;
@@ -202,7 +211,13 @@ const OpenOrdersTable = ({
         ),
       },
     ],
-    [currentPrice, orders.length, cancellingOrderId, isCancelling, isCancellingAll]
+    [
+      currentPrice,
+      orders.length,
+      cancellingOrderId,
+      isCancelling,
+      isCancellingAll,
+    ]
   );
 
   const table = useReactTable({
@@ -236,9 +251,9 @@ const OpenOrdersTable = ({
                   {header.isPlaceholder
                     ? null
                     : flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                 </TableHead>
               ))}
             </TableRow>

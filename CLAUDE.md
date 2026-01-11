@@ -14,19 +14,31 @@ HyProp is a prop trading platform for cryptocurrency futures, built with React/T
 
 ```bash
 # Development
-npm run dev              # Start development server (Vite)
-npm run build           # Build for production
-npm run preview         # Preview production build
+npm run dev              # Start development server (local/default mode)
+npm run dev:stg          # Start development server (staging mode)
+npm run build            # Build for staging
+npm run build:prod       # Build for production
+npm run preview          # Preview production build (local)
+npm run preview:stg      # Preview staging build
 
 # Code Quality
-npm run lint            # Run ESLint
-npm run typecheck       # Type check without emitting files
+npm run lint             # Run ESLint
+npm run typecheck        # Type check without emitting files
 
 # Database (Supabase)
-npx supabase start      # Start local Supabase
-npx supabase db reset   # Reset local database
+npx supabase start       # Start local Supabase instance
+npx supabase db reset    # Reset local database
 npx supabase migration new <name>  # Create new migration
+npx supabase db push     # Push migrations to remote
+npm run db:types         # Generate TypeScript types from local database
+npm run db:types:remote  # Generate TypeScript types from remote database (requires SUPABASE_PROJECT_ID)
+
+# Edge Functions
+npm run server           # Serve edge functions locally
 npx supabase functions deploy hyperliquid-trading  # Deploy edge function
+
+# Utilities
+npm run import-wallets:stg  # Import wallets from CSV (staging)
 ```
 
 ## Architecture
@@ -48,6 +60,7 @@ npx supabase functions deploy hyperliquid-trading  # Deploy edge function
 - `wallets` - Pre-generated wallet accounts with encrypted private keys
 - `positions` - Current open positions (funded accounts)
 - `test_positions` - Simulated positions (test accounts, Phase 1)
+- `test_orders` - Open/filled/cancelled limit orders (test accounts, Phase 1)
 - `equity_snapshots` - Historical equity for drawdown tracking
 - `events` - Audit log for all account activities
 - `payouts` - Profit distribution records
@@ -64,10 +77,12 @@ All tables have RLS enabled. Users can only access their own data via policies c
 
 - Simulated trading using real-world oracle prices (CoinGecko/Binance)
 - Positions stored in `test_positions` table
+- Orders stored in `test_orders` table (status: "open", "filled", "cancelled")
 - No real orders placed on Hyperliquid
 - PnL calculated using real BTC price vs entry price
 - Auto-close positions with >5% loss
 - Test passes if: 24h elapsed + 8% profit + no loss limit breach
+- Limit order matching: `useLimitOrderMatcher` hook monitors price and automatically fills orders when conditions are met (buy when price <= limit, sell when price >= limit)
 
 **Phase 2 (Future - Funded Accounts):**
 
@@ -110,44 +125,60 @@ All tables have RLS enabled. Users can only access their own data via policies c
 
 ### Frontend Structure
 
+**Routing:**
+
+- Uses Wouter library (lightweight React router)
+- Routes: `/` (Dashboard), `/new-account`, `/trade`, `/account-trading/:accountId`, `/funded-account-trading/:accountId`, `/portfolio`, `/leaderboard`, `/referrals`, `/nfts`, `/demo`
+- Protected routes: All routes require wallet connection (enforced by `AuthProvider`)
+
 **Component Hierarchy:**
 
 ```
-App (AuthProvider)
+App (AuthProvider, ToastProvider)
 ├── AuthForm (wallet connection)
-├── Dashboard
-│   ├── AccountSelection (test/funded account cards)
-│   ├── TestAccountCard
-│   └── FundedAccountCard
-├── TradingInterface (main trading view)
-│   ├── AccountStats (balance, PnL, equity)
+├── DashboardPage (account overview)
+├── NewAccountPage (create new test account)
+├── AccountTradingPage (main trading interface)
 │   ├── OrderForm (place/cancel orders)
-│   ├── PositionsList (current positions)
-│   ├── OpenOrdersList (pending orders)
-│   └── TradeHistoryList (fills history)
-└── AdminConsole (admin panel)
-    ├── UserManagement
-    ├── AccountManagement
-    ├── PayoutManagement
-    └── SystemSettings
+│   ├── PositionTable (current positions with PnL)
+│   ├── OpenOrdersTable (pending limit orders)
+│   ├── OrdersTable (order history/fills)
+│   ├── Chart (price chart)
+│   └── TargetInfo (evaluation progress)
+├── TradingDashboardPage (multi-account view)
+├── PortfolioPage
+├── LeaderboardPage
+├── ReferralsPage
+├── NFTsPage
+└── DemoSettingsPage (configure demo price offset)
 ```
 
 **State Management:**
 
-- React Context for auth (`AuthContext`)
+- React Context: `AuthContext` (wallet/user), `ToastProvider` (notifications)
+- TanStack Query (React Query) for server state (accounts, positions, orders, prices)
 - Local component state for UI
-- Real-time Supabase queries for data
-- No Redux/Zustand currently
+- Real-time data via Supabase subscriptions and query invalidation
 
-**Styling:**
+**Data Fetching Patterns:**
 
-- TailwindCSS with custom config
-- Dark theme (slate-900 background)
+- Custom hooks wrapping TanStack Query: `useAccounts`, `useTestOrders`, `useHyperliquidPrice`
+- Query keys follow pattern: `["resource-type", id]` (e.g., `["test-positions", testAccountId]`)
+- Mutations invalidate related queries via `queryClient.invalidateQueries()`
+
+**UI Libraries:**
+
+- TailwindCSS v4 with custom theme (dark mode, trading-specific colors)
+- Radix UI for accessible components (Dialog, Dropdown, Progress, Slider)
+- TanStack Table for data tables with pagination
 - Lucide React icons
+- Framer Motion (`motion` package) for animations
 
 ## Environment Variables
 
-Required in `.env`:
+The project supports multiple environments via Vite modes. Use `.env` for local, `.env.stg` for staging, `.env.production` for production.
+
+**Frontend (.env, .env.stg):**
 
 ```
 VITE_SUPABASE_URL=<supabase-project-url>
@@ -155,15 +186,15 @@ VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
 ENCRYPTION_KEY=<base64-encoded-256-bit-key>  # For wallet private key encryption
 ```
 
-For Supabase Edge Function (set via `npx supabase secrets set`):
+**Supabase Edge Functions (supabase/functions/.env, set via `npx supabase secrets set` for remote):**
 
 ```
 SUPABASE_URL=<supabase-project-url>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-ENCRYPTION_KEY=<base64-encoded-256-bit-key>  # Must match local .env
+ENCRYPTION_KEY=<base64-encoded-256-bit-key>  # Must match frontend .env
 ```
 
-For wallet generation script:
+**Wallet Import Scripts:**
 
 ```
 VITE_SUPABASE_URL=<supabase-project-url>
@@ -172,6 +203,33 @@ ENCRYPTION_KEY=<base64-encoded-256-bit-key>
 ```
 
 **Setting up encryption:** See `ENCRYPTION_SETUP.md` for detailed instructions on generating and configuring the encryption key.
+
+**Important:** The `ENCRYPTION_KEY` must be identical across all environments (frontend, edge functions, scripts) for the same deployment.
+
+## Key Custom Hooks and Utilities
+
+**Data Hooks (TanStack Query):**
+
+- `useAccounts` - Load test and funded accounts for current user
+- `useTestOrders` - Query and manage test account limit orders
+- `useOpenOrders` - Fetch paginated open orders with real-time updates
+- `useCancelTestOrder` - Mutation for cancelling individual orders
+- `useCancelAllTestOrders` - Mutation for bulk order cancellation
+- `useHyperliquidPrice` - Real-time BTC price from oracle (with demo offset support)
+- `useLimitOrderMatcher` - Automatically fills limit orders when price conditions are met
+
+**Trading Utilities:**
+
+- `src/lib/hyperliquidTrading.ts` - `HyperliquidTrading` class for all trading operations
+- `src/lib/hyperliquidApi.ts` - Direct Hyperliquid API integration helpers
+- `src/lib/priceOracle.ts` - Price fetching from CoinGecko/Binance with fallbacks
+- `src/lib/riskEngine.ts` - Drawdown calculations and risk checks
+- `src/lib/walletUtils.ts` - Wallet encryption/decryption utilities
+
+**Path Aliases:**
+
+- `@/` maps to `src/` (configured in tsconfig.json and vite.config.ts)
+- Example: `import { supabase } from "@/lib/supabase"`
 
 ## Key Technical Decisions
 
@@ -182,10 +240,12 @@ ENCRYPTION_KEY=<base64-encoded-256-bit-key>
 5. **Real-world oracle prices for simulation** - More accurate evaluation than testnet prices
 6. **Numeric type for all money values** - Prevents floating point precision issues
 7. **RLS policies** - Database-level security, users can't access others' data
+8. **Wouter for routing** - Lightweight alternative to React Router (< 2KB)
+9. **TanStack Query for server state** - Replaces manual useState/useEffect patterns for data fetching
 
 ## Common Patterns
 
-**Database Queries:**
+**Database Queries (Raw Supabase):**
 
 ```typescript
 const { data, error } = await supabase
@@ -193,6 +253,40 @@ const { data, error } = await supabase
   .select("*")
   .eq("user_id", userId)
   .maybeSingle(); // or .single() if expecting exactly one
+```
+
+**Database Queries (TanStack Query):**
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+// Query
+const { data, isLoading, error } = useQuery({
+  queryKey: ["test-positions", testAccountId],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("test_positions")
+      .select("*")
+      .eq("test_account_id", testAccountId);
+    if (error) throw error;
+    return data;
+  },
+});
+
+// Mutation
+const queryClient = useQueryClient();
+const { mutate } = useMutation({
+  mutationFn: async (orderId: string) => {
+    const { error } = await supabase
+      .from("test_orders")
+      .update({ status: "cancelled" })
+      .eq("id", orderId);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["test-orders", testAccountId] });
+  },
+});
 ```
 
 **Edge Function Calls:**
@@ -215,9 +309,10 @@ const response = await fetch(
 
 **Error Handling:**
 
-- Frontend: Try/catch with user-friendly error messages
+- Frontend: Try/catch with user-friendly error messages via `ToastContext`
 - Edge function: Detailed console.log for debugging, generic errors to client
 - Database: Check for error field in Supabase response
+- TanStack Query: Errors automatically caught and exposed via `error` property
 
 ## Testing Notes
 

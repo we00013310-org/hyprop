@@ -89,6 +89,8 @@ export const useCreateTestOrder = ({
                 .insert({
                     ...mainOrder,
                     test_account_id: testAccountId,
+                    order_subtype: 'regular',  // Regular entry order
+                    is_active: true,            // Active immediately
                 })
                 .select()
                 .single();
@@ -110,6 +112,9 @@ export const useCreateTestOrder = ({
                     price: tp_price,
                     order_type: "limit",
                     reduce_only: true,
+                    order_subtype: 'take_profit',      // Mark as TP order
+                    parent_order_id: mainOrderData.id, // Link to entry order
+                    is_active: false,                   // Inactive until parent fills
                     status: "open",
                 });
             }
@@ -123,6 +128,9 @@ export const useCreateTestOrder = ({
                     price: sl_price,
                     order_type: "limit",
                     reduce_only: true,
+                    order_subtype: 'stop_loss',        // Mark as SL order
+                    parent_order_id: mainOrderData.id, // Link to entry order
+                    is_active: false,                   // Inactive until parent fills
                     status: "open",
                 });
             }
@@ -171,6 +179,7 @@ export const useCancelTestOrder = ({
 
     return useMutation({
         mutationFn: async (orderId: string) => {
+            // Cancel the main order
             const { data, error } = await supabase
                 .from("test_orders")
                 .update({
@@ -186,6 +195,22 @@ export const useCancelTestOrder = ({
 
             if (error) {
                 throw new Error(error.message);
+            }
+
+            // Cancel any child TP/SL orders linked to this parent
+            const { error: childError } = await supabase
+                .from("test_orders")
+                .update({
+                    status: "cancelled",
+                    cancelled_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("parent_order_id", orderId)
+                .eq("status", "open");
+
+            if (childError) {
+                console.error("Failed to cancel child TP/SL orders:", childError);
+                // Don't throw - main order is cancelled, child errors are logged
             }
 
             return data;

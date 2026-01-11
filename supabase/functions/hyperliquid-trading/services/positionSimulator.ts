@@ -42,6 +42,9 @@ async function createTpSlOrders(
       price: tpPrice,
       order_type: "limit",
       reduce_only: true,
+      order_subtype: "take_profit",  // Mark as TP order
+      parent_order_id: null,          // No parent for market order TP/SL
+      is_active: true,                // Market orders create active TP/SL
       status: "open",
     });
   }
@@ -55,6 +58,9 @@ async function createTpSlOrders(
       price: slPrice,
       order_type: "limit",
       reduce_only: true,
+      order_subtype: "stop_loss",     // Mark as SL order
+      parent_order_id: null,          // No parent for market order TP/SL
+      is_active: true,                // Market orders create active TP/SL
       status: "open",
     });
   }

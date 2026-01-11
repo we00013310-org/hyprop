@@ -549,7 +549,10 @@ export type Database = {
           filled_price: number | null
           filled_size: number
           id: string
+          is_active: boolean | null
+          order_subtype: string | null
           order_type: string
+          parent_order_id: string | null
           price: number
           reduce_only: boolean
           side: string
@@ -566,7 +569,10 @@ export type Database = {
           filled_price?: number | null
           filled_size?: number
           id?: string
+          is_active?: boolean | null
+          order_subtype?: string | null
           order_type?: string
+          parent_order_id?: string | null
           price: number
           reduce_only?: boolean
           side: string
@@ -583,7 +589,10 @@ export type Database = {
           filled_price?: number | null
           filled_size?: number
           id?: string
+          is_active?: boolean | null
+          order_subtype?: string | null
           order_type?: string
+          parent_order_id?: string | null
           price?: number
           reduce_only?: boolean
           side?: string
@@ -594,6 +603,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "test_orders_parent_order_id_fkey"
+            columns: ["parent_order_id"]
+            isOneToOne: false
+            referencedRelation: "test_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "test_orders_test_account_id_fkey"
             columns: ["test_account_id"]
@@ -614,10 +630,8 @@ export type Database = {
           rpnl: number
           side: string
           size: number
-          sl_price: number | null
           symbol: string
           test_account_id: string
-          tp_price: number | null
           upnl: number
         }
         Insert: {
@@ -630,10 +644,8 @@ export type Database = {
           rpnl?: number
           side: string
           size?: number
-          sl_price?: number | null
           symbol: string
           test_account_id: string
-          tp_price?: number | null
           upnl?: number
         }
         Update: {
@@ -646,10 +658,8 @@ export type Database = {
           rpnl?: number
           side?: string
           size?: number
-          sl_price?: number | null
           symbol?: string
           test_account_id?: string
-          tp_price?: number | null
           upnl?: number
         }
         Relationships: [

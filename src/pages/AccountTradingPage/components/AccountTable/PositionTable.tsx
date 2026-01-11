@@ -48,7 +48,7 @@ interface PositionTableProps {
   currentPrice: number;
   isDisabled?: boolean;
   isFundedAccount?: boolean;
-  onChangeTab?: (newTab: Tab) => void
+  onChangeTab?: (newTab: Tab) => void;
 }
 
 const PositionTable = ({
@@ -227,9 +227,9 @@ const PositionTable = ({
           <span className="text-xs text-tradingText">
             ({row.original.marginType})
           </span>
-          <button className="text-tradingText hover:text-white transition-colors">
+          {/* <button className="text-tradingText hover:text-white transition-colors">
             <Pencil className="h-3 w-3" />
-          </button>
+          </button> */}
         </div>
       ),
     },
@@ -281,8 +281,14 @@ const PositionTable = ({
       id: "tpsl",
       header: "TP/SL",
       cell: () => {
-        return <span onClick={() => onChangeTab?.(Tab.OpenOrders)} className="text-highlight text-xs hover:underline transition-all cursor-pointer">View Orders</span>
-
+        return (
+          <span
+            onClick={() => onChangeTab?.(Tab.OpenOrders)}
+            className="text-highlight text-xs hover:underline transition-all cursor-pointer"
+          >
+            View Orders
+          </span>
+        );
       },
     },
   ];
@@ -315,9 +321,9 @@ const PositionTable = ({
                   {header.isPlaceholder
                     ? null
                     : flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                 </TableHead>
               ))}
             </TableRow>
