@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const TESTNET_API_URL = "https://api.hyperliquid-testnet.xyz";
+const TESTNET_API_URL = "https://api.hyperliquid.xyz";
 
 export class HyperliquidTrading {
   private accountId: string;

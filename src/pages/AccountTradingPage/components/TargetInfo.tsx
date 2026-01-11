@@ -3,16 +3,22 @@ import { AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { FundedAccount, TestAccount } from "@/types";
 import { useCheckpoints } from "@/hooks/account";
+import { DAILY_DD_PCT, MAX_DD_PCT } from "@/configs";
 
 interface TargetInfoProps {
   account: TestAccount | FundedAccount;
 }
+
 const TargetInfo = ({ account }: TargetInfoProps) => {
   const isFundedAccount = !!(account as FundedAccount).test_account_id;
-  const maxDDPercent = 0.1 * 100;
-  const dailyDDPercent = 0.05 * 100;
-  const ddValue = account.high_water_mark * 0.1;
-  const dailyDDValue = account.account_size * 0.05;
+  const maxDDPercent = MAX_DD_PCT * 100;
+  const dailyDDPercent = DAILY_DD_PCT * 100;
+  const ddValue = account.high_water_mark * MAX_DD_PCT;
+  const dailyDDValue = account.account_size * DAILY_DD_PCT;
+  const curDDValue = isFundedAccount
+    ? (account as FundedAccount).currentDD
+    : Math.max(0, account.account_size - account.virtual_balance) /
+      account.account_size;
   const { data: checkpoints } = useCheckpoints(account.id, isFundedAccount);
 
   // Get evaluation configuration
@@ -64,39 +70,46 @@ const TargetInfo = ({ account }: TargetInfoProps) => {
         </div>
       </div>
       <div className="flex gap-2">
-        <div className="relative flex-1 bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex items-end justify-between">
-          <div className="absolute inset-0 bg-linear-to-br from-tradingGreen/10 to-transparent " />
-          <div className="flex flex-col gap-1 h-full">
+        <div className="relative flex-1 bg-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex flex-col justify-between gap-4">
+          <div
+            style={{
+              height: `${(curDDValue / MAX_DD_PCT) * 100}%`,
+            }}
+            className="absolute bottom-0 left-0 w-full bg-red-500/20"
+          />
+          <div className="relative z-10 flex flex-col gap-1 h-full">
             <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
-            <div className="text-white text-xl">
-              ${ddValue.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
-            </div>
             <div className="text-tradingTextLight text-sm mt-1">
               Max Drawdown
             </div>
-          </div>
-          {/* <div className="flex flex-col gap-1 justify-end h-full">
-          {isFundedAccount && (
-            <>
-              <div className="text-white text-xl text-right">
-                {((account as FundedAccount).currentDD * 100.0).toFixed(1)}%
-              </div>
-              <div className="text-tradingTextLight text-sm mt-1 text-right">
-                Current Drawdown
-              </div>
-            </>
-          )}
-        </div> */}
-        </div>
-        <div className="flex-1 relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex items-end justify-between">
-          <div className="flex flex-col gap-1 h-full">
-            <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
-            <div className="text-white text-xl">
-              ${dailyDDValue.toLocaleString()} ({dailyDDPercent.toFixed(1)}%)
+            <div className="text-white">
+              ${ddValue.toLocaleString()} ({maxDDPercent.toFixed(1)}%)
             </div>
+          </div>
+          <div className="relative z-10 flex justify-between items-center gap-1 h-full">
+            <div className="text-tradingTextLight text-sm">Current</div>
+            <div className="text-white">{(curDDValue * 100.0).toFixed(1)}%</div>
+          </div>
+        </div>
+        <div className="flex-1 relative bg-linear-to-br from-tradingGreen/20 to-tradingGreen/5 border border-tradingGreen rounded-lg p-4 overflow-hidden flex flex-col justify-between gap-4">
+          <div
+            style={{
+              height: `${(curDDValue / DAILY_DD_PCT) * 100}%`,
+            }}
+            className="absolute bottom-0 left-0 w-full bg-red-500/20"
+          />
+          <div className="relative z-10 flex flex-col gap-1 h-full">
+            <AlertTriangle className="w-5 h-5 text-tradingGreen mb-2" />
             <div className="text-tradingTextLight text-sm mt-1">
               Daily Drawdown
             </div>
+            <div className="text-white">
+              ${dailyDDValue.toLocaleString()} ({dailyDDPercent.toFixed(1)}%)
+            </div>
+          </div>
+          <div className="relative z-10 flex justify-between items-center gap-1 h-full">
+            <div className="text-tradingTextLight text-sm">Current</div>
+            <div className="text-white">{(curDDValue * 100.0).toFixed(1)}%</div>
           </div>
         </div>
       </div>

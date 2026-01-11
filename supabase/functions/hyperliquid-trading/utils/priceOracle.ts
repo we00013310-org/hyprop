@@ -109,14 +109,14 @@ export async function getRealOraclePrice(
 
   if (coin === "BTC") {
     try {
-      basePrice = await fetchCoinGeckoPrice();
+      basePrice = await fetchHyperliquidPrice(coin);
     } catch (error) {
-      console.warn("CoinGecko failed, trying Binance fallback:", error);
+      console.warn("Hyperliquid failed, trying Binance fallback:", error);
       try {
         basePrice = await fetchBinancePrice();
       } catch (binanceError) {
         console.error("Both price sources failed:", binanceError);
-        basePrice = await fetchHyperliquidPrice(coin);
+        basePrice = await fetchCoinGeckoPrice();
       }
     }
   } else {
