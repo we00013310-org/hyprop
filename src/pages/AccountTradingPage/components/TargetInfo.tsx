@@ -11,10 +11,19 @@ interface TargetInfoProps {
 
 const TargetInfo = ({ account }: TargetInfoProps) => {
   const isFundedAccount = !!(account as FundedAccount).test_account_id;
-  const maxDDPercent = MAX_DD_PCT * 100;
-  const dailyDDPercent = DAILY_DD_PCT * 100;
-  const ddValue = account.high_water_mark * MAX_DD_PCT;
-  const dailyDDValue = account.account_size * DAILY_DD_PCT;
+
+  const maxDDPercent = isFundedAccount
+    ? MAX_DD_PCT * 100
+    : (account.dd_max / account.account_size) * 100;
+  const dailyDDPercent = isFundedAccount
+    ? DAILY_DD_PCT * 100
+    : (account.dd_daily / account.account_size) * 100;
+  const ddValue = isFundedAccount
+    ? account.high_water_mark * MAX_DD_PCT
+    : account.dd_max;
+  const dailyDDValue = isFundedAccount
+    ? account.account_size * DAILY_DD_PCT
+    : account.dd_daily;
   const curDDValue = isFundedAccount
     ? (account as FundedAccount).currentDD
     : Math.max(0, account.account_size - account.virtual_balance) /

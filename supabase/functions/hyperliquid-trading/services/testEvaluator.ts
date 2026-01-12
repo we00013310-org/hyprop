@@ -27,8 +27,9 @@ function calculateTimeMetrics(
 }
 
 function checkLossLimit(testAccount: TestAccount): boolean {
-  const lossLimit = testAccount.account_size * (1 - testAccount.dd_max / 100);
-  return testAccount.virtual_balance < lossLimit;
+  return (
+    testAccount.account_size - testAccount.virtual_balance > testAccount.dd_max
+  );
 }
 
 async function loadCheckpoints(
