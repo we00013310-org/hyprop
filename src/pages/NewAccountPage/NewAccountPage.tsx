@@ -168,7 +168,7 @@ const NewAccountPage = () => {
               </div>
               <div className="flex-1 text-center">{`$${acc1Step.target.toLocaleString()}`}</div>
               <div className="flex-1 text-center">{`$${(
-                acc1Step.target / 2
+                acc2Step.target / 2
               ).toLocaleString()}`}</div>
             </div>
             <div className="flex border-b-[0.6px] border-btnBorder py-4 text-white">
@@ -176,7 +176,7 @@ const NewAccountPage = () => {
                 Step 2 Goal
               </div>
               <div className="flex-1 text-center">-</div>
-              <div className="flex-1 text-center">{`$${acc1Step.target.toLocaleString()}`}</div>
+              <div className="flex-1 text-center">{`$${acc2Step.target.toLocaleString()}`}</div>
             </div>
             <div className="flex border-b-[0.6px] border-btnBorder py-4 text-white">
               <div className="flex-1 text-textFeature text-left flex items-center gap-2">
