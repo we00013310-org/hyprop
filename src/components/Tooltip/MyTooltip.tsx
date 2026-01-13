@@ -18,7 +18,7 @@ const MyTooltip = ({
     <TooltipProvider closeDelay={0}>
       <Tooltip>
         <TooltipTrigger>{children}</TooltipTrigger>
-        <TooltipContent>{content}</TooltipContent>
+        <TooltipContent className="max-w-[300px]">{content}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

@@ -5,6 +5,8 @@ import { Button } from "../ui";
 import { Exam } from "../../types";
 
 import "./ExamCard.css";
+import MyTooltip from "../Tooltip/MyTooltip";
+import { HelpCircle } from "lucide-react";
 
 const ExamDescriptionLine = ({
   label,
@@ -12,12 +14,14 @@ const ExamDescriptionLine = ({
   isBasic,
   large = false,
   noBorder = false,
+  explain,
 }: {
   label: string;
   value: string;
   isBasic: boolean;
   large?: boolean;
   noBorder?: boolean;
+  explain?: string;
 }) => {
   const borderCn = clsx({
     "border-lightBorder": isBasic,
@@ -29,7 +33,14 @@ const ExamDescriptionLine = ({
     <div
       className={`flex justify-between items-center border-b-[0.6px] ${borderCn} py-2`}
     >
-      <p className="text-textBtn">{label}</p>
+      <p className="text-textBtn flex gap-1 items-center">
+        {label}
+        {!!explain && (
+          <MyTooltip content={explain}>
+            <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-300 cursor-help" />
+          </MyTooltip>
+        )}
+      </p>
       <p className={clsx("text-white", { "text-xl font-medium": large })}>
         {value}
       </p>
@@ -93,11 +104,13 @@ const ExamCard = ({ type = "basic", data, onClick }: ExamCardProps) => {
         isBasic={isBasic}
         label="Daily loss"
         value={`${(data.dailyLoss * 100).toFixed(0)}%`}
+        explain="Daily loss limit is based on the prior day's balance. This number is recalculated every day (00:30 UTC). If your equity reaches or declines below the maximum daily loss, the account will be in breach (all positions closed, account permanently disabled)."
       />
       <ExamDescriptionLine
         isBasic={isBasic}
         label="Max. drawdown"
         value={`$${data.maxDD.toLocaleString()}`}
+        explain="Maximum overall loss equity limit. 1-Step maximum drawdown is static. 2-Step maximum drawdown trails your highest balance. If your equity limit reaches or falls below the maximum drawdown equity limit, the account will breach (all positions closed, account permanently disabled)."
       />
       <ExamDescriptionLine
         isBasic={isBasic}

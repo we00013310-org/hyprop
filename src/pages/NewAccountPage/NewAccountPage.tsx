@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { HelpCircle } from "lucide-react";
 
 import ExamCard from "../../components/ExamCard/ExamCard";
 import PaymentModal from "./components/PaymentModal/PaymentModal";
+import MyTooltip from "../../components/Tooltip/MyTooltip";
 import {
   ACCOUNT_TIERS,
   CHECKPOINT_INTERVAL_HOURS,
@@ -177,8 +179,11 @@ const NewAccountPage = () => {
               <div className="flex-1 text-center">{`$${acc1Step.target.toLocaleString()}`}</div>
             </div>
             <div className="flex border-b-[0.6px] border-btnBorder py-4 text-white">
-              <div className="flex-1 text-textFeature text-left">
+              <div className="flex-1 text-textFeature text-left flex items-center gap-2">
                 Daily Loss
+                <MyTooltip content="Daily loss limit is based on the prior day's balance. This number is recalculated every day (00:30 UTC). If your equity reaches or declines below the maximum daily loss, the account will be in breach (all positions closed, account permanently disabled).">
+                  <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-300 cursor-help" />
+                </MyTooltip>
               </div>
               <div className="flex-1 text-center">{`${(
                 acc1Step.dailyLoss * 100
@@ -188,8 +193,11 @@ const NewAccountPage = () => {
               ).toFixed(0)}%`}</div>
             </div>
             <div className="flex border-b-[0.6px] border-btnBorder py-4 text-white">
-              <div className="flex-1 text-textFeature text-left">
+              <div className="flex-1 text-textFeature text-left flex items-center gap-2">
                 Max. drawdown
+                <MyTooltip content="Maximum overall loss equity limit. 1-Step maximum drawdown is static. 2-Step maximum drawdown trails your highest balance. If your equity limit reaches or falls below the maximum drawdown equity limit, the account will breach (all positions closed, account permanently disabled).">
+                  <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-300 cursor-help" />
+                </MyTooltip>
               </div>
               <div className="flex-1 text-center">{`$${acc1Step.maxDD.toLocaleString()}`}</div>
               <div className="flex-1 text-center">{`$${acc2Step.maxDD.toLocaleString()}`}</div>
